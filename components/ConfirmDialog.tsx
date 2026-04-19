@@ -216,12 +216,14 @@ export function DialogProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useConfirm(): ConfirmFn {
   const ctx = useContext(DialogContext);
   if (!ctx) throw new Error('useConfirm must be used within DialogProvider');
   return ctx.confirm;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePrompt(): PromptFn {
   const ctx = useContext(DialogContext);
   if (!ctx) throw new Error('usePrompt must be used within DialogProvider');

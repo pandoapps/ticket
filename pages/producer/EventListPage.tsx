@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
@@ -30,18 +30,18 @@ export function EventListPage() {
   const confirm = useConfirm();
   const navigate = useNavigate();
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const res = await producerEventService.list();
       setEvents(res.data);
     } catch (err) {
       toast.error((err as ApiError).message);
     }
-  }
+  }, [toast]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   async function handlePublish(event: EventModel) {
     try {

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
@@ -32,18 +32,18 @@ export function EventDetailPage() {
   const [editingLotId, setEditingLotId] = useState<number | null>(null);
   const [syncingLotId, setSyncingLotId] = useState<number | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const res = await producerEventService.show(eventId);
       setEvent(res.data);
     } catch (err) {
       toast.error((err as ApiError).message);
     }
-  }
+  }, [eventId, toast]);
 
   useEffect(() => {
     load();
-  }, [eventId]);
+  }, [load]);
 
   function openNewLot() {
     setLotForm(EMPTY_LOT);
