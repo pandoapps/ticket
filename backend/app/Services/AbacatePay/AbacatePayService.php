@@ -57,6 +57,7 @@ class AbacatePayService
                 'message' => $e->getMessage(),
                 'environment' => $environment->value,
             ]);
+
             return ['valid' => false, 'status' => null, 'error' => 'Falha de rede ao contatar o Abacate Pay.'];
         }
     }
@@ -129,6 +130,95 @@ class AbacatePayService
         ];
     }
 
+    /**
+     * @return array{charge_id: string, checkout_url: ?string, raw: array<string, mixed>}
+     */
+    public function createCardChargeForOrder(Order $order): array
+    {
+        $producer = $order->producer()->with('credentials')->firstOrFail();
+        $client = $this->clientFor($producer);
+
+        $productPayload = [
+            'externalId' => 'order_'.$order->id.'_'.now()->timestamp,
+            'name' => 'Pedido #'.$order->id.' - '.($order->event->name ?? 'Evento'),
+            'price' => (int) round(((float) $order->total) * 100),
+            'currency' => 'BRL',
+        ];
+
+        try {
+            $productResponse = $client->createProduct($productPayload);
+        } catch (RequestException $e) {
+            $body = $e->response->json();
+            $remoteMessage = is_array($body) ? ($body['error'] ?? $body['message'] ?? null) : null;
+            Log::warning('AbacatePay order-product creation failed', [
+                'status' => $e->response->status(),
+                'body' => $body,
+                'order_id' => $order->id,
+            ]);
+            throw new HttpException(
+                422,
+                'Não foi possível preparar o checkout de cartão. '.($remoteMessage ?? 'Tente novamente em instantes.'),
+                $e,
+            );
+        }
+
+        $productData = $productResponse['data'] ?? $productResponse;
+        $productId = (string) ($productData['id'] ?? '');
+
+        if ($productId === '') {
+            Log::warning('AbacatePay product response missing id for order', [
+                'order_id' => $order->id,
+                'response' => $productResponse,
+            ]);
+            throw new HttpException(422, 'Resposta inválida do gateway de pagamento.');
+        }
+
+        $frontendUrl = rtrim((string) (env('FRONTEND_URL') ?: config('app.url')), '/');
+        $orderUrl = $frontendUrl.'/meus-pedidos/'.$order->id;
+
+        $payload = [
+            'items' => [['id' => $productId, 'quantity' => 1]],
+            'methods' => ['CARD'],
+            'externalId' => (string) $order->id,
+            'returnUrl' => $orderUrl,
+            'completionUrl' => $orderUrl,
+        ];
+
+        try {
+            $response = $client->createCheckout($payload);
+        } catch (RequestException $e) {
+            $body = $e->response->json();
+            $remoteMessage = is_array($body) ? ($body['error'] ?? $body['message'] ?? null) : null;
+            Log::warning('AbacatePay card checkout creation failed', [
+                'status' => $e->response->status(),
+                'body' => $body,
+                'order_id' => $order->id,
+            ]);
+            throw new HttpException(
+                422,
+                'Não foi possível gerar o checkout de cartão. '.($remoteMessage ?? 'Tente novamente em instantes.'),
+                $e,
+            );
+        }
+
+        $data = $response['data'] ?? $response;
+
+        $chargeId = (string) ($data['id'] ?? '');
+        if ($chargeId === '') {
+            Log::warning('AbacatePay card checkout returned unexpected payload', [
+                'order_id' => $order->id,
+                'response' => $response,
+            ]);
+            throw new HttpException(422, 'Resposta inválida do gateway de pagamento.');
+        }
+
+        return [
+            'charge_id' => $chargeId,
+            'checkout_url' => $data['url'] ?? $data['checkoutUrl'] ?? null,
+            'raw' => $response,
+        ];
+    }
+
     public function syncProductForLot(TicketLot $lot): string
     {
         $event = $lot->event()->with('producer.credentials')->firstOrFail();
@@ -189,6 +279,7 @@ class AbacatePayService
         if ($message) {
             return "Abacate Pay retornou erro (HTTP {$status}): {$message}";
         }
+
         return "Abacate Pay retornou HTTP {$status}.";
     }
 }

@@ -14,7 +14,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/';
+  const fromState = (location.state as { from?: { pathname?: string } } | null)?.from;
+  const redirectTo = fromState?.pathname ?? '/';
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,7 +82,11 @@ export function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Novo por aqui?{' '}
-            <Link to="/cadastro" className="font-medium text-brand-600 hover:text-brand-700">
+            <Link
+              to="/cadastro"
+              state={fromState ? { from: fromState } : undefined}
+              className="font-medium text-brand-600 hover:text-brand-700"
+            >
               Criar conta
             </Link>
           </p>

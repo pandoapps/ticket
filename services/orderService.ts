@@ -2,6 +2,7 @@ import { api } from './api';
 import type { EventModel, TicketLot } from './eventService';
 
 export type OrderStatus = 'pending' | 'paid' | 'cancelled' | 'expired';
+export type PaymentMethod = 'pix' | 'card';
 
 export interface OrderItem {
   id: number;
@@ -17,6 +18,7 @@ export interface Order {
   subtotal: number;
   platform_fee: number;
   total: number;
+  payment_method: PaymentMethod;
   status: OrderStatus;
   checkout_url: string | null;
   pix_code: string | null;
@@ -35,6 +37,7 @@ export const orderService = {
   show: (id: number) => api.get<{ data: Order }>(`/customer/orders/${id}`),
   create: (payload: {
     event_id: number;
+    payment_method: PaymentMethod;
     items: Array<{ ticket_lot_id: number; quantity: number }>;
     phone?: string;
     cpf?: string;

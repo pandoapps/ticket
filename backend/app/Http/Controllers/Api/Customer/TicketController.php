@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\TicketResource;
+use App\Http\Resources\EventResource;
+use App\Http\Resources\TicketLotResource;
 use App\Models\Ticket;
 use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
@@ -53,8 +54,8 @@ class TicketController extends Controller
                 'code' => $ticket->code,
                 'qr_code' => $this->qr->pngDataUri($ticket->code),
                 'used_at' => $ticket->used_at?->toIso8601String(),
-                'lot' => new \App\Http\Resources\TicketLotResource($ticket->lot),
-                'event' => new \App\Http\Resources\EventResource($ticket->lot->event),
+                'lot' => new TicketLotResource($ticket->lot),
+                'event' => new EventResource($ticket->lot->event),
             ],
         ]);
     }

@@ -5,10 +5,12 @@ import { Modal } from '@components/Modal';
 import { useToast } from '@components/Toast';
 import { Icons } from '@components/Icon';
 import { publicEventService, type EventModel, type TicketLot } from '@services/eventService';
-import { orderService } from '@services/orderService';
+import { orderService, type PaymentMethod } from '@services/orderService';
 import { formatBRL, formatCPF, formatDateTime, formatPhone } from '@utils/format';
 import { useAuth } from '@hooks/useAuth';
 import type { ApiError } from '@services/api';
+
+const cartKey = (slug: string) => `ticketeira:pendingCart:${slug}`;
 
 export function PublicEventPage() {
   const { slug } = useParams();
@@ -16,6 +18,7 @@ export function PublicEventPage() {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
   const toast = useToast();
   const navigate = useNavigate();
@@ -29,10 +32,36 @@ export function PublicEventPage() {
         setEvent(r.data);
         const initial: Record<number, number> = {};
         r.data.lots?.forEach((lot) => (initial[lot.id] = 0));
+
+        const saved = sessionStorage.getItem(cartKey(slug));
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved) as Record<number, number>;
+            r.data.lots?.forEach((lot) => {
+              const qty = Number(parsed[lot.id]);
+              if (Number.isFinite(qty) && qty > 0) {
+                initial[lot.id] = Math.min(qty, lot.available);
+              }
+            });
+          } catch {
+            // ignore corrupted cart
+          }
+        }
+
         setQuantities(initial);
       })
       .catch((err: ApiError) => toast.error(err.message));
   }, [slug, toast]);
+
+  useEffect(() => {
+    if (!slug || !event) return;
+    const hasItems = Object.values(quantities).some((q) => q > 0);
+    if (hasItems) {
+      sessionStorage.setItem(cartKey(slug), JSON.stringify(quantities));
+    } else {
+      sessionStorage.removeItem(cartKey(slug));
+    }
+  }, [slug, event, quantities]);
 
   function setQty(lotId: number, qty: number) {
     setQuantities((prev) => ({ ...prev, [lotId]: Math.max(0, qty) }));
@@ -50,10 +79,11 @@ export function PublicEventPage() {
     setFormErrors({});
     setLoading(true);
     try {
-      const res = await orderService.create({ event_id: event.id, items, ...extra });
+      const res = await orderService.create({ event_id: event.id, payment_method: paymentMethod, items, ...extra });
       if (user && extra?.phone && extra?.cpf) {
         setUser({ ...user, phone: extra.phone, cpf: extra.cpf });
       }
+      sessionStorage.removeItem(cartKey(event.slug));
       setContactOpen(false);
       toast.success('Pedido criado.');
       navigate(`/meus-pedidos/${res.data.id}`);
@@ -76,7 +106,7 @@ export function PublicEventPage() {
       return;
     }
     if (!user) {
-      navigate('/login', { state: { from: { pathname: `/eventos/${event.slug}` } } });
+      navigate('/cadastro', { state: { from: { pathname: `/eventos/${event.slug}` } } });
       return;
     }
     if (!user.phone || !user.cpf) {
@@ -96,7 +126,7 @@ export function PublicEventPage() {
 
   return (
     <PublicLayout wide>
-      <section className="relative mx-auto max-w-7xl overflow-hidden md:mt-4 md:rounded-3xl md:mx-4 lg:mx-8">
+      <section className="relative w-full overflow-hidden">
         <div className="relative aspect-[21/9] w-full">
           {event.banner_url ? (
             <img src={event.banner_url} alt={event.name} className="absolute inset-0 h-full w-full object-cover" />
@@ -164,6 +194,30 @@ export function PublicEventPage() {
                     <p className="text-2xl font-semibold text-slate-900">{formatBRL(total)}</p>
                   </div>
                 </div>
+
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Forma de pagamento</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <PaymentMethodOption
+                      active={paymentMethod === 'pix'}
+                      label="PIX"
+                      hint="Aprovação imediata"
+                      onClick={() => setPaymentMethod('pix')}
+                    />
+                    <PaymentMethodOption
+                      active={paymentMethod === 'card'}
+                      label="Cartão"
+                      hint="Em até 4x*"
+                      onClick={() => setPaymentMethod('card')}
+                    />
+                  </div>
+                  {paymentMethod === 'card' && (
+                    <p className="mt-2 text-[10px] text-slate-500">
+                      *Parcelamento com juros definidos pela operadora do cartão, aplicados no checkout.
+                    </p>
+                  )}
+                </div>
+
                 <button onClick={handleCheckout} disabled={loading} className="btn btn-primary mt-4 w-full">
                   {loading ? 'Processando...' : 'Comprar ingressos'}
                 </button>
@@ -228,7 +282,7 @@ function ContactModal({
     <Modal open={open} onClose={onClose} title="Dados para o pagamento">
       <form onSubmit={handleSubmit} className="space-y-4">
         <p className="text-sm text-slate-600">
-          O Abacate Pay exige telefone e CPF para gerar o PIX. Eles ficam salvos no seu perfil para as próximas compras.
+          O Abacate Pay exige telefone e CPF para processar o pagamento. Eles ficam salvos no seu perfil para as próximas compras.
         </p>
 
         {generalErrors.length > 0 && (
@@ -283,6 +337,34 @@ function ContactModal({
         </div>
       </form>
     </Modal>
+  );
+}
+
+function PaymentMethodOption({
+  active,
+  label,
+  hint,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  hint: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-xl border px-3 py-2 text-left transition ${
+        active
+          ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200'
+          : 'border-slate-200 bg-white/70 hover:border-brand-300'
+      }`}
+    >
+      <p className="text-sm font-semibold text-slate-900">{label}</p>
+      <p className="text-[10px] text-slate-500">{hint}</p>
+    </button>
   );
 }
 

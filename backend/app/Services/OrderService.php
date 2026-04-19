@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
 use App\Models\Event;
 use App\Models\Order;
 use App\Models\Ticket;
@@ -21,9 +22,9 @@ class OrderService
     /**
      * @param  array<int, array{ticket_lot_id: int, quantity: int}>  $items
      */
-    public function createPendingOrder(User $customer, Event $event, array $items): Order
+    public function createPendingOrder(User $customer, Event $event, array $items, PaymentMethod $method = PaymentMethod::Pix): Order
     {
-        return DB::transaction(function () use ($customer, $event, $items) {
+        return DB::transaction(function () use ($customer, $event, $items, $method) {
             $subtotal = 0.0;
             $validated = [];
 
@@ -54,6 +55,7 @@ class OrderService
                 'subtotal' => $breakdown['subtotal'],
                 'platform_fee' => $breakdown['platform_fee'],
                 'total' => $breakdown['total'],
+                'payment_method' => $method,
                 'status' => OrderStatus::Pending,
                 'expires_at' => now()->addMinutes(30),
             ]);
@@ -69,12 +71,23 @@ class OrderService
                 $v['lot']->increment('sold', $v['quantity']);
             }
 
-            $charge = $this->abacate->createPixChargeForOrder($order->load(['customer', 'event', 'items.lot']));
-            $order->update([
-                'abacate_charge_id' => $charge['charge_id'],
-                'pix_code' => $charge['pix_code'],
-                'pix_qr_code' => $charge['pix_qr_code'],
-            ]);
+            $loaded = $order->load(['customer', 'event', 'items.lot']);
+
+            if ($method === PaymentMethod::Card) {
+                $charge = $this->abacate->createCardChargeForOrder($loaded);
+                $order->update([
+                    'abacate_charge_id' => $charge['charge_id'],
+                    'abacate_checkout_url' => $charge['checkout_url'],
+                ]);
+            } else {
+                $charge = $this->abacate->createPixChargeForOrder($loaded);
+                $order->update([
+                    'abacate_charge_id' => $charge['charge_id'],
+                    'pix_code' => $charge['pix_code'],
+                    'pix_qr_code' => $charge['pix_qr_code'],
+                ]);
+            }
+
             $order->payments()->create([
                 'gateway' => 'abacate_pay',
                 'gateway_charge_id' => $charge['charge_id'],

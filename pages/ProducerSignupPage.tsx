@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { useToast } from '@components/Toast';
 import { authService } from '@services/authService';
 import { setToken } from '@utils/token';
 import type { ApiError } from '@services/api';
 
-export function RegisterPage() {
+export function ProducerSignupPage() {
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -16,21 +16,17 @@ export function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
   const { setUser } = useAuth();
-
-  const fromState = (location.state as { from?: { pathname?: string } } | null)?.from;
-  const redirectTo = fromState?.pathname ?? '/';
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     try {
-      const res = await authService.register({ ...form, role: 'customer' });
+      const res = await authService.register({ ...form, role: 'producer' });
       setToken(res.data.token);
       setUser(res.data.user);
-      toast.success('Cadastro realizado!');
-      navigate(redirectTo, { replace: true });
+      toast.success('Conta criada! Complete o cadastro do produtor.');
+      navigate('/produtor/cadastro', { replace: true });
     } catch (err) {
       toast.error((err as ApiError).message);
     } finally {
@@ -54,8 +50,10 @@ export function RegisterPage() {
         </Link>
 
         <form onSubmit={handleSubmit} className="glass-card p-8">
-          <h1 className="text-2xl font-semibold text-slate-900">Criar conta de cliente</h1>
-          <p className="mb-6 mt-1 text-sm text-slate-500">Compre ingressos e acompanhe seus pedidos.</p>
+          <h1 className="text-2xl font-semibold text-slate-900">Criar conta de produtor</h1>
+          <p className="mb-6 mt-1 text-sm text-slate-500">
+            Crie sua conta para vender ingressos. Após o cadastro, complete os dados da produtora.
+          </p>
 
           <label className="mb-3 block">
             <span className="mb-1 block text-sm font-medium text-slate-700">Nome</span>
@@ -99,19 +97,19 @@ export function RegisterPage() {
           </div>
 
           <button type="submit" disabled={loading} className="btn btn-primary w-full">
-            {loading ? 'Criando...' : 'Criar conta'}
+            {loading ? 'Criando...' : 'Continuar'}
           </button>
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Já tem conta?{' '}
-            <Link to="/login" state={fromState ? { from: fromState } : undefined} className="font-medium text-brand-600 hover:text-brand-700">
+            <Link to="/login" className="font-medium text-brand-600 hover:text-brand-700">
               Entrar
             </Link>
           </p>
           <p className="mt-2 text-center text-sm text-slate-500">
-            Quer vender ingressos?{' '}
-            <Link to="/cadastro/produtor" className="font-medium text-brand-600 hover:text-brand-700">
-              Cadastre-se como produtor
+            Quer comprar ingressos?{' '}
+            <Link to="/cadastro" className="font-medium text-brand-600 hover:text-brand-700">
+              Cadastre-se como cliente
             </Link>
           </p>
         </form>

@@ -3,6 +3,7 @@
 namespace App\Services\AbacatePay;
 
 use App\Enums\AbacateEnvironment;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
@@ -41,6 +42,15 @@ class AbacatePayClient
     }
 
     /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function createCheckout(array $payload): array
+    {
+        return $this->request()->post('/checkouts/create', $payload)->throw()->json() ?? [];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function checkTransparent(string $id): array
@@ -57,7 +67,7 @@ class AbacatePayClient
         return $this->request()->post('/products/create', $payload)->throw()->json() ?? [];
     }
 
-    private function request(): \Illuminate\Http\Client\PendingRequest
+    private function request(): PendingRequest
     {
         return Http::withToken($this->secretKey)
             ->acceptJson()

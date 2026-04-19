@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { HomePage } from '@pages/HomePage';
 import { LoginPage } from '@pages/LoginPage';
 import { RegisterPage } from '@pages/RegisterPage';
+import { ProducerSignupPage } from '@pages/ProducerSignupPage';
 import { NotFoundPage } from '@pages/NotFoundPage';
 
 import { BrowsePage } from '@pages/customer/BrowsePage';
@@ -39,6 +40,7 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<RegisterPage />} />
+      <Route path="/cadastro/produtor" element={<ProducerSignupPage />} />
 
       <Route path="/eventos" element={<BrowsePage />} />
       <Route path="/eventos/:slug" element={<PublicEventPage />} />

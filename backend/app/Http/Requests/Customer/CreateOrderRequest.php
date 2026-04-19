@@ -24,6 +24,7 @@ class CreateOrderRequest extends FormRequest
 
         return [
             'event_id' => ['required', 'integer', 'exists:events,id'],
+            'payment_method' => ['required', 'string', 'in:pix,card'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.ticket_lot_id' => ['required', 'integer', 'exists:ticket_lots,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:20'],
@@ -41,6 +42,8 @@ class CreateOrderRequest extends FormRequest
             'phone.required' => 'Informe seu telefone (DDD + número).',
             'phone.regex' => 'Telefone inválido. Use DDD + número (10 ou 11 dígitos).',
             'cpf.required' => 'Informe seu CPF.',
+            'payment_method.required' => 'Escolha a forma de pagamento.',
+            'payment_method.in' => 'Forma de pagamento inválida.',
         ];
     }
 

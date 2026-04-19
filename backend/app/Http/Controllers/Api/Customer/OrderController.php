@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\CreateOrderRequest;
 use App\Http\Resources\OrderResource;
@@ -66,6 +67,7 @@ class OrderController extends Controller
             $user->fresh(),
             $event,
             $validated['items'],
+            PaymentMethod::from($validated['payment_method']),
         );
 
         $this->audit->log('order.created', $order);

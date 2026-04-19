@@ -52,6 +52,7 @@ class TicketLot extends Model
         if ($this->sales_end_at !== null && $now->gt($this->sales_end_at)) {
             return false;
         }
+
         return $this->available() > 0;
     }
 }

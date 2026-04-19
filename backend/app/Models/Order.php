@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,7 @@ class Order extends Model
         'subtotal',
         'platform_fee',
         'total',
+        'payment_method',
         'status',
         'abacate_charge_id',
         'abacate_checkout_url',
@@ -36,6 +38,7 @@ class Order extends Model
             'subtotal' => 'decimal:2',
             'platform_fee' => 'decimal:2',
             'total' => 'decimal:2',
+            'payment_method' => PaymentMethod::class,
             'status' => OrderStatus::class,
             'paid_at' => 'datetime',
             'cancelled_at' => 'datetime',

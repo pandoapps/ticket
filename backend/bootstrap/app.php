@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureApprovedProducer;
+use App\Http\Middleware\EnsureRole;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,8 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureRole::class,
-            'producer.approved' => \App\Http\Middleware\EnsureApprovedProducer::class,
+            'role' => EnsureRole::class,
+            'producer.approved' => EnsureApprovedProducer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -62,7 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ], $e->getStatusCode());
         });
 
-        $exceptions->render(function (\Throwable $e, Request $request) {
+        $exceptions->render(function (Throwable $e, Request $request) {
             if (! $request->is('api/*') && ! $request->expectsJson()) {
                 return null;
             }

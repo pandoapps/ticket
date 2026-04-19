@@ -25,36 +25,59 @@ class WebhookController extends Controller
         $payload = $request->all();
 
         $event = $payload['event'] ?? $payload['type'] ?? null;
-        $chargeId = $payload['data']['transparent']['id']
+        $chargeId = $payload['data']['checkout']['id']
+            ?? $payload['data']['transparent']['id']
             ?? $payload['data']['billing']['id']
             ?? $payload['data']['id']
             ?? $payload['id']
             ?? null;
-        $status = $payload['data']['transparent']['status']
+        $externalId = $payload['data']['checkout']['externalId']
+            ?? $payload['data']['transparent']['externalId']
+            ?? $payload['data']['billing']['externalId']
+            ?? $payload['data']['externalId']
+            ?? null;
+        $status = $payload['data']['checkout']['status']
+            ?? $payload['data']['transparent']['status']
             ?? $payload['data']['billing']['status']
             ?? $payload['data']['status']
             ?? $payload['status']
             ?? null;
 
-        Log::info('AbacatePay webhook received', ['event' => $event, 'charge_id' => $chargeId, 'status' => $status]);
+        Log::info('AbacatePay webhook received', ['event' => $event, 'charge_id' => $chargeId, 'external_id' => $externalId, 'status' => $status]);
 
-        if (! is_string($chargeId) || $chargeId === '') {
-            return response()->json(['message' => 'Missing charge id.'], 400);
+        $order = null;
+        if (is_string($chargeId) && $chargeId !== '') {
+            $order = Order::with('producer.credentials')->where('abacate_charge_id', $chargeId)->first();
         }
-
-        $order = Order::with('producer.credentials')->where('abacate_charge_id', $chargeId)->first();
+        if ($order === null && is_string($externalId) && $externalId !== '' && ctype_digit($externalId)) {
+            $order = Order::with('producer.credentials')->whereKey((int) $externalId)->first();
+        }
         if ($order === null) {
             return response()->json(['message' => 'Order not found.'], 404);
         }
 
+        if ((! is_string($chargeId) || $chargeId === '') && $order->abacate_charge_id) {
+            $chargeId = $order->abacate_charge_id;
+        }
+        if (! is_string($chargeId) || $chargeId === '') {
+            return response()->json(['message' => 'Missing charge id.'], 400);
+        }
+
         if (! $this->verifySignature($request, $payload, $order->producer?->credentials?->webhook_secret)) {
             Log::warning('AbacatePay webhook signature rejected', ['charge_id' => $chargeId, 'order_id' => $order->id]);
+
             return response()->json(['message' => 'Invalid webhook signature.'], 401);
         }
 
-        $paymentStatus = $this->mapPaymentStatus($status);
+        $outcome = $this->resolveOutcome($event, $status);
+        $paymentStatus = match ($outcome) {
+            'paid' => PaymentStatus::Paid,
+            'cancelled' => PaymentStatus::Cancelled,
+            'failed' => PaymentStatus::Failed,
+            default => $this->mapPaymentStatus($status),
+        };
 
-        DB::transaction(function () use ($order, $chargeId, $status, $paymentStatus, $payload) {
+        DB::transaction(function () use ($order, $chargeId, $event, $status, $outcome, $paymentStatus, $payload) {
             $locked = Order::whereKey($order->id)->lockForUpdate()->first();
 
             $locked->payments()->updateOrCreate(
@@ -66,17 +89,18 @@ class WebhookController extends Controller
                 ],
             );
 
-            if (in_array($status, ['PAID', 'paid', 'approved', 'CONFIRMED'], true)) {
+            if ($outcome === 'paid') {
                 if ($locked->status !== OrderStatus::Paid) {
                     $this->orders->markOrderPaid($locked);
-                    $this->audit->log('order.paid_webhook', $locked, ['charge_id' => $chargeId]);
+                    $this->audit->log('order.paid_webhook', $locked, ['charge_id' => $chargeId, 'event' => $event]);
                 } else {
                     Log::info('AbacatePay webhook ignored (order already paid)', ['charge_id' => $chargeId, 'order_id' => $locked->id]);
                 }
-            } elseif (in_array($status, ['CANCELLED', 'cancelled', 'EXPIRED', 'expired', 'FAILED', 'failed'], true)) {
+            } elseif ($outcome === 'cancelled' || $outcome === 'failed') {
                 if (! in_array($locked->status, [OrderStatus::Paid, OrderStatus::Cancelled, OrderStatus::Expired], true)) {
-                    $this->orders->cancelOrder($locked, strtolower((string) $status));
-                    $this->audit->log('order.cancelled_webhook', $locked, ['charge_id' => $chargeId, 'status' => $status]);
+                    $reason = $outcome === 'failed' ? 'failed' : strtolower((string) ($status ?: $event));
+                    $this->orders->cancelOrder($locked, $reason);
+                    $this->audit->log('order.cancelled_webhook', $locked, ['charge_id' => $chargeId, 'event' => $event, 'status' => $status]);
                 } else {
                     Log::info('AbacatePay webhook ignored (order already finalized)', ['charge_id' => $chargeId, 'order_id' => $locked->id, 'current_status' => $locked->status->value]);
                 }
@@ -118,9 +142,38 @@ class WebhookController extends Controller
         return false;
     }
 
+    private function resolveOutcome(mixed $event, mixed $status): string
+    {
+        $normalizedStatus = strtolower((string) $status);
+        $normalizedEvent = strtolower((string) $event);
+
+        if (in_array($normalizedStatus, ['paid', 'approved', 'confirmed'], true)) {
+            return 'paid';
+        }
+        if (in_array($normalizedStatus, ['cancelled', 'canceled', 'expired'], true)) {
+            return 'cancelled';
+        }
+        if ($normalizedStatus === 'failed') {
+            return 'failed';
+        }
+
+        if (in_array($normalizedEvent, ['checkout.completed', 'billing.paid', 'transparent.paid', 'payment.paid'], true)) {
+            return 'paid';
+        }
+        if (in_array($normalizedEvent, ['checkout.cancelled', 'checkout.canceled', 'billing.cancelled', 'billing.expired'], true)) {
+            return 'cancelled';
+        }
+        if (in_array($normalizedEvent, ['checkout.failed', 'billing.failed', 'payment.failed'], true)) {
+            return 'failed';
+        }
+
+        return 'unknown';
+    }
+
     private function mapPaymentStatus(mixed $status): PaymentStatus
     {
         $normalized = strtolower((string) $status);
+
         return match ($normalized) {
             'paid', 'approved', 'confirmed' => PaymentStatus::Paid,
             'cancelled', 'canceled' => PaymentStatus::Cancelled,

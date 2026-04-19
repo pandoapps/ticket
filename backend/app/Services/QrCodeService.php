@@ -19,6 +19,6 @@ class QrCodeService
             margin: 10,
         );
 
-        return (new SvgWriter())->write($qr)->getDataUri();
+        return (new SvgWriter)->write($qr)->getDataUri();
     }
 }

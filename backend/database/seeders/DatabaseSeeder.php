@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AbacateEnvironment;
 use App\Enums\EventStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
@@ -69,8 +70,9 @@ class DatabaseSeeder extends Seeder
         $producer->credentials()->updateOrCreate(
             [],
             [
-                'secret_key' => 'abc_dev_demo_key',
-                'environment' => \App\Enums\AbacateEnvironment::Sandbox->value,
+                'secret_key' => 'abc_dev_htgHBeHSWDtxnhgc1RPqLjCU',
+                'webhook_secret' => '23d3223d23dddds',
+                'environment' => AbacateEnvironment::Sandbox->value,
                 'validated_at' => now(),
             ],
         );
@@ -125,6 +127,7 @@ class DatabaseSeeder extends Seeder
 
         $customers = collect($customerNames)->map(function (string $name) {
             $slug = Str::slug($name, '.');
+
             return User::updateOrCreate(
                 ['email' => "{$slug}@ticketeira.local"],
                 [
@@ -135,7 +138,7 @@ class DatabaseSeeder extends Seeder
             );
         });
 
-        $pricing = new PricingService();
+        $pricing = new PricingService;
         $events = Event::with('lots')->get();
         $rng = random_int(1, PHP_INT_MAX);
         mt_srand(42);
@@ -145,7 +148,9 @@ class DatabaseSeeder extends Seeder
             for ($i = 0; $i < $purchases; $i++) {
                 $event = $events->random();
                 $lots = $event->lots->filter(fn ($lot) => $lot->price > 0)->values();
-                if ($lots->isEmpty()) continue;
+                if ($lots->isEmpty()) {
+                    continue;
+                }
 
                 $pickedLots = $lots->random(min($lots->count(), mt_rand(1, 2)));
                 $items = [];

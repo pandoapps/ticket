@@ -82,21 +82,52 @@ lint:
 	-$(NODE) npm run lint --silent || true
 
 deploy:
+	@test -f .env || (echo "✘ .env not found. Create it before deploying." && exit 1)
+	@test -f backend/.env || (echo "✘ backend/.env not found. Create it before deploying." && exit 1)
 	@echo "▶ Pulling latest from origin..."
 	git pull --rebase
-	@echo "▶ Building frontend bundle..."
+	@echo "▶ Installing frontend dependencies..."
 	npm ci
+	@echo "▶ Building frontend bundle..."
 	npm run build
 	@echo "▶ Rebuilding production containers..."
-	$(COMPOSE_PROD) up -d --build
-	@echo "▶ Installing backend dependencies (no-dev)..."
-	$(COMPOSE_PROD) exec -T app composer install --no-dev --optimize-autoloader
+	$(COMPOSE_PROD) up -d --build --remove-orphans
+	@echo "▶ Installing backend dependencies (no-dev, optimized)..."
+	$(COMPOSE_PROD) exec -T app composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+	@echo "▶ Entering maintenance mode..."
+	-$(COMPOSE_PROD) exec -T app php artisan down --render="errors::503" --retry=60
+	@echo "▶ Clearing stale caches..."
+	$(COMPOSE_PROD) exec -T app php artisan config:clear
+	$(COMPOSE_PROD) exec -T app php artisan route:clear
+	$(COMPOSE_PROD) exec -T app php artisan view:clear
+	$(COMPOSE_PROD) exec -T app php artisan event:clear
 	@echo "▶ Running migrations (forced)..."
 	$(COMPOSE_PROD) exec -T app php artisan migrate --force
-	@echo "▶ Caching config/routes/views..."
+	@echo "▶ Ensuring storage symlink..."
+	-$(COMPOSE_PROD) exec -T app php artisan storage:link
+	@echo "▶ Caching config, routes, views and events..."
 	$(COMPOSE_PROD) exec -T app php artisan config:cache
 	$(COMPOSE_PROD) exec -T app php artisan route:cache
 	$(COMPOSE_PROD) exec -T app php artisan view:cache
+	$(COMPOSE_PROD) exec -T app php artisan event:cache
+	@echo "▶ Restarting queue workers (graceful)..."
+	-$(COMPOSE_PROD) exec -T app php artisan queue:restart
+	@echo "▶ Restarting php-fpm to flush opcache..."
+	$(COMPOSE_PROD) restart app
+	@echo "▶ Waiting for app to come back up..."
+	@sleep 3
+	@echo "▶ Leaving maintenance mode..."
+	$(COMPOSE_PROD) exec -T app php artisan up
+	@echo "▶ Health check..."
+	@set -e; \
+	port=$${APP_PORT:-80}; \
+	for i in 1 2 3 4 5; do \
+	  if curl -fsS "http://localhost:$$port/up" > /dev/null; then \
+	    echo "✔ Health check passed."; exit 0; \
+	  fi; \
+	  echo "  …retrying ($$i/5)"; sleep 2; \
+	done; \
+	echo "✘ Health check failed after 5 attempts."; exit 1
 	@echo "✔ Deploy finished."
 
 send:

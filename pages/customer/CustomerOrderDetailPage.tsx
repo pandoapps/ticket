@@ -107,7 +107,31 @@ export function CustomerOrderDetailPage() {
         action={<span className={`chip ${statusMeta.color}`}>{statusMeta.label}</span>}
       />
 
-      {order.status === 'pending' && order.pix_qr_code && (
+      {order.status === 'pending' && order.payment_method === 'card' && order.checkout_url && (
+        <div className="mb-6 glass-card p-6 animate-fade-up">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">Pagamento via Cartão</p>
+          <h3 className="mt-1 text-lg font-semibold text-slate-900">Finalize no checkout da Abacate Pay</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Você será direcionado para o ambiente seguro da Abacate Pay, onde escolhe a bandeira, o número de parcelas e conclui o
+            pagamento. O valor das parcelas e eventuais juros são definidos pela operadora do seu cartão.
+          </p>
+          <a href={order.checkout_url} target="_blank" rel="noopener noreferrer" className="btn btn-primary mt-4 w-full sm:w-auto">
+            Pagar com cartão
+          </a>
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+            <Icons.clock className="h-4 w-4 flex-shrink-0" />
+            <span>
+              Aguardando confirmação. Após aprovação, seus ingressos aparecem em{' '}
+              <Link to="/meus-ingressos" className="font-semibold underline">
+                Meus ingressos
+              </Link>
+              .
+            </span>
+          </div>
+        </div>
+      )}
+
+      {order.status === 'pending' && order.payment_method === 'pix' && order.pix_qr_code && (
         <div className="mb-6 grid gap-4 lg:grid-cols-2">
           <div className="glass-card p-6 animate-fade-up">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">Pagamento via PIX</p>

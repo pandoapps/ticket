@@ -32,6 +32,7 @@ class EventController extends Controller
     public function show(Request $request, Event $event): JsonResponse
     {
         $this->authorizeOwnership($request, $event);
+
         return response()->json(['data' => new EventResource($event->load('lots'))]);
     }
 
@@ -128,6 +129,7 @@ class EventController extends Controller
         while (Event::where('slug', $slug)->exists()) {
             $slug = $base.'-'.(++$n);
         }
+
         return $slug;
     }
 }

@@ -100,6 +100,7 @@ class CredentialController extends Controller
     {
         $producer = $request->user()->producer()->with('credentials')->first();
         abort_if($producer === null, 404, 'Cadastro de produtor não encontrado.');
+
         return $producer;
     }
 }

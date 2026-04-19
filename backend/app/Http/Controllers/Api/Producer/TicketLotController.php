@@ -22,6 +22,7 @@ class TicketLotController extends Controller
     public function index(Request $request, Event $event): JsonResponse
     {
         $this->authorizeEvent($request, $event);
+
         return response()->json([
             'data' => TicketLotResource::collection($event->lots)->resolve(),
         ]);
