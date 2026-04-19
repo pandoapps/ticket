@@ -9,7 +9,6 @@ use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
@@ -62,12 +61,10 @@ class ReportController extends Controller
         };
 
         $series = (clone $paid)
-            ->select(
-                DB::raw("DATE_FORMAT(created_at, '{$format}') as bucket"),
-                DB::raw('SUM(total) as revenue'),
-                DB::raw('SUM(platform_fee) as platform_fee'),
-                DB::raw('COUNT(*) as orders'),
-            )
+            ->selectRaw('DATE_FORMAT(created_at, ?) as bucket', [$format])
+            ->selectRaw('SUM(total) as revenue')
+            ->selectRaw('SUM(platform_fee) as platform_fee')
+            ->selectRaw('COUNT(*) as orders')
             ->groupBy('bucket')
             ->orderBy('bucket')
             ->get();

@@ -23,8 +23,8 @@ use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:register');
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
@@ -38,7 +38,7 @@ Route::prefix('public')->group(function () {
     Route::get('events/{slug}', [PublicEventController::class, 'show']);
 });
 
-Route::post('webhooks/abacate-pay', [WebhookController::class, 'abacatePay']);
+Route::post('webhooks/abacate-pay', [WebhookController::class, 'abacatePay'])->middleware('throttle:webhook');
 
 Route::middleware('auth:sanctum')->group(function () {
 

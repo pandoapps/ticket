@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
@@ -9,6 +10,7 @@ use App\Services\AuditLogger;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
@@ -50,21 +52,36 @@ class WebhookController extends Controller
             return response()->json(['message' => 'Invalid webhook signature.'], 401);
         }
 
-        $order->payments()->create([
-            'gateway' => 'abacate_pay',
-            'gateway_charge_id' => $chargeId,
-            'status' => $this->mapPaymentStatus($status),
-            'amount' => $order->total,
-            'payload' => $payload,
-        ]);
+        $paymentStatus = $this->mapPaymentStatus($status);
 
-        if (in_array($status, ['PAID', 'paid', 'approved', 'CONFIRMED'], true)) {
-            $this->orders->markOrderPaid($order);
-            $this->audit->log('order.paid_webhook', $order, ['charge_id' => $chargeId]);
-        } elseif (in_array($status, ['CANCELLED', 'cancelled', 'EXPIRED', 'expired', 'FAILED', 'failed'], true)) {
-            $this->orders->cancelOrder($order, strtolower((string) $status));
-            $this->audit->log('order.cancelled_webhook', $order, ['charge_id' => $chargeId, 'status' => $status]);
-        }
+        DB::transaction(function () use ($order, $chargeId, $status, $paymentStatus, $payload) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
+
+            $locked->payments()->updateOrCreate(
+                ['gateway' => 'abacate_pay', 'gateway_charge_id' => $chargeId],
+                [
+                    'status' => $paymentStatus,
+                    'amount' => $locked->total,
+                    'payload' => $payload,
+                ],
+            );
+
+            if (in_array($status, ['PAID', 'paid', 'approved', 'CONFIRMED'], true)) {
+                if ($locked->status !== OrderStatus::Paid) {
+                    $this->orders->markOrderPaid($locked);
+                    $this->audit->log('order.paid_webhook', $locked, ['charge_id' => $chargeId]);
+                } else {
+                    Log::info('AbacatePay webhook ignored (order already paid)', ['charge_id' => $chargeId, 'order_id' => $locked->id]);
+                }
+            } elseif (in_array($status, ['CANCELLED', 'cancelled', 'EXPIRED', 'expired', 'FAILED', 'failed'], true)) {
+                if (! in_array($locked->status, [OrderStatus::Paid, OrderStatus::Cancelled, OrderStatus::Expired], true)) {
+                    $this->orders->cancelOrder($locked, strtolower((string) $status));
+                    $this->audit->log('order.cancelled_webhook', $locked, ['charge_id' => $chargeId, 'status' => $status]);
+                } else {
+                    Log::info('AbacatePay webhook ignored (order already finalized)', ['charge_id' => $chargeId, 'order_id' => $locked->id, 'current_status' => $locked->status->value]);
+                }
+            }
+        });
 
         return response()->json(['message' => 'ok']);
     }
