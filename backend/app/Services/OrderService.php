@@ -1,0 +1,134 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\OrderStatus;
+use App\Models\Event;
+use App\Models\Order;
+use App\Models\Ticket;
+use App\Models\TicketLot;
+use App\Models\User;
+use App\Services\AbacatePay\AbacatePayService;
+use Illuminate\Support\Facades\DB;
+
+class OrderService
+{
+    public function __construct(
+        private readonly PricingService $pricing,
+        private readonly AbacatePayService $abacate,
+    ) {}
+
+    /**
+     * @param  array<int, array{ticket_lot_id: int, quantity: int}>  $items
+     */
+    public function createPendingOrder(User $customer, Event $event, array $items): Order
+    {
+        return DB::transaction(function () use ($customer, $event, $items) {
+            $subtotal = 0.0;
+            $validated = [];
+
+            foreach ($items as $item) {
+                $lot = TicketLot::lockForUpdate()->findOrFail($item['ticket_lot_id']);
+                abort_if($lot->event_id !== $event->id, 422, 'Lote não pertence ao evento.');
+                abort_if(! $lot->isOnSale(), 422, "Lote '{$lot->name}' não está disponível.");
+                abort_if($lot->available() < $item['quantity'], 422, "Quantidade indisponível no lote '{$lot->name}'.");
+
+                $unit = (float) $lot->price;
+                $sub = $unit * $item['quantity'];
+                $subtotal += $sub;
+
+                $validated[] = [
+                    'lot' => $lot,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $unit,
+                    'subtotal' => $sub,
+                ];
+            }
+
+            $breakdown = $this->pricing->breakdown($subtotal);
+
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'producer_id' => $event->producer_id,
+                'event_id' => $event->id,
+                'subtotal' => $breakdown['subtotal'],
+                'platform_fee' => $breakdown['platform_fee'],
+                'total' => $breakdown['total'],
+                'status' => OrderStatus::Pending,
+                'expires_at' => now()->addMinutes(30),
+            ]);
+
+            foreach ($validated as $v) {
+                $order->items()->create([
+                    'ticket_lot_id' => $v['lot']->id,
+                    'quantity' => $v['quantity'],
+                    'unit_price' => $v['unit_price'],
+                    'subtotal' => $v['subtotal'],
+                ]);
+
+                $v['lot']->increment('sold', $v['quantity']);
+            }
+
+            $charge = $this->abacate->createPixChargeForOrder($order->load(['customer', 'event', 'items.lot']));
+            $order->update([
+                'abacate_charge_id' => $charge['charge_id'],
+                'pix_code' => $charge['pix_code'],
+                'pix_qr_code' => $charge['pix_qr_code'],
+            ]);
+            $order->payments()->create([
+                'gateway' => 'abacate_pay',
+                'gateway_charge_id' => $charge['charge_id'],
+                'amount' => $order->total,
+                'payload' => $charge['raw'],
+            ]);
+
+            return $order;
+        });
+    }
+
+    public function markOrderPaid(Order $order): Order
+    {
+        return DB::transaction(function () use ($order) {
+            if ($order->status === OrderStatus::Paid) {
+                return $order;
+            }
+
+            $order->update([
+                'status' => OrderStatus::Paid,
+                'paid_at' => now(),
+            ]);
+
+            foreach ($order->items()->with('lot')->get() as $item) {
+                for ($i = 0; $i < $item->quantity; $i++) {
+                    Ticket::create([
+                        'order_id' => $order->id,
+                        'ticket_lot_id' => $item->ticket_lot_id,
+                        'customer_id' => $order->customer_id,
+                    ]);
+                }
+            }
+
+            return $order->fresh(['tickets']);
+        });
+    }
+
+    public function cancelOrder(Order $order, string $reason = 'cancelled'): Order
+    {
+        return DB::transaction(function () use ($order, $reason) {
+            if ($order->status === OrderStatus::Paid) {
+                return $order;
+            }
+
+            $order->update([
+                'status' => $reason === 'expired' ? OrderStatus::Expired : OrderStatus::Cancelled,
+                'cancelled_at' => now(),
+            ]);
+
+            foreach ($order->items as $item) {
+                $item->lot()->lockForUpdate()->first()?->decrement('sold', $item->quantity);
+            }
+
+            return $order->fresh();
+        });
+    }
+}

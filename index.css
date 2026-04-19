@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply font-sans text-slate-800 antialiased;
+    background: theme('backgroundImage.app-gradient');
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply border border-white/50 bg-white/60 backdrop-blur-xl shadow-glass;
+  }
+  .glass-dark {
+    @apply border border-white/10 bg-slate-900/60 backdrop-blur-xl;
+  }
+  .glass-card {
+    @apply rounded-2xl border border-white/50 bg-white/60 backdrop-blur-xl shadow-glass;
+  }
+  .input {
+    @apply w-full rounded-xl border border-white/70 bg-white/70 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm backdrop-blur-sm transition
+      placeholder:text-slate-400
+      focus:border-brand-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition;
+  }
+  .btn-primary {
+    @apply bg-gradient-to-r from-brand-600 to-accent-600 text-white shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-secondary {
+    @apply border border-white/60 bg-white/60 text-slate-700 backdrop-blur hover:bg-white;
+  }
+  .btn-ghost {
+    @apply text-slate-600 hover:text-slate-900;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}

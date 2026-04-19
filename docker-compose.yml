@@ -1,0 +1,71 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: ticketeira_app
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ticketeira
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ticketeira_nginx
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - ./backend:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - ticketeira
+
+  db:
+    image: mysql:8.0
+    container_name: ticketeira_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-ticketeira}
+      MYSQL_USER: ${DB_USERNAME:-ticketeira}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - ticketeira_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_ROOT_PASSWORD:-rootsecret}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ticketeira
+
+  node:
+    image: node:20-alpine
+    container_name: ticketeira_node
+    working_dir: /app
+    environment:
+      VITE_PROXY_TARGET: http://nginx
+    volumes:
+      - ./:/app
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - nginx
+    networks:
+      - ticketeira
+
+volumes:
+  ticketeira_db_data:
+
+networks:
+  ticketeira:
+    driver: bridge
