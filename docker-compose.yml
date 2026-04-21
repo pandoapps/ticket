@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
     container_name: ticketeira_app
     working_dir: /var/www/html
     environment:

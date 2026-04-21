@@ -1,6 +1,11 @@
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 
+ifneq (,$(wildcard .env))
+  include .env
+  export
+endif
+
 COMPOSE        := docker compose
 COMPOSE_PROD   := docker compose -f docker-compose.yml -f docker-compose.prod.yml
 APP            := $(COMPOSE) exec app

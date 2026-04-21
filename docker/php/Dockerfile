@@ -22,7 +22,9 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-RUN addgroup -g 1000 laravel && adduser -G laravel -g laravel -s /bin/sh -D -u 1000 laravel
+ARG UID=1000
+ARG GID=1000
+RUN addgroup -g ${GID} laravel && adduser -G laravel -g laravel -s /bin/sh -D -u ${UID} laravel
 
 USER laravel
 
