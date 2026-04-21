@@ -86,10 +86,8 @@ deploy:
 	@test -f backend/.env || (echo "✘ backend/.env not found. Create it before deploying." && exit 1)
 	@echo "▶ Pulling latest from origin..."
 	git pull --rebase
-	@echo "▶ Installing frontend dependencies..."
-	npm ci
-	@echo "▶ Building frontend bundle..."
-	npm run build
+	@echo "▶ Building frontend bundle (via docker, no host Node required)..."
+	docker run --rm -v "$$PWD:/app" -w /app node:20-alpine sh -c "npm ci && npm run build"
 	@echo "▶ Rebuilding production containers..."
 	$(COMPOSE_PROD) up -d --build --remove-orphans
 	@echo "▶ Installing backend dependencies (no-dev, optimized)..."
