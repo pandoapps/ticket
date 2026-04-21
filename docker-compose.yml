@@ -5,6 +5,13 @@ services:
       dockerfile: docker/php/Dockerfile
     container_name: ticketeira_app
     working_dir: /var/www/html
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_DATABASE: ${DB_DATABASE:-ticketeira}
+      DB_USERNAME: ${DB_USERNAME:-ticketeira}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
     volumes:
       - ./backend:/var/www/html
     depends_on:
