@@ -134,4 +134,6 @@ send:
 	@$(MAKE) lint
 	@read -r -p "Commit message: " msg; \
 	if [ -z "$$msg" ]; then echo "✘ empty message, aborting."; exit 1; fi; \
-	git add -A && git commit -m "$$msg" && echo "✔ Committed: $$msg"
+	git add -A && git commit -m "$$msg" && echo "✔ Committed: $$msg" && \
+	echo "▶ Pushing to origin..." && \
+	git push && echo "✔ Pushed."
