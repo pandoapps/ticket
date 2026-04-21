@@ -73,6 +73,17 @@ class OrderService
 
             $loaded = $order->load(['customer', 'event', 'items.lot']);
 
+            if ((float) $order->total <= 0.0) {
+                $order->payments()->create([
+                    'gateway' => 'free',
+                    'gateway_charge_id' => null,
+                    'amount' => 0,
+                    'payload' => null,
+                ]);
+
+                return $this->markOrderPaid($order);
+            }
+
             if ($method === PaymentMethod::Card) {
                 $charge = $this->abacate->createCardChargeForOrder($loaded);
                 $order->update([

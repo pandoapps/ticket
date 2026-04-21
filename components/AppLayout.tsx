@@ -18,7 +18,7 @@ interface AppLayoutProps {
 export function AppLayout({ title, subtitle, nav, children }: AppLayoutProps) {
   return (
     <div className="relative min-h-screen">
-      <aside className="fixed inset-y-4 left-4 hidden w-60 flex-col rounded-3xl border border-white/50 bg-white/60 p-5 shadow-glass backdrop-blur-xl md:flex">
+      <aside className="fixed inset-y-4 left-4 z-30 hidden w-60 flex-col rounded-3xl border border-white/50 bg-white/60 p-5 shadow-glass backdrop-blur-xl md:flex">
         <Link to="/" className="mb-6 block">
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-brand-600">Ticketeira</p>
           <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
@@ -45,16 +45,16 @@ export function AppLayout({ title, subtitle, nav, children }: AppLayoutProps) {
         </nav>
       </aside>
 
-      <div className="md:ml-64">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/40 bg-white/50 px-4 py-3 backdrop-blur-xl md:px-8">
-          <div className="md:hidden">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-brand-600">Ticketeira</p>
-            <h1 className="text-sm font-semibold text-slate-900">{title}</h1>
-          </div>
-          <div className="hidden md:block" />
-          <ProfileMenu />
-        </header>
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/40 bg-white/50 px-4 py-3 backdrop-blur-xl md:px-8">
+        <div className="md:hidden">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-brand-600">Ticketeira</p>
+          <h1 className="text-sm font-semibold text-slate-900">{title}</h1>
+        </div>
+        <div className="hidden md:block" />
+        <ProfileMenu />
+      </header>
 
+      <div className="md:ml-64">
         <div className="mx-auto max-w-6xl px-4 py-8 md:px-8">{children}</div>
       </div>
     </div>

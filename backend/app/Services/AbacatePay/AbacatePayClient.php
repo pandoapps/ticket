@@ -67,6 +67,14 @@ class AbacatePayClient
         return $this->request()->post('/products/create', $payload)->throw()->json() ?? [];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function deleteProduct(string $id): array
+    {
+        return $this->request()->post("/products/delete?id={$id}")->throw()->json() ?? [];
+    }
+
     private function request(): PendingRequest
     {
         return Http::withToken($this->secretKey)

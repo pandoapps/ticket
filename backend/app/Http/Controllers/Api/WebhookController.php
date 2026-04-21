@@ -73,6 +73,7 @@ class WebhookController extends Controller
         $paymentStatus = match ($outcome) {
             'paid' => PaymentStatus::Paid,
             'cancelled' => PaymentStatus::Cancelled,
+            'expired' => PaymentStatus::Expired,
             'failed' => PaymentStatus::Failed,
             default => $this->mapPaymentStatus($status),
         };
@@ -96,11 +97,16 @@ class WebhookController extends Controller
                 } else {
                     Log::info('AbacatePay webhook ignored (order already paid)', ['charge_id' => $chargeId, 'order_id' => $locked->id]);
                 }
-            } elseif ($outcome === 'cancelled' || $outcome === 'failed') {
+            } elseif ($outcome === 'cancelled' || $outcome === 'failed' || $outcome === 'expired') {
                 if (! in_array($locked->status, [OrderStatus::Paid, OrderStatus::Cancelled, OrderStatus::Expired], true)) {
-                    $reason = $outcome === 'failed' ? 'failed' : strtolower((string) ($status ?: $event));
+                    $reason = match ($outcome) {
+                        'expired' => 'expired',
+                        'failed' => 'failed',
+                        default => strtolower((string) ($status ?: $event)),
+                    };
                     $this->orders->cancelOrder($locked, $reason);
-                    $this->audit->log('order.cancelled_webhook', $locked, ['charge_id' => $chargeId, 'event' => $event, 'status' => $status]);
+                    $auditAction = $outcome === 'expired' ? 'order.expired_webhook' : 'order.cancelled_webhook';
+                    $this->audit->log($auditAction, $locked, ['charge_id' => $chargeId, 'event' => $event, 'status' => $status]);
                 } else {
                     Log::info('AbacatePay webhook ignored (order already finalized)', ['charge_id' => $chargeId, 'order_id' => $locked->id, 'current_status' => $locked->status->value]);
                 }
@@ -150,7 +156,10 @@ class WebhookController extends Controller
         if (in_array($normalizedStatus, ['paid', 'approved', 'confirmed'], true)) {
             return 'paid';
         }
-        if (in_array($normalizedStatus, ['cancelled', 'canceled', 'expired'], true)) {
+        if ($normalizedStatus === 'expired') {
+            return 'expired';
+        }
+        if (in_array($normalizedStatus, ['cancelled', 'canceled'], true)) {
             return 'cancelled';
         }
         if ($normalizedStatus === 'failed') {
@@ -160,7 +169,10 @@ class WebhookController extends Controller
         if (in_array($normalizedEvent, ['checkout.completed', 'billing.paid', 'transparent.paid', 'payment.paid'], true)) {
             return 'paid';
         }
-        if (in_array($normalizedEvent, ['checkout.cancelled', 'checkout.canceled', 'billing.cancelled', 'billing.expired'], true)) {
+        if (in_array($normalizedEvent, ['billing.expired', 'checkout.expired', 'transparent.expired', 'payment.expired'], true)) {
+            return 'expired';
+        }
+        if (in_array($normalizedEvent, ['checkout.cancelled', 'checkout.canceled', 'billing.cancelled', 'billing.canceled'], true)) {
             return 'cancelled';
         }
         if (in_array($normalizedEvent, ['checkout.failed', 'billing.failed', 'payment.failed'], true)) {
@@ -177,6 +189,7 @@ class WebhookController extends Controller
         return match ($normalized) {
             'paid', 'approved', 'confirmed' => PaymentStatus::Paid,
             'cancelled', 'canceled' => PaymentStatus::Cancelled,
+            'expired' => PaymentStatus::Expired,
             'failed' => PaymentStatus::Failed,
             default => PaymentStatus::Pending,
         };

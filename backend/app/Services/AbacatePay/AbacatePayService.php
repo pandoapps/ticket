@@ -265,6 +265,38 @@ class AbacatePayService
         return $productId;
     }
 
+    public function removeProductForLot(TicketLot $lot): void
+    {
+        $productId = $lot->abacate_product_id;
+        if ($productId === null || $productId === '') {
+            return;
+        }
+
+        $event = $lot->event()->with('producer.credentials')->firstOrFail();
+        $producer = $event->producer;
+        if (! $producer->hasValidCredentials()) {
+            return;
+        }
+
+        $client = $this->clientFor($producer);
+
+        try {
+            $client->deleteProduct($productId);
+        } catch (RequestException $e) {
+            if ($e->response->status() !== 404) {
+                Log::warning('AbacatePay product delete failed', [
+                    'status' => $e->response->status(),
+                    'body' => $e->response->json(),
+                    'lot_id' => $lot->id,
+                    'product_id' => $productId,
+                ]);
+                throw $e;
+            }
+        }
+
+        $lot->forceFill(['abacate_product_id' => null])->save();
+    }
+
     private function humanize(int $status, ?string $message): string
     {
         if ($message === 'API key version mismatch') {

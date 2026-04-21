@@ -12,12 +12,17 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, children, footer }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
 
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
     };
 
     document.addEventListener('keydown', onKey);
@@ -31,7 +36,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
       document.body.style.overflow = previousOverflow;
       previouslyFocused?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

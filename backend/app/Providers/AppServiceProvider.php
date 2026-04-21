@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\TicketLot;
+use App\Observers\TicketLotObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -17,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        TicketLot::observe(TicketLotObserver::class);
+
         RateLimiter::for('login', function (Request $request) {
             $email = Str::lower((string) $request->input('email'));
 
