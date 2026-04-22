@@ -123,9 +123,8 @@ deploy:
 	$(COMPOSE_PROD) exec -T app php artisan up
 	@echo "▶ Health check..."
 	@set -e; \
-	port=$${APP_PORT:-80}; \
 	for i in 1 2 3 4 5; do \
-	  if curl -fsS "http://localhost:$$port/up" > /dev/null; then \
+	  if curl -fsSk "https://localhost/up" > /dev/null; then \
 	    echo "✔ Health check passed."; exit 0; \
 	  fi; \
 	  echo "  …retrying ($$i/5)"; sleep 2; \
