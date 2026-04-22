@@ -19,6 +19,7 @@ const EMPTY_LOT: LotPayload = {
   price: 0,
   quantity: 1,
   is_half_price: false,
+  is_active: true,
 };
 
 export function EventDetailPage() {
@@ -60,6 +61,7 @@ export function EventDetailPage() {
       sales_start_at: toLocalInput(lot.sales_start_at),
       sales_end_at: toLocalInput(lot.sales_end_at),
       is_half_price: lot.is_half_price,
+      is_active: lot.is_active,
     });
     setEditingLotId(lot.id);
     setLotOpen(true);
@@ -96,6 +98,16 @@ export function EventDetailPage() {
       toast.error((err as ApiError).message);
     } finally {
       setSyncingLotId(null);
+    }
+  }
+
+  async function handleToggleActive(lot: TicketLot) {
+    try {
+      await producerEventService.toggleLotActive(lot.id);
+      toast.success(lot.is_active ? 'Ingresso desativado.' : 'Ingresso ativado.');
+      load();
+    } catch (err) {
+      toast.error((err as ApiError).message);
     }
   }
 
@@ -187,9 +199,11 @@ export function EventDetailPage() {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {event.lots?.map((lot) => (
-                <tr key={lot.id}>
+                <tr key={lot.id} className={lot.is_active ? undefined : 'bg-slate-50 text-slate-400'}>
                   <td className="px-4 py-3 font-medium text-slate-900">
-                    {lot.name} {lot.is_half_price && <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">meia</span>}
+                    <span className={lot.is_active ? undefined : 'text-slate-500 line-through'}>{lot.name}</span>
+                    {lot.is_half_price && <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">meia</span>}
+                    {!lot.is_active && <span className="ml-1 rounded bg-slate-200 px-1.5 py-0.5 text-xs text-slate-600">desativado</span>}
                   </td>
                   <td className="px-4 py-3">{formatBRL(lot.price)}</td>
                   <td className="px-4 py-3">{lot.quantity}</td>
@@ -222,6 +236,12 @@ export function EventDetailPage() {
                         tone="brand"
                         label="Editar"
                         icon={<Icons.pencil className="h-4 w-4" />}
+                      />
+                      <ActionIconButton
+                        onClick={() => handleToggleActive(lot)}
+                        tone={lot.is_active ? 'danger' : 'brand'}
+                        label={lot.is_active ? 'Desativar' : 'Ativar'}
+                        icon={lot.is_active ? <Icons.ban className="h-4 w-4" /> : <Icons.check className="h-4 w-4" />}
                       />
                       <ActionIconButton
                         onClick={() => handleDeleteLot(lot)}
@@ -294,14 +314,24 @@ export function EventDetailPage() {
               />
             </label>
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={lotForm.is_half_price ?? false}
-              onChange={(e) => setLotForm({ ...lotForm, is_half_price: e.target.checked })}
-            />
-            Meia entrada
-          </label>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={lotForm.is_half_price ?? false}
+                onChange={(e) => setLotForm({ ...lotForm, is_half_price: e.target.checked })}
+              />
+              Meia entrada
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={lotForm.is_active ?? true}
+                onChange={(e) => setLotForm({ ...lotForm, is_active: e.target.checked })}
+              />
+              Ativo
+            </label>
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={() => setLotOpen(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm">
               Cancelar

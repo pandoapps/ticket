@@ -15,7 +15,7 @@ class PublicEventController extends Controller
     {
         $q = $request->query('q');
 
-        $query = Event::with(['producer', 'lots'])
+        $query = Event::with(['producer', 'lots' => fn ($q) => $q->where('is_active', true)])
             ->where('status', EventStatus::Published->value)
             ->where('starts_at', '>=', now())
             ->orderByDesc('is_featured')
@@ -39,7 +39,7 @@ class PublicEventController extends Controller
 
     public function show(string $slug): JsonResponse
     {
-        $event = Event::with(['producer', 'lots'])
+        $event = Event::with(['producer', 'lots' => fn ($q) => $q->where('is_active', true)])
             ->where('slug', $slug)
             ->where('status', EventStatus::Published->value)
             ->firstOrFail();

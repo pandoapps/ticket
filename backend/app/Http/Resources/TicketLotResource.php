@@ -23,6 +23,7 @@ class TicketLotResource extends JsonResource
             'sales_start_at' => $this->sales_start_at?->toIso8601String(),
             'sales_end_at' => $this->sales_end_at?->toIso8601String(),
             'is_half_price' => (bool) $this->is_half_price,
+            'is_active' => (bool) $this->is_active,
             'on_sale' => $this->isOnSale(),
             'abacate_product_id' => $this->abacate_product_id,
         ];

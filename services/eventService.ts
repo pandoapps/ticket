@@ -14,6 +14,7 @@ export interface TicketLot {
   sales_start_at: string | null;
   sales_end_at: string | null;
   is_half_price: boolean;
+  is_active: boolean;
   on_sale: boolean;
   abacate_product_id: string | null;
 }
@@ -79,6 +80,7 @@ export interface LotPayload {
   sales_start_at?: string | null;
   sales_end_at?: string | null;
   is_half_price?: boolean;
+  is_active?: boolean;
 }
 
 export const producerEventService = {
@@ -96,5 +98,6 @@ export const producerEventService = {
   updateLot: (lotId: number, payload: LotPayload) =>
     api.put<{ data: TicketLot }>(`/producer/lots/${lotId}`, payload),
   syncLot: (lotId: number) => api.post<{ data: TicketLot }>(`/producer/lots/${lotId}/sync`),
+  toggleLotActive: (lotId: number) => api.post<{ data: TicketLot }>(`/producer/lots/${lotId}/toggle-active`),
   destroyLot: (lotId: number) => api.delete<void>(`/producer/lots/${lotId}`),
 };

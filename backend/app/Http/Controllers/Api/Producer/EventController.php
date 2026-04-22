@@ -80,9 +80,9 @@ class EventController extends Controller
             ], 422);
         }
 
-        if ($event->lots()->count() === 0) {
+        if ($event->lots()->where('is_active', true)->count() === 0) {
             return response()->json([
-                'message' => 'Adicione ao menos um ingresso antes de publicar.',
+                'message' => 'Adicione ao menos um ingresso ativo antes de publicar.',
             ], 422);
         }
 

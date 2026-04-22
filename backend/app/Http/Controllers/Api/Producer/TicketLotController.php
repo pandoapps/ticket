@@ -46,6 +46,15 @@ class TicketLotController extends Controller
         return response()->json(['data' => new TicketLotResource($lot)]);
     }
 
+    public function toggleActive(Request $request, TicketLot $lot): JsonResponse
+    {
+        $this->authorizeLot($request, $lot);
+        $lot->update(['is_active' => ! $lot->is_active]);
+        $this->audit->log($lot->is_active ? 'lot.activated' : 'lot.deactivated', $lot);
+
+        return response()->json(['data' => new TicketLotResource($lot->fresh())]);
+    }
+
     public function sync(Request $request, TicketLot $lot): JsonResponse
     {
         $this->authorizeLot($request, $lot);

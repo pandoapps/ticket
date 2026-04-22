@@ -20,6 +20,7 @@ class TicketLot extends Model
         'sales_start_at',
         'sales_end_at',
         'is_half_price',
+        'is_active',
         'abacate_product_id',
     ];
 
@@ -30,6 +31,7 @@ class TicketLot extends Model
             'sales_start_at' => 'datetime',
             'sales_end_at' => 'datetime',
             'is_half_price' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -45,6 +47,9 @@ class TicketLot extends Model
 
     public function isOnSale(): bool
     {
+        if (! $this->is_active) {
+            return false;
+        }
         $now = now();
         if ($this->sales_start_at !== null && $now->lt($this->sales_start_at)) {
             return false;

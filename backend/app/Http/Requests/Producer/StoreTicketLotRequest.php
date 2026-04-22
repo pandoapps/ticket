@@ -23,6 +23,7 @@ class StoreTicketLotRequest extends FormRequest
             'sales_start_at' => ['nullable', 'date'],
             'sales_end_at' => ['nullable', 'date', 'after:sales_start_at'],
             'is_half_price' => ['boolean'],
+            'is_active' => ['boolean'],
         ];
     }
 }

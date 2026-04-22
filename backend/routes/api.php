@@ -69,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('events/{event}/lots', [TicketLotController::class, 'index']);
             Route::post('events/{event}/lots', [TicketLotController::class, 'store']);
             Route::put('lots/{lot}', [TicketLotController::class, 'update']);
+            Route::post('lots/{lot}/toggle-active', [TicketLotController::class, 'toggleActive']);
             Route::post('lots/{lot}/sync', [TicketLotController::class, 'sync']);
             Route::delete('lots/{lot}', [TicketLotController::class, 'destroy']);
 

@@ -50,7 +50,7 @@ export function BrowsePage() {
 }
 
 function Hero({ event }: { event: EventModel }) {
-  const minPrice = event.lots?.reduce((min, lot) => (lot.price < min ? lot.price : min), Infinity);
+  const minPrice = event.lots?.filter((lot) => lot.is_active).reduce((min, lot) => (lot.price < min ? lot.price : min), Infinity);
 
   return (
     <section className="relative w-full overflow-hidden">
@@ -104,7 +104,7 @@ function Hero({ event }: { event: EventModel }) {
 }
 
 function EventCard({ event, delay }: { event: EventModel; delay: number }) {
-  const minPrice = event.lots?.reduce((min, lot) => (lot.price < min ? lot.price : min), Infinity);
+  const minPrice = event.lots?.filter((lot) => lot.is_active).reduce((min, lot) => (lot.price < min ? lot.price : min), Infinity);
 
   return (
     <Link

@@ -31,6 +31,7 @@ class OrderService
             foreach ($items as $item) {
                 $lot = TicketLot::lockForUpdate()->findOrFail($item['ticket_lot_id']);
                 abort_if($lot->event_id !== $event->id, 422, 'Ingresso não pertence ao evento.');
+                abort_if(! $lot->is_active, 422, "Ingresso '{$lot->name}' está desativado.");
                 abort_if(! $lot->isOnSale(), 422, "Ingresso '{$lot->name}' não está disponível.");
                 abort_if($lot->available() < $item['quantity'], 422, "Quantidade indisponível para o ingresso '{$lot->name}'.");
 
