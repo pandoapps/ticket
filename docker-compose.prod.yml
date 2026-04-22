@@ -21,10 +21,10 @@ services:
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
-    ports: !reset
+    ports: !override
       - "80:80"
       - "443:443"
-    volumes: !reset
+    volumes: !override
       - ./dist:/usr/share/nginx/html:ro
       - ./backend:/var/www/html:ro
       - ./docker/nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
