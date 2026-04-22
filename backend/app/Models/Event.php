@@ -28,9 +28,12 @@ class Event extends Model
         'venue_address',
         'online_url',
         'banner_url',
+        'header_url',
         'status',
         'published_at',
         'is_featured',
+        'accepts_pix',
+        'accepts_card',
     ];
 
     protected function casts(): array
@@ -42,6 +45,8 @@ class Event extends Model
             'status' => EventStatus::class,
             'venue_type' => VenueType::class,
             'is_featured' => 'boolean',
+            'accepts_pix' => 'boolean',
+            'accepts_card' => 'boolean',
         ];
     }
 

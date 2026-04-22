@@ -13,7 +13,12 @@ class AdminSeeder extends Seeder
     {
         PlatformSetting::updateOrCreate(
             ['id' => 1],
-            ['commission_percent' => 10.00, 'fixed_fee_cents' => 0],
+            [
+                'pix_commission_percent' => 10.00,
+                'pix_fixed_fee_cents' => 0,
+                'card_commission_percent' => 10.00,
+                'card_fixed_fee_cents' => 0,
+            ],
         );
 
         User::updateOrCreate(

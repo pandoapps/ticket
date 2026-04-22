@@ -173,7 +173,10 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
   const [venueAddress, setVenueAddress] = useState('');
   const [onlineUrl, setOnlineUrl] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
+  const [headerUrl, setHeaderUrl] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
+  const [acceptsPix, setAcceptsPix] = useState(true);
+  const [acceptsCard, setAcceptsCard] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const toast = useToast();
@@ -190,7 +193,10 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
     setVenueAddress(event.venue_address ?? '');
     setOnlineUrl(event.online_url ?? '');
     setBannerUrl(event.banner_url ?? '');
+    setHeaderUrl(event.header_url ?? '');
     setIsFeatured(event.is_featured);
+    setAcceptsPix(event.accepts_pix);
+    setAcceptsCard(event.accepts_card);
     setErrors({});
   }, [event]);
 
@@ -211,7 +217,10 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
         venue_address: venueAddress || null,
         online_url: onlineUrl || null,
         banner_url: bannerUrl || null,
+        header_url: headerUrl || null,
         is_featured: isFeatured,
+        accepts_pix: acceptsPix,
+        accepts_card: acceptsCard,
       });
       toast.success('Evento atualizado.');
       onSaved();
@@ -337,7 +346,7 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
         )}
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">URL do banner</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">URL do banner (card)</span>
           <input
             type="url"
             value={bannerUrl}
@@ -347,6 +356,41 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
           />
           {fieldError('banner_url') && <p className="mt-1 text-xs text-rose-600">{fieldError('banner_url')}</p>}
         </label>
+
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-slate-700">URL do header (hero)</span>
+          <input
+            type="url"
+            value={headerUrl}
+            onChange={(e) => setHeaderUrl(e.target.value)}
+            placeholder="https://..."
+            className={`input ${fieldError('header_url') ? 'border-rose-400' : ''}`}
+          />
+          {fieldError('header_url') && <p className="mt-1 text-xs text-rose-600">{fieldError('header_url')}</p>}
+        </label>
+
+        <fieldset className="space-y-2 rounded-lg border border-slate-200 p-3">
+          <legend className="px-2 text-sm font-semibold text-slate-700">Métodos de pagamento aceitos</legend>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={acceptsPix}
+              onChange={(e) => setAcceptsPix(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            PIX
+          </label>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={acceptsCard}
+              onChange={(e) => setAcceptsCard(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            Cartão
+          </label>
+          {fieldError('accepts_pix') && <p className="text-xs text-rose-600">{fieldError('accepts_pix')}</p>}
+        </fieldset>
 
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input

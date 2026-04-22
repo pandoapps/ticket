@@ -32,9 +32,12 @@ export interface EventModel {
   venue_address: string | null;
   online_url: string | null;
   banner_url: string | null;
+  header_url: string | null;
   status: EventStatus;
   published_at: string | null;
   is_featured: boolean;
+  accepts_pix: boolean;
+  accepts_card: boolean;
   producer?: {
     id: number;
     company_name: string;
@@ -64,6 +67,9 @@ export interface EventPayload {
   venue_address?: string | null;
   online_url?: string | null;
   banner_url?: string | null;
+  header_url?: string | null;
+  accepts_pix?: boolean;
+  accepts_card?: boolean;
 }
 
 export interface LotPayload {

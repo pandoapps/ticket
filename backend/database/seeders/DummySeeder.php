@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\AbacateEnvironment;
 use App\Enums\EventStatus;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ProducerStatus;
 use App\Enums\UserRole;
@@ -85,7 +86,10 @@ class DummySeeder extends Seeder
                     'venue_address' => $data['venue_address'] ?? null,
                     'online_url' => $data['online_url'] ?? null,
                     'banner_url' => $data['banner_url'],
+                    'header_url' => $data['header_url'] ?? $data['banner_url'],
                     'is_featured' => $data['is_featured'] ?? false,
+                    'accepts_pix' => $data['accepts_pix'] ?? true,
+                    'accepts_card' => $data['accepts_card'] ?? true,
                     'status' => EventStatus::Published->value,
                     'published_at' => now(),
                 ],
@@ -158,7 +162,7 @@ class DummySeeder extends Seeder
                     $lot->increment('sold', $qty);
                 }
 
-                $breakdown = $pricing->breakdown($subtotal);
+                $breakdown = $pricing->breakdown($subtotal, PaymentMethod::Pix);
                 $paid = mt_rand(1, 10) <= 8;
                 $createdAt = now()->subDays(mt_rand(0, 28))->subHours(mt_rand(0, 23));
 

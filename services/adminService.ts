@@ -30,8 +30,17 @@ export interface AdminOrder {
 
 export interface PlatformSettings {
   id: number;
-  commission_percent: string;
-  fixed_fee_cents: string;
+  pix_commission_percent: string;
+  pix_fixed_fee_cents: string;
+  card_commission_percent: string;
+  card_fixed_fee_cents: string;
+}
+
+export interface UpdateSettingsPayload {
+  pix_commission_percent: number;
+  pix_fixed_fee_cents: number;
+  card_commission_percent: number;
+  card_fixed_fee_cents: number;
 }
 
 export interface AuditLogEntry {
@@ -73,7 +82,10 @@ export interface UpdateEventPayload {
   venue_address?: string | null;
   online_url?: string | null;
   banner_url?: string | null;
+  header_url?: string | null;
   is_featured?: boolean;
+  accepts_pix?: boolean;
+  accepts_card?: boolean;
 }
 
 export interface UpdateOrderPayload {
@@ -126,7 +138,7 @@ export const adminService = {
     api.put<{ data: AdminOrder }>(`/admin/orders/${id}`, payload),
   deleteOrder: (id: number) => api.delete<void>(`/admin/orders/${id}`),
   getSettings: () => api.get<{ data: PlatformSettings }>('/admin/settings'),
-  updateSettings: (payload: { commission_percent: number; fixed_fee_cents: number }) =>
+  updateSettings: (payload: UpdateSettingsPayload) =>
     api.put<{ data: PlatformSettings }>('/admin/settings', payload),
   listAuditLogs: (params: { action?: string } = {}) => {
     const qs = new URLSearchParams();

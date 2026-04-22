@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentMethod;
 use App\Models\PlatformSetting;
 
 class PricingService
@@ -9,12 +10,17 @@ class PricingService
     /**
      * @return array{subtotal: float, platform_fee: float, total: float}
      */
-    public function breakdown(float $subtotal): array
+    public function breakdown(float $subtotal, PaymentMethod $method): array
     {
         $settings = PlatformSetting::current();
-        $commission = round($subtotal * ((float) $settings->commission_percent / 100), 2);
-        $fixedFee = (float) $settings->fixed_fee_cents;
-        $platformFee = round($commission + $fixedFee, 2);
+
+        [$percent, $fixed] = match ($method) {
+            PaymentMethod::Pix => [(float) $settings->pix_commission_percent, (float) $settings->pix_fixed_fee_cents],
+            PaymentMethod::Card => [(float) $settings->card_commission_percent, (float) $settings->card_fixed_fee_cents],
+        };
+
+        $commission = round($subtotal * ($percent / 100), 2);
+        $platformFee = round($commission + $fixed, 2);
 
         return [
             'subtotal' => round($subtotal, 2),

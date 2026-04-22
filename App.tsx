@@ -5,6 +5,7 @@ import { LoginPage } from '@pages/LoginPage';
 import { RegisterPage } from '@pages/RegisterPage';
 import { ProducerSignupPage } from '@pages/ProducerSignupPage';
 import { NotFoundPage } from '@pages/NotFoundPage';
+import { ThiagoPage } from '@pages/ThiagoPage';
 
 import { BrowsePage } from '@pages/customer/BrowsePage';
 import { PublicEventPage } from '@pages/customer/PublicEventPage';
@@ -44,6 +45,8 @@ export default function App() {
 
       <Route path="/eventos" element={<BrowsePage />} />
       <Route path="/eventos/:slug" element={<PublicEventPage />} />
+
+      <Route path="/pages/thiago" element={<ThiagoPage />} />
 
       <Route
         path="/meus-pedidos"

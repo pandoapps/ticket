@@ -29,7 +29,21 @@ class StoreEventRequest extends FormRequest
             'venue_address' => ['nullable', 'string', 'max:500'],
             'online_url' => ['nullable', 'url', 'max:500'],
             'banner_url' => ['nullable', 'url', 'max:500'],
+            'header_url' => ['nullable', 'url', 'max:500'],
             'is_featured' => ['boolean'],
+            'accepts_pix' => ['boolean'],
+            'accepts_card' => ['boolean'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $pix = $this->boolean('accepts_pix', true);
+            $card = $this->boolean('accepts_card', true);
+            if (! $pix && ! $card) {
+                $validator->errors()->add('accepts_pix', 'Selecione ao menos um método de pagamento.');
+            }
+        });
     }
 }

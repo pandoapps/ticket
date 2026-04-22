@@ -49,6 +49,14 @@ class OrderController extends Controller
         abort_unless($event->isPublished(), 422, 'Evento não está disponível para compra.');
         abort_unless($event->producer->hasValidCredentials(), 422, 'Produtor sem credenciais de pagamento válidas.');
 
+        $method = PaymentMethod::from($request->string('payment_method')->toString());
+        if ($method === PaymentMethod::Pix && ! $event->accepts_pix) {
+            abort(422, 'Este evento não aceita pagamento via PIX.');
+        }
+        if ($method === PaymentMethod::Card && ! $event->accepts_card) {
+            abort(422, 'Este evento não aceita pagamento via cartão.');
+        }
+
         $user = $request->user();
         $validated = $request->validated();
 
@@ -67,7 +75,7 @@ class OrderController extends Controller
             $user->fresh(),
             $event,
             $validated['items'],
-            PaymentMethod::from($validated['payment_method']),
+            $method,
         );
 
         $this->audit->log('order.created', $order);

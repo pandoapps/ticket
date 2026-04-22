@@ -5,7 +5,7 @@ import { Empty } from '@components/Empty';
 import { useToast } from '@components/Toast';
 import { Icons } from '@components/Icon';
 import { publicEventService, type EventModel } from '@services/eventService';
-import { formatDate, formatDateTime } from '@utils/format';
+import { formatBRL, formatDate, formatDateTime } from '@utils/format';
 import type { ApiError } from '@services/api';
 
 export function BrowsePage() {
@@ -55,8 +55,8 @@ function Hero({ event }: { event: EventModel }) {
   return (
     <section className="relative w-full overflow-hidden">
       <div className="relative aspect-[16/9] w-full sm:aspect-[21/9] lg:aspect-[32/10]">
-        {event.banner_url ? (
-          <img src={event.banner_url} alt={event.name} className="absolute inset-0 h-full w-full object-cover" />
+        {event.header_url || event.banner_url ? (
+          <img src={event.header_url ?? event.banner_url ?? ''} alt={event.name} className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-brand-500 via-brand-700 to-accent-600" />
         )}
@@ -92,7 +92,7 @@ function Hero({ event }: { event: EventModel }) {
               {minPrice !== undefined && Number.isFinite(minPrice) && (
                 <p className="text-sm text-white/85">
                   A partir de{' '}
-                  <span className="font-semibold text-white">R$ {minPrice.toFixed(2).replace('.', ',')}</span>
+                  <span className="font-semibold text-white">{formatBRL(minPrice)}</span>
                 </p>
               )}
             </div>
@@ -141,7 +141,7 @@ function EventCard({ event, delay }: { event: EventModel; delay: number }) {
         </p>
         {minPrice !== undefined && Number.isFinite(minPrice) && (
           <p className="mt-3 text-sm text-slate-600">
-            A partir de <span className="font-semibold text-slate-900">R$ {minPrice.toFixed(2).replace('.', ',')}</span>
+            A partir de <span className="font-semibold text-slate-900">{formatBRL(minPrice)}</span>
           </p>
         )}
       </div>

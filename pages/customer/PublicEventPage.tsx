@@ -54,6 +54,15 @@ export function PublicEventPage() {
   }, [slug, toast]);
 
   useEffect(() => {
+    if (!event) return;
+    if (!event.accepts_pix && event.accepts_card) {
+      setPaymentMethod('card');
+    } else if (event.accepts_pix && !event.accepts_card) {
+      setPaymentMethod('pix');
+    }
+  }, [event]);
+
+  useEffect(() => {
     if (!slug || !event) return;
     const hasItems = Object.values(quantities).some((q) => q > 0);
     if (hasItems) {
@@ -128,8 +137,8 @@ export function PublicEventPage() {
     <PublicLayout wide>
       <section className="relative w-full overflow-hidden">
         <div className="relative aspect-[21/9] w-full">
-          {event.banner_url ? (
-            <img src={event.banner_url} alt={event.name} className="absolute inset-0 h-full w-full object-cover" />
+          {event.header_url || event.banner_url ? (
+            <img src={event.header_url ?? event.banner_url ?? ''} alt={event.name} className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-brand-500 to-accent-600" />
           )}
@@ -197,21 +206,25 @@ export function PublicEventPage() {
 
                 <div className="mt-4">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Forma de pagamento</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <PaymentMethodOption
-                      active={paymentMethod === 'pix'}
-                      label="PIX"
-                      hint="Aprovação imediata"
-                      onClick={() => setPaymentMethod('pix')}
-                    />
-                    <PaymentMethodOption
-                      active={paymentMethod === 'card'}
-                      label="Cartão"
-                      hint="Em até 4x*"
-                      onClick={() => setPaymentMethod('card')}
-                    />
+                  <div className={`grid gap-2 ${event.accepts_pix && event.accepts_card ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {event.accepts_pix && (
+                      <PaymentMethodOption
+                        active={paymentMethod === 'pix'}
+                        label="PIX"
+                        hint="Aprovação imediata"
+                        onClick={() => setPaymentMethod('pix')}
+                      />
+                    )}
+                    {event.accepts_card && (
+                      <PaymentMethodOption
+                        active={paymentMethod === 'card'}
+                        label="Cartão"
+                        hint="Em até 4x*"
+                        onClick={() => setPaymentMethod('card')}
+                      />
+                    )}
                   </div>
-                  {paymentMethod === 'card' && (
+                  {paymentMethod === 'card' && event.accepts_card && (
                     <p className="mt-2 text-[10px] text-slate-500">
                       *Parcelamento com juros definidos pela operadora do cartão, aplicados no checkout.
                     </p>

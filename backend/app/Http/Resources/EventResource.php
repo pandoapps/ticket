@@ -26,9 +26,12 @@ class EventResource extends JsonResource
             'venue_address' => $this->venue_address,
             'online_url' => $this->online_url,
             'banner_url' => $this->banner_url,
+            'header_url' => $this->header_url,
             'status' => $this->status?->value,
             'published_at' => $this->published_at?->toIso8601String(),
             'is_featured' => (bool) $this->is_featured,
+            'accepts_pix' => (bool) $this->accepts_pix,
+            'accepts_card' => (bool) $this->accepts_card,
             'producer' => new ProducerResource($this->whenLoaded('producer')),
             'lots' => TicketLotResource::collection($this->whenLoaded('lots')),
         ];

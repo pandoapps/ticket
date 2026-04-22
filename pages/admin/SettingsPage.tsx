@@ -7,8 +7,10 @@ import { adminService } from '@services/adminService';
 import type { ApiError } from '@services/api';
 
 export function SettingsPage() {
-  const [commission, setCommission] = useState('10.00');
-  const [fixedFee, setFixedFee] = useState('0');
+  const [pixCommission, setPixCommission] = useState('10.00');
+  const [pixFixed, setPixFixed] = useState('0');
+  const [cardCommission, setCardCommission] = useState('10.00');
+  const [cardFixed, setCardFixed] = useState('0');
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
@@ -16,8 +18,10 @@ export function SettingsPage() {
     adminService
       .getSettings()
       .then((r) => {
-        setCommission(r.data.commission_percent);
-        setFixedFee(r.data.fixed_fee_cents);
+        setPixCommission(r.data.pix_commission_percent);
+        setPixFixed(r.data.pix_fixed_fee_cents);
+        setCardCommission(r.data.card_commission_percent);
+        setCardFixed(r.data.card_fixed_fee_cents);
       })
       .catch((err: ApiError) => toast.error(err.message));
   }, [toast]);
@@ -27,8 +31,10 @@ export function SettingsPage() {
     setLoading(true);
     try {
       await adminService.updateSettings({
-        commission_percent: parseFloat(commission),
-        fixed_fee_cents: parseFloat(fixedFee),
+        pix_commission_percent: parseFloat(pixCommission),
+        pix_fixed_fee_cents: parseFloat(pixFixed),
+        card_commission_percent: parseFloat(cardCommission),
+        card_fixed_fee_cents: parseFloat(cardFixed),
       });
       toast.success('Configurações atualizadas.');
     } catch (err) {
@@ -40,34 +46,67 @@ export function SettingsPage() {
 
   return (
     <AppLayout title="Admin" nav={adminNav}>
-      <PageHeader title="Configurações da plataforma" description="Taxas cobradas em cada venda." />
+      <PageHeader title="Configurações da plataforma" description="Taxas cobradas em cada venda, por método de pagamento." />
 
-      <form onSubmit={handleSubmit} className="max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-6">
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Comissão (%)</span>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            max="100"
-            value={commission}
-            onChange={(e) => setCommission(e.target.value)}
-            required
-            className="input"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Taxa fixa (R$)</span>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={fixedFee}
-            onChange={(e) => setFixedFee(e.target.value)}
-            required
-            className="input"
-          />
-        </label>
+      <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
+        <fieldset className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
+          <legend className="px-2 text-sm font-semibold text-slate-700">PIX</legend>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-slate-700">Comissão (%)</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              value={pixCommission}
+              onChange={(e) => setPixCommission(e.target.value)}
+              required
+              className="input"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-slate-700">Taxa fixa (R$)</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={pixFixed}
+              onChange={(e) => setPixFixed(e.target.value)}
+              required
+              className="input"
+            />
+          </label>
+        </fieldset>
+
+        <fieldset className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
+          <legend className="px-2 text-sm font-semibold text-slate-700">Cartão</legend>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-slate-700">Comissão (%)</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              value={cardCommission}
+              onChange={(e) => setCardCommission(e.target.value)}
+              required
+              className="input"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-slate-700">Taxa fixa (R$)</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={cardFixed}
+              onChange={(e) => setCardFixed(e.target.value)}
+              required
+              className="input"
+            />
+          </label>
+        </fieldset>
+
         <button
           type="submit"
           disabled={loading}

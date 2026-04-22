@@ -46,7 +46,7 @@ class OrderService
                 ];
             }
 
-            $breakdown = $this->pricing->breakdown($subtotal);
+            $breakdown = $this->pricing->breakdown($subtotal, $method);
 
             $order = Order::create([
                 'customer_id' => $customer->id,

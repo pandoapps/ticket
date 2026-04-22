@@ -20,8 +20,10 @@ class SettingsController extends Controller
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'commission_percent' => ['required', 'numeric', 'min:0', 'max:100'],
-            'fixed_fee_cents' => ['required', 'numeric', 'min:0'],
+            'pix_commission_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'pix_fixed_fee_cents' => ['required', 'numeric', 'min:0'],
+            'card_commission_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'card_fixed_fee_cents' => ['required', 'numeric', 'min:0'],
         ]);
 
         $settings = PlatformSetting::current();

@@ -18,7 +18,10 @@ const EMPTY: EventPayload = {
   venue_address: '',
   online_url: '',
   banner_url: '',
+  header_url: '',
   is_featured: false,
+  accepts_pix: true,
+  accepts_card: true,
 };
 
 export function EventFormPage() {
@@ -47,7 +50,10 @@ export function EventFormPage() {
           venue_address: e.venue_address ?? '',
           online_url: e.online_url ?? '',
           banner_url: e.banner_url ?? '',
+          header_url: e.header_url ?? '',
           is_featured: e.is_featured,
+          accepts_pix: e.accepts_pix,
+          accepts_card: e.accepts_card,
         });
       })
       .catch((err: ApiError) => toast.error(err.message));
@@ -173,13 +179,48 @@ export function EventFormPage() {
           </Field>
         )}
 
-        <Field label="URL do banner">
+        <Field label="URL do banner (card)">
           <input
             value={form.banner_url ?? ''}
             onChange={(e) => setField('banner_url', e.target.value)}
             className="input"
           />
+          <span className="mt-1 block text-xs text-slate-500">Usado no card de listagem do evento.</span>
         </Field>
+
+        <Field label="URL do header (hero)">
+          <input
+            value={form.header_url ?? ''}
+            onChange={(e) => setField('header_url', e.target.value)}
+            className="input"
+          />
+          <span className="mt-1 block text-xs text-slate-500">Usado no topo da página do evento. Se vazio, cai no banner.</span>
+        </Field>
+
+        <fieldset className="space-y-2 rounded-xl border border-slate-200 bg-white/60 p-4">
+          <legend className="px-2 text-sm font-semibold text-slate-700">Métodos de pagamento aceitos</legend>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={form.accepts_pix ?? true}
+              onChange={(e) => setField('accepts_pix', e.target.checked)}
+              className="h-4 w-4 accent-brand-600"
+            />
+            PIX
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={form.accepts_card ?? true}
+              onChange={(e) => setField('accepts_card', e.target.checked)}
+              className="h-4 w-4 accent-brand-600"
+            />
+            Cartão
+          </label>
+          {!(form.accepts_pix || form.accepts_card) && (
+            <p className="text-xs text-rose-600">Selecione ao menos um método.</p>
+          )}
+        </fieldset>
 
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/60 bg-gradient-to-br from-amber-50 to-accent-50/60 p-4 transition hover:from-amber-100">
           <input
