@@ -19,6 +19,7 @@ class Event extends Model
         'producer_id',
         'slug',
         'name',
+        'short_description',
         'description',
         'starts_at',
         'ends_at',

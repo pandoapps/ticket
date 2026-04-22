@@ -20,6 +20,7 @@ class UpdateEventRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:255'],
+            'short_description' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
             'starts_at' => ['sometimes', 'date'],
             'ends_at' => ['nullable', 'date', 'after:starts_at'],

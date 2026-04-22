@@ -82,8 +82,8 @@ function Hero({ event }: { event: EventModel }) {
             <h1 className="max-w-3xl text-3xl font-bold leading-tight text-white drop-shadow-lg sm:text-4xl md:text-5xl lg:text-6xl">
               {event.name}
             </h1>
-            {event.description && (
-              <p className="max-w-2xl text-sm text-white/85 md:text-base">{event.description}</p>
+            {event.short_description && (
+              <p className="max-w-2xl text-sm text-white/85 md:text-base">{event.short_description}</p>
             )}
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link to={`/eventos/${event.slug}`} className="btn btn-primary shadow-xl shadow-black/30">

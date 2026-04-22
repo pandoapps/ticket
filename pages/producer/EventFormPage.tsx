@@ -9,6 +9,7 @@ import type { ApiError } from '@services/api';
 
 const EMPTY: EventPayload = {
   name: '',
+  short_description: '',
   description: '',
   starts_at: '',
   ends_at: '',
@@ -37,6 +38,7 @@ export function EventFormPage() {
         const e = r.data;
         setForm({
           name: e.name,
+          short_description: e.short_description ?? '',
           description: e.description ?? '',
           starts_at: toLocalInput(e.starts_at),
           ends_at: toLocalInput(e.ends_at),
@@ -90,6 +92,18 @@ export function EventFormPage() {
             required
             className="input"
           />
+        </Field>
+
+        <Field label="Descrição curta">
+          <input
+            value={form.short_description ?? ''}
+            onChange={(e) => setField('short_description', e.target.value)}
+            maxLength={100}
+            className="input"
+          />
+          <span className="mt-1 block text-xs text-slate-500">
+            Exibida no banner da home. {(form.short_description ?? '').length}/100 caracteres.
+          </span>
         </Field>
 
         <Field label="Descrição">

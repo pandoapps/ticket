@@ -23,6 +23,7 @@ export interface EventModel {
   producer_id: number;
   slug: string;
   name: string;
+  short_description: string | null;
   description: string | null;
   starts_at: string;
   ends_at: string | null;
@@ -53,6 +54,7 @@ export const publicEventService = {
 
 export interface EventPayload {
   name: string;
+  short_description?: string | null;
   description?: string | null;
   is_featured?: boolean;
   starts_at: string;
