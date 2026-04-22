@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
 import { Modal } from '@components/Modal';
+import { MoneyInput } from '@components/MoneyInput';
 import { Empty } from '@components/Empty';
 import { useToast } from '@components/Toast';
 import { useConfirm } from '@components/ConfirmDialog';
@@ -254,15 +255,11 @@ export function EventDetailPage() {
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-medium">Preço (R$)</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
+              <span className="mb-1 block text-sm font-medium">Preço</span>
+              <MoneyInput
                 value={lotForm.price}
-                onChange={(e) => setLotForm({ ...lotForm, price: parseFloat(e.target.value) || 0 })}
+                onValueChange={(v) => setLotForm({ ...lotForm, price: v })}
                 required
-                className="input"
               />
             </label>
             <label className="block">

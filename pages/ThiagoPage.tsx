@@ -130,7 +130,10 @@ function Hero() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="#comprar" className="btn btn-primary px-6 py-3 text-base">
+            <a
+              href="https://cursos.pandoapps.com.br/eventos/curso-claudecode"
+              className="btn btn-primary px-6 py-3 text-base"
+            >
               Comprar agora
             </a>
             <a href="#programa" className="btn btn-secondary px-6 py-3 text-base">
@@ -245,10 +248,12 @@ function Mentor() {
       <div className="glass-card overflow-hidden">
         <div className="grid grid-cols-1 gap-8 p-6 md:grid-cols-[1fr_2fr] md:p-10">
           <div className="flex flex-col items-center justify-center text-center md:items-start md:text-left">
-            <div className="relative h-40 w-40 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-500 via-brand-700 to-accent-600 shadow-xl shadow-brand-500/30">
-              <span className="flex h-full w-full items-center justify-center text-5xl font-bold text-white">
-                TF
-              </span>
+            <div className="relative h-48 w-48 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-500 via-brand-700 to-accent-600 shadow-xl shadow-brand-500/30">
+              <img
+                src="/images/thiago.png"
+                alt="Thiago Ferreira"
+                className="h-full w-full object-cover"
+              />
             </div>
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.25em] text-brand-600">
               Mentor
@@ -320,9 +325,7 @@ function CallToAction() {
           </div>
           <div className="flex flex-col items-stretch gap-3">
             <a
-              href="https://instagram.com/cafecomcifrao"
-              target="_blank"
-              rel="noreferrer"
+              href="https://cursos.pandoapps.com.br/eventos/curso-claudecode"
               className="btn bg-white px-6 py-3 text-base font-semibold text-brand-700 shadow-xl shadow-black/20 hover:brightness-105"
             >
               Comprar agora

@@ -82,7 +82,7 @@ class EventController extends Controller
 
         if ($event->lots()->count() === 0) {
             return response()->json([
-                'message' => 'Adicione ao menos um lote de ingresso antes de publicar.',
+                'message' => 'Adicione ao menos um ingresso antes de publicar.',
             ], 422);
         }
 

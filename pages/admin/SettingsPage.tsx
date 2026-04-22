@@ -48,7 +48,8 @@ export function SettingsPage() {
     <AppLayout title="Admin" nav={adminNav}>
       <PageHeader title="Configurações da plataforma" description="Taxas cobradas em cada venda, por método de pagamento." />
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <fieldset className="space-y-4 rounded-xl border border-slate-200 bg-white p-6">
           <legend className="px-2 text-sm font-semibold text-slate-700">PIX</legend>
           <label className="block">
@@ -106,6 +107,7 @@ export function SettingsPage() {
             />
           </label>
         </fieldset>
+        </div>
 
         <button
           type="submit"

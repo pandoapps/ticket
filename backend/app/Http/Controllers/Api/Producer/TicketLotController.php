@@ -62,7 +62,7 @@ class TicketLotController extends Controller
 
         if ($lot->sold > 0) {
             return response()->json([
-                'message' => 'Não é possível excluir um lote com ingressos vendidos.',
+                'message' => 'Não é possível excluir um ingresso que já teve vendas.',
             ], 422);
         }
 
