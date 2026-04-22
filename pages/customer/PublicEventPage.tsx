@@ -4,7 +4,7 @@ import { PublicLayout } from '@components/PublicLayout';
 import { Modal } from '@components/Modal';
 import { useToast } from '@components/Toast';
 import { Icons } from '@components/Icon';
-import { publicEventService, type EventModel, type TicketLot } from '@services/eventService';
+import { publicEventService, type EventModel, type PlatformFees, type TicketLot } from '@services/eventService';
 import { orderService, type PaymentMethod } from '@services/orderService';
 import { formatBRL, formatCPF, formatDateTime, formatPhone } from '@utils/format';
 import { useAuth } from '@hooks/useAuth';
@@ -76,8 +76,12 @@ export function PublicEventPage() {
     setQuantities((prev) => ({ ...prev, [lotId]: Math.max(0, qty) }));
   }
 
-  const total = event?.lots?.reduce((sum, lot) => sum + lot.price * (quantities[lot.id] ?? 0), 0) ?? 0;
+  const subtotal = event?.lots?.reduce((sum, lot) => sum + lot.price * (quantities[lot.id] ?? 0), 0) ?? 0;
   const totalTickets = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
+  const feePercent = feePercentFor(event?.platform_fees, paymentMethod);
+  const feeFixed = feeFixedFor(event?.platform_fees, paymentMethod);
+  const platformFee = subtotal > 0 ? round2(subtotal * (feePercent / 100)) + feeFixed : 0;
+  const total = round2(subtotal + platformFee);
 
   async function createOrder(extra?: { phone?: string; cpf?: string }) {
     if (!event) return;
@@ -191,13 +195,29 @@ export function PublicEventPage() {
             <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Ingressos</h3>
             <div className="mt-4 space-y-3">
               {event.lots?.map((lot) => (
-                <LotRow key={lot.id} lot={lot} quantity={quantities[lot.id] ?? 0} onChange={(qty) => setQty(lot.id, qty)} />
+                <LotRow
+                  key={lot.id}
+                  lot={lot}
+                  quantity={quantities[lot.id] ?? 0}
+                  feePercent={feePercent}
+                  onChange={(qty) => setQty(lot.id, qty)}
+                />
               ))}
             </div>
 
             {totalTickets > 0 && (
               <div className="mt-5 border-t border-white/60 pt-4">
-                <div className="flex items-end justify-between">
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Subtotal</span>
+                    <span>{formatBRL(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-500">
+                    <span>Taxa ({feePercent}%{feeFixed > 0 ? ` + ${formatBRL(feeFixed)}` : ''})</span>
+                    <span>{formatBRL(platformFee)}</span>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-end justify-between">
                   <div>
                     <p className="text-xs text-slate-500">{totalTickets} ingresso(s)</p>
                     <p className="text-2xl font-semibold text-slate-900">{formatBRL(total)}</p>
@@ -235,7 +255,7 @@ export function PublicEventPage() {
                   {loading ? 'Processando...' : 'Comprar ingressos'}
                 </button>
                 <p className="mt-2 text-center text-[10px] text-slate-400">
-                  Taxa calculada no checkout • Pagamento via Abacate Pay
+                  Pagamento via Abacate Pay
                 </p>
               </div>
             )}
@@ -393,8 +413,19 @@ function Detail({ icon, label, value }: { icon: React.ReactNode; label: string; 
   );
 }
 
-function LotRow({ lot, quantity, onChange }: { lot: TicketLot; quantity: number; onChange: (qty: number) => void }) {
+function LotRow({
+  lot,
+  quantity,
+  feePercent,
+  onChange,
+}: {
+  lot: TicketLot;
+  quantity: number;
+  feePercent: number;
+  onChange: (qty: number) => void;
+}) {
   const unavailable = !lot.on_sale;
+  const unitFee = round2(lot.price * (feePercent / 100));
   return (
     <div
       className={`flex items-center justify-between rounded-xl border p-4 ${
@@ -406,7 +437,14 @@ function LotRow({ lot, quantity, onChange }: { lot: TicketLot; quantity: number;
           {lot.name}
           {lot.is_half_price && <span className="chip bg-amber-100 text-amber-800">meia</span>}
         </p>
-        <p className="text-sm font-semibold text-slate-900">{formatBRL(lot.price)}</p>
+        <p className="flex items-baseline gap-1.5 font-semibold text-slate-900">
+          <span className="text-sm">{formatBRL(lot.price)}</span>
+          {unitFee > 0 && (
+            <span className="text-[11px] font-normal text-slate-500">
+              + {formatBRL(unitFee)} de taxa
+            </span>
+          )}
+        </p>
         <p className="text-[11px] text-slate-500">{lot.available} disponíveis</p>
       </div>
       {unavailable ? (
@@ -434,4 +472,18 @@ function LotRow({ lot, quantity, onChange }: { lot: TicketLot; quantity: number;
       )}
     </div>
   );
+}
+
+function feePercentFor(fees: PlatformFees | undefined, method: PaymentMethod): number {
+  if (!fees) return 0;
+  return method === 'pix' ? fees.pix_percent : fees.card_percent;
+}
+
+function feeFixedFor(fees: PlatformFees | undefined, method: PaymentMethod): number {
+  if (!fees) return 0;
+  return method === 'pix' ? fees.pix_fixed : fees.card_fixed;
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
 }

@@ -23,9 +23,11 @@ class PlatformSetting extends Model
         ];
     }
 
+    protected static ?self $cached = null;
+
     public static function current(): self
     {
-        return static::query()->firstOrCreate([], [
+        return static::$cached ??= static::query()->firstOrCreate([], [
             'pix_commission_percent' => 10.00,
             'pix_fixed_fee_cents' => 0,
             'card_commission_percent' => 10.00,

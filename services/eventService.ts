@@ -19,6 +19,13 @@ export interface TicketLot {
   abacate_product_id: string | null;
 }
 
+export interface PlatformFees {
+  pix_percent: number;
+  pix_fixed: number;
+  card_percent: number;
+  card_fixed: number;
+}
+
 export interface EventModel {
   id: number;
   producer_id: number;
@@ -39,6 +46,7 @@ export interface EventModel {
   is_featured: boolean;
   accepts_pix: boolean;
   accepts_card: boolean;
+  platform_fees?: PlatformFees;
   producer?: {
     id: number;
     company_name: string;

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\PlatformSetting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,6 +13,8 @@ class EventResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $settings = PlatformSetting::current();
+
         return [
             'id' => $this->id,
             'producer_id' => $this->producer_id,
@@ -32,6 +35,12 @@ class EventResource extends JsonResource
             'is_featured' => (bool) $this->is_featured,
             'accepts_pix' => (bool) $this->accepts_pix,
             'accepts_card' => (bool) $this->accepts_card,
+            'platform_fees' => [
+                'pix_percent' => (float) $settings->pix_commission_percent,
+                'pix_fixed' => (float) $settings->pix_fixed_fee_cents,
+                'card_percent' => (float) $settings->card_commission_percent,
+                'card_fixed' => (float) $settings->card_fixed_fee_cents,
+            ],
             'producer' => new ProducerResource($this->whenLoaded('producer')),
             'lots' => TicketLotResource::collection($this->whenLoaded('lots')),
         ];
