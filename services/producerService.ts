@@ -24,6 +24,27 @@ export interface Credentials {
   validation_error: string | null;
 }
 
+export interface ProducerCustomer {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  cpf: string | null;
+  orders_count: number;
+  paid_orders_count: number;
+  total_spent: number;
+  last_order_at: string | null;
+  last_paid_at: string | null;
+  created_at: string | null;
+}
+
+export interface ProducerCustomerListResponse {
+  data: ProducerCustomer[];
+  meta: { total: number; page: number; last_page: number; per_page: number };
+}
+
+export type ProducerCustomerSort = 'last_order' | 'name' | 'total' | 'orders';
+
 export const producerService = {
   profile: () => api.get<{ data: Producer | null }>('/producer/profile'),
   register: (payload: { company_name: string; document: string; phone?: string }) =>
@@ -38,6 +59,14 @@ export const producerService = {
     api.get<{ data: unknown[]; meta: { total: number; page: number } }>(
       `/producer/sales${status ? `?status=${status}` : ''}`,
     ),
+  customers: (params: { q?: string; sort?: ProducerCustomerSort; page?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.q) qs.set('q', params.q);
+    if (params.sort) qs.set('sort', params.sort);
+    if (params.page) qs.set('page', String(params.page));
+    const tail = qs.toString() ? `?${qs}` : '';
+    return api.get<ProducerCustomerListResponse>(`/producer/customers${tail}`);
+  },
   salesSummary: () =>
     api.get<{ data: { paid_total: number; paid_count: number; pending_count: number; tickets_sold: number } }>(
       '/producer/sales/summary',

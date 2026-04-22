@@ -221,6 +221,20 @@ export function ProducerTicketsPage() {
         </div>
       )}
 
+      {tickets.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+          <span className="font-semibold uppercase tracking-[0.15em] text-slate-500">Legenda:</span>
+          <span className="inline-flex items-center gap-2">
+            <span className="chip bg-emerald-100 text-emerald-700">✓ Válido</span>
+            <span className="text-slate-500">ingresso ainda não utilizado</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="chip bg-sky-100 text-sky-700">● Usado</span>
+            <span className="text-slate-500">ingresso já validado na entrada</span>
+          </span>
+        </div>
+      )}
+
       <Modal
         open={qrModal !== null}
         onClose={() => setQrModal(null)}
@@ -282,9 +296,9 @@ function TicketRow({
     <tr className="transition hover:bg-white/50">
       <td className="px-4 py-3">
         {isUsed ? (
-          <span className="chip bg-emerald-100 text-emerald-700">✓ Validado</span>
+          <span className="chip bg-sky-100 text-sky-700">● Usado</span>
         ) : (
-          <span className="chip bg-amber-100 text-amber-700">● Pendente</span>
+          <span className="chip bg-emerald-100 text-emerald-700">✓ Válido</span>
         )}
       </td>
       <td className="px-4 py-3">

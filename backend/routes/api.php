@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Customer\OrderController as CustomerOrderController
 use App\Http\Controllers\Api\Customer\PublicEventController;
 use App\Http\Controllers\Api\Customer\TicketController as CustomerTicketController;
 use App\Http\Controllers\Api\Producer\CredentialController;
+use App\Http\Controllers\Api\Producer\CustomersController as ProducerCustomersController;
 use App\Http\Controllers\Api\Producer\EventController as ProducerEventController;
 use App\Http\Controllers\Api\Producer\ProducerProfileController;
 use App\Http\Controllers\Api\Producer\ReportController as ProducerReportController;
@@ -76,6 +77,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('sales', [ProducerSalesController::class, 'index']);
             Route::get('sales/summary', [ProducerSalesController::class, 'summary']);
             Route::get('sales/{order}', [ProducerSalesController::class, 'show']);
+
+            Route::get('customers', [ProducerCustomersController::class, 'index']);
 
             Route::get('reports', [ProducerReportController::class, 'index']);
 

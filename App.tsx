@@ -21,6 +21,7 @@ import { EventListPage } from '@pages/producer/EventListPage';
 import { EventFormPage } from '@pages/producer/EventFormPage';
 import { EventDetailPage as ProducerEventDetailPage } from '@pages/producer/EventDetailPage';
 import { SalesPage } from '@pages/producer/SalesPage';
+import { CustomersPage as ProducerCustomersPage } from '@pages/producer/CustomersPage';
 import { TicketScannerPage } from '@pages/producer/TicketScannerPage';
 import { ProducerTicketsPage } from '@pages/producer/TicketsPage';
 
@@ -150,6 +151,14 @@ export default function App() {
         element={
           <RoleRoute roles={['producer', 'admin']}>
             <ProducerTicketsPage />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path="/produtor/clientes"
+        element={
+          <RoleRoute roles={['producer', 'admin']}>
+            <ProducerCustomersPage />
           </RoleRoute>
         }
       />
