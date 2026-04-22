@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
+use App\Models\Coupon;
 use App\Models\Event;
 use App\Models\Order;
 use App\Models\Ticket;
@@ -22,9 +23,14 @@ class OrderService
     /**
      * @param  array<int, array{ticket_lot_id: int, quantity: int}>  $items
      */
-    public function createPendingOrder(User $customer, Event $event, array $items, PaymentMethod $method = PaymentMethod::Pix): Order
-    {
-        return DB::transaction(function () use ($customer, $event, $items, $method) {
+    public function createPendingOrder(
+        User $customer,
+        Event $event,
+        array $items,
+        PaymentMethod $method = PaymentMethod::Pix,
+        ?string $couponCode = null,
+    ): Order {
+        return DB::transaction(function () use ($customer, $event, $items, $method, $couponCode) {
             $subtotal = 0.0;
             $validated = [];
 
@@ -47,12 +53,19 @@ class OrderService
                 ];
             }
 
-            $breakdown = $this->pricing->breakdown($subtotal, $method);
+            $coupon = $this->resolveCoupon($couponCode, $event->id);
+            $discountPercent = $coupon !== null ? (float) $coupon->discount_percent : null;
+
+            $breakdown = $this->pricing->breakdown($subtotal, $method, $discountPercent);
 
             $order = Order::create([
                 'customer_id' => $customer->id,
                 'producer_id' => $event->producer_id,
                 'event_id' => $event->id,
+                'coupon_id' => $coupon?->id,
+                'coupon_code' => $coupon?->code,
+                'discount_percent' => $coupon?->discount_percent,
+                'discount_amount' => $breakdown['discount_amount'],
                 'subtotal' => $breakdown['subtotal'],
                 'platform_fee' => $breakdown['platform_fee'],
                 'total' => $breakdown['total'],
@@ -123,6 +136,11 @@ class OrderService
                 'paid_at' => now(),
             ]);
 
+            if ($order->coupon_id !== null) {
+                $coupon = Coupon::whereKey($order->coupon_id)->lockForUpdate()->first();
+                $coupon?->increment('used_count');
+            }
+
             foreach ($order->items()->with('lot')->get() as $item) {
                 for ($i = 0; $i < $item->quantity; $i++) {
                     Ticket::create([
@@ -155,5 +173,27 @@ class OrderService
 
             return $order->fresh();
         });
+    }
+
+    private function resolveCoupon(?string $code, int $eventId): ?Coupon
+    {
+        if ($code === null || trim($code) === '') {
+            return null;
+        }
+
+        $normalized = strtoupper(trim($code));
+
+        $coupon = Coupon::where('event_id', $eventId)
+            ->where('code', $normalized)
+            ->lockForUpdate()
+            ->first();
+
+        abort_if($coupon === null, 422, 'Cupom inválido para este evento.');
+
+        if (($reason = $coupon->unavailableReason()) !== null) {
+            abort(422, $reason);
+        }
+
+        return $coupon;
     }
 }

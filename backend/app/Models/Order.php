@@ -18,6 +18,10 @@ class Order extends Model
         'customer_id',
         'producer_id',
         'event_id',
+        'coupon_id',
+        'coupon_code',
+        'discount_percent',
+        'discount_amount',
         'subtotal',
         'platform_fee',
         'total',
@@ -36,6 +40,8 @@ class Order extends Model
     {
         return [
             'subtotal' => 'decimal:2',
+            'discount_percent' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
             'platform_fee' => 'decimal:2',
             'total' => 'decimal:2',
             'payment_method' => PaymentMethod::class,
@@ -59,6 +65,11 @@ class Order extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     public function items(): HasMany

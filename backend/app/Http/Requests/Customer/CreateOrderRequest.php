@@ -28,9 +28,17 @@ class CreateOrderRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.ticket_lot_id' => ['required', 'integer', 'exists:ticket_lots,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:20'],
+            'coupon_code' => ['nullable', 'string', 'max:50'],
             'phone' => array_merge($phoneRule, ['string', 'regex:/^\D*(\d\D*){10,11}$/']),
             'cpf' => array_merge($cpfRule, ['string', $this->cpfChecksumRule()]),
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('coupon_code')) {
+            $this->merge(['coupon_code' => strtoupper(trim((string) $this->input('coupon_code')))]);
+        }
     }
 
     /**

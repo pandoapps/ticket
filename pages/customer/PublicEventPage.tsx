@@ -6,6 +6,7 @@ import { useToast } from '@components/Toast';
 import { Icons } from '@components/Icon';
 import { publicEventService, type EventModel, type PlatformFees, type TicketLot } from '@services/eventService';
 import { orderService, type PaymentMethod } from '@services/orderService';
+import { customerCouponService } from '@services/couponService';
 import { formatBRL, formatCPF, formatDateTime, formatPhone } from '@utils/format';
 import { useAuth } from '@hooks/useAuth';
 import type { ApiError } from '@services/api';
@@ -20,6 +21,11 @@ export function PublicEventPage() {
   const [contactOpen, setContactOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
+  const [couponInput, setCouponInput] = useState('');
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [couponPercent, setCouponPercent] = useState<number>(0);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
@@ -80,8 +86,41 @@ export function PublicEventPage() {
   const totalTickets = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
   const feePercent = feePercentFor(event?.platform_fees, paymentMethod);
   const feeFixed = feeFixedFor(event?.platform_fees, paymentMethod);
-  const platformFee = subtotal > 0 ? round2(subtotal * (feePercent / 100)) + feeFixed : 0;
-  const total = round2(subtotal + platformFee);
+  const discountAmount = couponPercent > 0 ? round2(subtotal * (couponPercent / 100)) : 0;
+  const discountedSubtotal = Math.max(0, round2(subtotal - discountAmount));
+  const platformFee = subtotal > 0 ? round2(discountedSubtotal * (feePercent / 100)) + feeFixed : 0;
+  const total = round2(discountedSubtotal + platformFee);
+
+  async function applyCoupon() {
+    if (!event) return;
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponError('Informe um código.');
+      return;
+    }
+    setCouponLoading(true);
+    setCouponError(null);
+    try {
+      const res = await customerCouponService.validate({ event_id: event.id, code });
+      setCouponCode(res.data.code);
+      setCouponPercent(res.data.discount_percent);
+      toast.success(`Cupom ${res.data.code} aplicado.`);
+    } catch (err) {
+      const msg = (err as ApiError).message;
+      setCouponError(msg);
+      setCouponCode(null);
+      setCouponPercent(0);
+    } finally {
+      setCouponLoading(false);
+    }
+  }
+
+  function removeCoupon() {
+    setCouponCode(null);
+    setCouponPercent(0);
+    setCouponInput('');
+    setCouponError(null);
+  }
 
   async function createOrder(extra?: { phone?: string; cpf?: string }) {
     if (!event) return;
@@ -92,7 +131,13 @@ export function PublicEventPage() {
     setFormErrors({});
     setLoading(true);
     try {
-      const res = await orderService.create({ event_id: event.id, payment_method: paymentMethod, items, ...extra });
+      const res = await orderService.create({
+        event_id: event.id,
+        payment_method: paymentMethod,
+        items,
+        coupon_code: couponCode,
+        ...extra,
+      });
       if (user && extra?.phone && extra?.cpf) {
         setUser({ ...user, phone: extra.phone, cpf: extra.cpf });
       }
@@ -212,6 +257,12 @@ export function PublicEventPage() {
                     <span>Subtotal</span>
                     <span>{formatBRL(subtotal)}</span>
                   </div>
+                  {couponCode && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span>Desconto ({couponPercent}% · {couponCode})</span>
+                      <span>− {formatBRL(discountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-slate-500">
                     <span>Taxa ({feePercent}%{feeFixed > 0 ? ` + ${formatBRL(feeFixed)}` : ''})</span>
                     <span>{formatBRL(platformFee)}</span>
@@ -222,6 +273,55 @@ export function PublicEventPage() {
                     <p className="text-xs text-slate-500">{totalTickets} ingresso(s)</p>
                     <p className="text-2xl font-semibold text-slate-900">{formatBRL(total)}</p>
                   </div>
+                </div>
+
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Cupom</p>
+                  {couponCode ? (
+                    <div className="flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2">
+                      <div>
+                        <p className="font-mono text-sm font-semibold text-emerald-800">{couponCode}</p>
+                        <p className="text-[11px] text-emerald-700">Desconto de {couponPercent}% aplicado.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeCoupon}
+                        className="text-xs text-emerald-700 underline hover:text-emerald-900"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <input
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''));
+                            setCouponError(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              void applyCoupon();
+                            }
+                          }}
+                          placeholder="Digite o código"
+                          maxLength={50}
+                          className={`input uppercase tracking-wider ${couponError ? 'border-rose-400' : ''}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void applyCoupon()}
+                          disabled={couponLoading || !couponInput.trim()}
+                          className="btn btn-ghost shrink-0"
+                        >
+                          {couponLoading ? '...' : 'Aplicar'}
+                        </button>
+                      </div>
+                      {couponError && <p className="mt-1 text-xs text-rose-600">{couponError}</p>}
+                    </>
+                  )}
                 </div>
 
                 <div className="mt-4">

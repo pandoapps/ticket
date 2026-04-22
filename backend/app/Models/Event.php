@@ -65,6 +65,11 @@ class Event extends Model
         return $this->hasMany(Order::class);
     }
 
+    public function coupons(): HasMany
+    {
+        return $this->hasMany(Coupon::class);
+    }
+
     public function tickets()
     {
         return $this->hasManyThrough(Ticket::class, Order::class);

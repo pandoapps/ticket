@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Api\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
@@ -8,9 +9,11 @@ use App\Http\Controllers\Api\Admin\ProducerController as AdminProducerController
 use App\Http\Controllers\Api\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Customer\CouponController as CustomerCouponController;
 use App\Http\Controllers\Api\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Api\Customer\PublicEventController;
 use App\Http\Controllers\Api\Customer\TicketController as CustomerTicketController;
+use App\Http\Controllers\Api\Producer\CouponController as ProducerCouponController;
 use App\Http\Controllers\Api\Producer\CredentialController;
 use App\Http\Controllers\Api\Producer\CustomersController as ProducerCustomersController;
 use App\Http\Controllers\Api\Producer\EventController as ProducerEventController;
@@ -49,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('orders/{order}', [CustomerOrderController::class, 'show']);
         Route::get('tickets', [CustomerTicketController::class, 'index']);
         Route::get('tickets/{ticket}', [CustomerTicketController::class, 'show']);
+        Route::post('coupons/validate', [CustomerCouponController::class, 'validate']);
     });
 
     Route::prefix('producer')->group(function () {
@@ -85,6 +89,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('tickets', [ProducerTicketController::class, 'index']);
             Route::get('tickets/{ticket}', [ProducerTicketController::class, 'show']);
             Route::post('tickets/redeem', [TicketRedemptionController::class, 'redeem']);
+
+            Route::get('coupons', [ProducerCouponController::class, 'index']);
+            Route::post('coupons', [ProducerCouponController::class, 'store']);
+            Route::get('coupons/{coupon}', [ProducerCouponController::class, 'show']);
+            Route::put('coupons/{coupon}', [ProducerCouponController::class, 'update']);
+            Route::delete('coupons/{coupon}', [ProducerCouponController::class, 'destroy']);
         });
     });
 
@@ -112,6 +122,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('settings', [AdminSettingsController::class, 'show']);
         Route::put('settings', [AdminSettingsController::class, 'update']);
+
+        Route::get('coupons', [AdminCouponController::class, 'index']);
+        Route::post('coupons', [AdminCouponController::class, 'store']);
+        Route::get('coupons/{coupon}', [AdminCouponController::class, 'show']);
+        Route::put('coupons/{coupon}', [AdminCouponController::class, 'update']);
+        Route::delete('coupons/{coupon}', [AdminCouponController::class, 'destroy']);
 
         Route::get('audit-logs', [AdminAuditLogController::class, 'index']);
     });

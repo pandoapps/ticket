@@ -201,6 +201,12 @@ export function CustomerOrderDetailPage() {
         </div>
         <div className="mt-4 space-y-1 border-t border-white/60 pt-4 text-sm">
           <Row label="Subtotal" value={formatBRL(order.subtotal)} />
+          {order.coupon_code && order.discount_amount > 0 && (
+            <Row
+              label={`Desconto (${order.discount_percent ?? 0}% · ${order.coupon_code})`}
+              value={`− ${formatBRL(order.discount_amount)}`}
+            />
+          )}
           <Row label="Taxa plataforma" value={formatBRL(order.platform_fee)} />
           <Row label="Total" value={formatBRL(order.total)} big />
         </div>

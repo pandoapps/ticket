@@ -16,6 +16,9 @@ export interface OrderItem {
 export interface Order {
   id: number;
   subtotal: number;
+  discount_amount: number;
+  discount_percent: number | null;
+  coupon_code: string | null;
   platform_fee: number;
   total: number;
   payment_method: PaymentMethod;
@@ -39,6 +42,7 @@ export const orderService = {
     event_id: number;
     payment_method: PaymentMethod;
     items: Array<{ ticket_lot_id: number; quantity: number }>;
+    coupon_code?: string | null;
     phone?: string;
     cpf?: string;
   }) => api.post<{ data: Order }>('/customer/orders', payload),

@@ -76,6 +76,7 @@ class OrderController extends Controller
             $event,
             $validated['items'],
             $method,
+            $validated['coupon_code'] ?? null,
         );
 
         $this->audit->log('order.created', $order);
