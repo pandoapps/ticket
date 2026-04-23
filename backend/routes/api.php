@@ -42,6 +42,8 @@ Route::prefix('public')->group(function () {
     Route::get('events/{slug}', [PublicEventController::class, 'show']);
 });
 
+Route::post('customer/coupons/validate', [CustomerCouponController::class, 'validate']);
+
 Route::post('webhooks/abacate-pay', [WebhookController::class, 'abacatePay'])->middleware('throttle:webhook');
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -52,7 +54,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('orders/{order}', [CustomerOrderController::class, 'show']);
         Route::get('tickets', [CustomerTicketController::class, 'index']);
         Route::get('tickets/{ticket}', [CustomerTicketController::class, 'show']);
-        Route::post('coupons/validate', [CustomerCouponController::class, 'validate']);
     });
 
     Route::prefix('producer')->group(function () {
