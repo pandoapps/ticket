@@ -49,7 +49,7 @@ export function RegisterPage() {
           </span>
           <div className="leading-tight">
             <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-brand-600">Ticketeira</p>
-            <p className="text-sm font-semibold text-slate-900">Ingressos com estilo</p>
+            <p className="text-sm font-semibold text-slate-900">Let's make it happen</p>
           </div>
         </Link>
 

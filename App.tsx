@@ -6,6 +6,7 @@ import { RegisterPage } from '@pages/RegisterPage';
 import { ProducerSignupPage } from '@pages/ProducerSignupPage';
 import { NotFoundPage } from '@pages/NotFoundPage';
 import { ThiagoPage } from '@pages/ThiagoPage';
+import { IphoneCursorPoc } from '@pages/temp/IphoneCursorPoc';
 
 import { BrowsePage } from '@pages/customer/BrowsePage';
 import { PublicEventPage } from '@pages/customer/PublicEventPage';
@@ -50,6 +51,7 @@ export default function App() {
       <Route path="/eventos/:slug" element={<PublicEventPage />} />
 
       <Route path="/pages/thiago" element={<ThiagoPage />} />
+      <Route path="/temp/iphone" element={<IphoneCursorPoc />} />
 
       <Route
         path="/meus-pedidos"
