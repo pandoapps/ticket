@@ -11,8 +11,9 @@ COMPOSE_PROD   := docker compose -f docker-compose.yml -f docker-compose.prod.ym
 APP            := $(COMPOSE) exec app
 APP_NOTTY      := $(COMPOSE) exec -T app
 NODE           := $(COMPOSE) exec node
+PROD_MARKER    := /etc/ticketeira-prod
 
-.PHONY: help up up-prod down restart logs ps install migrate seed fresh db thinker shell shell-node deploy send lint
+.PHONY: help up up-prod down restart logs ps install migrate seed fresh db thinker shell shell-node deploy send lint guard-not-prod
 
 help:
 	@echo ""
@@ -37,7 +38,16 @@ help:
 	@echo "  make lint         Run linters (backend + frontend)"
 	@echo ""
 
-up:
+guard-not-prod:
+	@if [ -f $(PROD_MARKER) ]; then \
+	  echo "✘ Production host detected ($(PROD_MARKER) exists)."; \
+	  echo "  Dev stack (docker-compose.yml) binds nginx to :8080 and starts Vite,"; \
+	  echo "  which leaves :443 empty and causes Cloudflare 521."; \
+	  echo "  Use 'make up-prod' or 'make deploy' instead."; \
+	  exit 1; \
+	fi
+
+up: guard-not-prod
 	$(COMPOSE) up -d --build
 
 up-prod:

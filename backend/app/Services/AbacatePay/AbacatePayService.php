@@ -12,6 +12,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AbacatePayService
 {
+    private const MIN_CHARGE_CENTS = 100;
+
     public function clientFor(Producer $producer): AbacatePayClient
     {
         $credentials = $producer->credentials;
@@ -78,10 +80,21 @@ class AbacatePayService
             throw new \RuntimeException('Cliente sem telefone ou CPF cadastrado.');
         }
 
+        $amountCents = (int) round(((float) $order->total) * 100);
+        if ($amountCents < self::MIN_CHARGE_CENTS) {
+            throw new HttpException(
+                422,
+                sprintf(
+                    'O valor mínimo para pagamento via PIX é R$ %s. Ajuste o valor do ingresso e tente novamente.',
+                    number_format(self::MIN_CHARGE_CENTS / 100, 2, ',', '.'),
+                ),
+            );
+        }
+
         $payload = [
             'method' => 'PIX',
             'data' => [
-                'amount' => (int) round(((float) $order->total) * 100),
+                'amount' => $amountCents,
                 'expiresIn' => 3600,
                 'description' => 'Ingressos: '.($order->event->name ?? 'Evento'),
                 'customer' => [
@@ -106,7 +119,7 @@ class AbacatePayService
             ]);
             throw new HttpException(
                 422,
-                'Não foi possível gerar o PIX no momento. '.($remoteMessage ?? 'Tente novamente em instantes.'),
+                'Não foi possível gerar o PIX no momento. '.$this->sanitizeGatewayMessage($remoteMessage),
                 $e,
             );
         }
@@ -157,7 +170,7 @@ class AbacatePayService
             ]);
             throw new HttpException(
                 422,
-                'Não foi possível preparar o checkout de cartão. '.($remoteMessage ?? 'Tente novamente em instantes.'),
+                'Não foi possível preparar o checkout de cartão. '.$this->sanitizeGatewayMessage($remoteMessage),
                 $e,
             );
         }
@@ -196,7 +209,7 @@ class AbacatePayService
             ]);
             throw new HttpException(
                 422,
-                'Não foi possível gerar o checkout de cartão. '.($remoteMessage ?? 'Tente novamente em instantes.'),
+                'Não foi possível gerar o checkout de cartão. '.$this->sanitizeGatewayMessage($remoteMessage),
                 $e,
             );
         }
@@ -245,7 +258,7 @@ class AbacatePayService
             ]);
             throw new HttpException(
                 422,
-                'Não foi possível sincronizar o produto no Abacate Pay. '.($remoteMessage ?? 'Tente novamente em instantes.'),
+                'Não foi possível sincronizar o produto no Abacate Pay. '.$this->sanitizeGatewayMessage($remoteMessage),
                 $e,
             );
         }
@@ -295,6 +308,34 @@ class AbacatePayService
         }
 
         $lot->forceFill(['abacate_product_id' => null])->save();
+    }
+
+    private function sanitizeGatewayMessage(?string $message): string
+    {
+        $fallback = 'Tente novamente em instantes ou entre em contato com o suporte.';
+
+        if ($message === null || trim($message) === '') {
+            return $fallback;
+        }
+
+        $lower = mb_strtolower($message);
+        $devPatterns = [
+            'value should be',
+            'expected ',
+            'invalid input',
+            'invalid_type',
+            'required',
+            'zoderror',
+            "'object'",
+            'unrecognized_keys',
+        ];
+        foreach ($devPatterns as $pattern) {
+            if (str_contains($lower, $pattern)) {
+                return $fallback;
+            }
+        }
+
+        return $message;
     }
 
     private function humanize(int $status, ?string $message): string

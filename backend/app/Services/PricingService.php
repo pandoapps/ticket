@@ -25,6 +25,16 @@ class PricingService
         }
 
         $discountedSubtotal = max(0.0, round($subtotal - $discountAmount, 2));
+
+        if ($discountedSubtotal <= 0.0) {
+            return [
+                'subtotal' => round($subtotal, 2),
+                'discount_amount' => $discountAmount,
+                'platform_fee' => 0.0,
+                'total' => 0.0,
+            ];
+        }
+
         $commission = round($discountedSubtotal * ($percent / 100), 2);
         $platformFee = round($commission + $fixed, 2);
 
