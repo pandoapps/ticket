@@ -81,8 +81,6 @@ class OrderService
                     'unit_price' => $v['unit_price'],
                     'subtotal' => $v['subtotal'],
                 ]);
-
-                $v['lot']->increment('sold', $v['quantity']);
             }
 
             $loaded = $order->load(['customer', 'event', 'items.lot']);
@@ -142,6 +140,8 @@ class OrderService
             }
 
             foreach ($order->items()->with('lot')->get() as $item) {
+                TicketLot::whereKey($item->ticket_lot_id)->lockForUpdate()->first()?->increment('sold', $item->quantity);
+
                 for ($i = 0; $i < $item->quantity; $i++) {
                     Ticket::create([
                         'order_id' => $order->id,
@@ -166,10 +166,6 @@ class OrderService
                 'status' => $reason === 'expired' ? OrderStatus::Expired : OrderStatus::Cancelled,
                 'cancelled_at' => now(),
             ]);
-
-            foreach ($order->items as $item) {
-                $item->lot()->lockForUpdate()->first()?->decrement('sold', $item->quantity);
-            }
 
             return $order->fresh();
         });

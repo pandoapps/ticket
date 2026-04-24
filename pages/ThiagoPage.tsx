@@ -113,7 +113,7 @@ function Hero() {
         <div className="flex flex-col items-center text-center">
           <span className="chip border border-brand-200 bg-brand-50 text-brand-700">
             <Icons.sparkles className="mr-1.5 h-3 w-3" />
-            Turma de Abril — Vagas limitadas
+            Turma de Maio — Vagas limitadas
           </span>
 
           <h1 className="mt-6 max-w-3xl text-4xl font-bold leading-tight text-slate-900 sm:text-5xl md:text-6xl">
@@ -159,7 +159,7 @@ function Hero() {
             </span>
             <span className="chip border border-white/60 bg-white/70 backdrop-blur">
               <Icons.calendar className="mr-1.5 h-3.5 w-3.5" />
-              07, 14, 21 e 28 de Abril
+              09, 16, 23 e 30 de Maio
             </span>
             <span className="chip border border-white/60 bg-white/70 backdrop-blur">
               <Icons.clock className="mr-1.5 h-3.5 w-3.5" />
