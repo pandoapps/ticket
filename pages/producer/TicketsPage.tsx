@@ -133,7 +133,7 @@ export function ProducerTicketsPage() {
         title="Ingressos emitidos"
         description="Todos os ingressos gerados por pedidos pagos, com status de validação."
         action={
-          <button onClick={() => setIssueModal(true)} className="btn-primary flex items-center gap-2">
+          <button onClick={() => setIssueModal(true)} className="btn btn-primary flex items-center gap-2">
             <Icons.plus className="h-4 w-4" />
             Emitir ingresso
           </button>
@@ -660,7 +660,7 @@ function IssueTicketModal({
               type="button"
               onClick={lookupEmail}
               disabled={!email.trim() || customer.status === 'loading'}
-              className="btn-secondary shrink-0 px-3"
+              className="btn btn-secondary shrink-0 px-3"
             >
               {customer.status === 'loading' ? (
                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -692,10 +692,10 @@ function IssueTicketModal({
         )}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={handleClose} className="btn-secondary">
+          <button type="button" onClick={handleClose} className="btn btn-secondary">
             Cancelar
           </button>
-          <button type="submit" disabled={submitting || !canSubmit} className="btn-primary">
+          <button type="submit" disabled={submitting || !canSubmit} className="btn btn-primary">
             {submitting ? 'Emitindo...' : 'Emitir ingresso'}
           </button>
         </div>
