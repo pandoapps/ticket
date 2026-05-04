@@ -11,6 +11,22 @@ use Illuminate\Http\Request;
 
 class CustomersController extends Controller
 {
+    public function lookup(Request $request): JsonResponse
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->query('email'))->first(['id', 'name', 'email']);
+
+        if (! $user) {
+            return response()->json(['found' => false]);
+        }
+
+        return response()->json([
+            'found' => true,
+            'data'  => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $producer = $request->attributes->get('producer') ?? $request->user()->producer()->firstOrFail();

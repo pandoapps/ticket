@@ -12,6 +12,41 @@ class TicketRedemptionController extends Controller
 {
     public function __construct(private readonly AuditLogger $audit) {}
 
+    public function lookup(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'uuid'],
+        ]);
+
+        $producer = $request->attributes->get('producer') ?? $request->user()->producer()->firstOrFail();
+
+        $ticket = Ticket::with(['lot.event', 'customer'])
+            ->where('code', $data['code'])
+            ->first();
+
+        if ($ticket === null) {
+            return response()->json(['status' => 'invalid', 'message' => 'Ingresso não encontrado.'], 404);
+        }
+
+        if ($ticket->lot->event->producer_id !== $producer->id) {
+            return response()->json(['status' => 'forbidden', 'message' => 'Ingresso não pertence aos seus eventos.'], 403);
+        }
+
+        if ($ticket->used_at !== null) {
+            return response()->json([
+                'status' => 'already_used',
+                'message' => 'Ingresso já foi utilizado.',
+                'data' => $this->ticketView($ticket),
+            ], 409);
+        }
+
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'Ingresso válido — aguardando confirmação.',
+            'data' => $this->ticketView($ticket),
+        ]);
+    }
+
     public function redeem(Request $request): JsonResponse
     {
         $data = $request->validate([

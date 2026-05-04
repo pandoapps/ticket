@@ -21,18 +21,28 @@ interface ApiErrorWithData extends ApiError {
   data?: RedemptionResultData;
 }
 
+async function handleRedemptionError(err: unknown): Promise<RedemptionResult> {
+  const apiErr = err as ApiErrorWithData;
+  if (apiErr.status === 404) return { status: 'invalid', message: apiErr.message };
+  if (apiErr.status === 403) return { status: 'forbidden', message: apiErr.message };
+  if (apiErr.status === 409) return { status: 'already_used', message: apiErr.message, data: apiErr.data };
+  throw err;
+}
+
 export const ticketRedemptionService = {
   async redeem(code: string): Promise<RedemptionResult> {
     try {
       return await api.post<RedemptionResult>('/producer/tickets/redeem', { code });
     } catch (err) {
-      const apiErr = err as ApiErrorWithData;
-      if (apiErr.status === 404) return { status: 'invalid', message: apiErr.message };
-      if (apiErr.status === 403) return { status: 'forbidden', message: apiErr.message };
-      if (apiErr.status === 409) {
-        return { status: 'already_used', message: apiErr.message, data: apiErr.data };
-      }
-      throw err;
+      return handleRedemptionError(err);
+    }
+  },
+
+  async lookup(code: string): Promise<RedemptionResult> {
+    try {
+      return await api.post<RedemptionResult>('/producer/tickets/lookup', { code });
+    } catch (err) {
+      return handleRedemptionError(err);
     }
   },
 };

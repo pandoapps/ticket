@@ -83,13 +83,16 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('sales/summary', [ProducerSalesController::class, 'summary']);
             Route::get('sales/{order}', [ProducerSalesController::class, 'show']);
 
+            Route::get('customers/lookup', [ProducerCustomersController::class, 'lookup']);
             Route::get('customers', [ProducerCustomersController::class, 'index']);
 
             Route::get('reports', [ProducerReportController::class, 'index']);
 
             Route::get('tickets', [ProducerTicketController::class, 'index']);
+            Route::post('tickets', [ProducerTicketController::class, 'store']);
             Route::get('tickets/{ticket}', [ProducerTicketController::class, 'show']);
             Route::post('tickets/redeem', [TicketRedemptionController::class, 'redeem']);
+            Route::post('tickets/lookup', [TicketRedemptionController::class, 'lookup']);
 
             Route::get('coupons', [ProducerCouponController::class, 'index']);
             Route::post('coupons', [ProducerCouponController::class, 'store']);

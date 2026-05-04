@@ -53,3 +53,20 @@
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
 }
+
+@media print {
+  body > *:not(.print-badge-portal) {
+    display: none !important;
+  }
+  .print-badge-portal {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    overflow: visible !important;
+  }
+  .print-badge-portal > div {
+    display: block !important;
+    padding: 0 !important;
+    min-height: unset !important;
+  }
+}

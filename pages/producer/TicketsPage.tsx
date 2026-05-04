@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
 import { Empty } from '@components/Empty';
@@ -12,10 +13,11 @@ import {
   type ProducerTicket,
   type TicketListResponse,
   type TicketQrData,
+  type IssuedTicket,
 } from '@services/producerTicketService';
-import { producerEventService, type EventModel } from '@services/eventService';
+import { producerEventService, type EventModel, type TicketLot } from '@services/eventService';
 import { ticketRedemptionService } from '@services/ticketRedemptionService';
-import { formatDateTime } from '@utils/format';
+import { formatBRL, formatDate, formatDateTime } from '@utils/format';
 import type { ApiError } from '@services/api';
 
 type StatusFilter = 'all' | 'used' | 'unused';
@@ -29,6 +31,7 @@ export function ProducerTicketsPage() {
   const [page, setPage] = useState(1);
   const [qrModal, setQrModal] = useState<{ ticket: ProducerTicket; qr: TicketQrData | null } | null>(null);
   const [redeemingId, setRedeemingId] = useState<number | null>(null);
+  const [issueModal, setIssueModal] = useState(false);
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -113,6 +116,14 @@ export function ProducerTicketsPage() {
     }
   }
 
+  function handleIssued(_ticket: IssuedTicket) {
+    setPage(1);
+    producerTicketService
+      .list({ status: status === 'all' ? undefined : status, event_id: eventId ? Number(eventId) : undefined, q: q || undefined, page: 1 })
+      .then(setResponse)
+      .catch((err: ApiError) => toast.error(err.message));
+  }
+
   const tickets = response?.data ?? [];
   const stats = response?.meta.stats;
 
@@ -121,6 +132,12 @@ export function ProducerTicketsPage() {
       <PageHeader
         title="Ingressos emitidos"
         description="Todos os ingressos gerados por pedidos pagos, com status de validação."
+        action={
+          <button onClick={() => setIssueModal(true)} className="btn-primary flex items-center gap-2">
+            <Icons.plus className="h-4 w-4" />
+            Emitir ingresso
+          </button>
+        }
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -235,47 +252,20 @@ export function ProducerTicketsPage() {
         </div>
       )}
 
-      <Modal
-        open={qrModal !== null}
-        onClose={() => setQrModal(null)}
-        title={qrModal ? `Ingresso — ${qrModal.ticket.event.name}` : ''}
-      >
-        {qrModal && (
-          <div className="space-y-4">
-            <div className="text-sm">
-              <p className="text-slate-500">Cliente</p>
-              <p className="font-medium text-slate-900">{qrModal.ticket.customer.name}</p>
-              <p className="text-xs text-slate-500">{qrModal.ticket.customer.email}</p>
-            </div>
-            <div className="text-sm">
-              <p className="text-slate-500">Ingresso</p>
-              <p className="font-medium text-slate-900">{qrModal.ticket.lot.name}</p>
-            </div>
+      <IssueTicketModal
+        open={issueModal}
+        onClose={() => setIssueModal(false)}
+        events={events}
+        onIssued={handleIssued}
+      />
 
-            <div className="flex items-center justify-center rounded-xl bg-white p-4 shadow-inner">
-              {qrModal.qr ? (
-                <img src={qrModal.qr.qr_code} alt="QR Code" className="h-64 w-64 object-contain" />
-              ) : (
-                <div className="flex h-64 w-64 items-center justify-center text-sm text-slate-400">
-                  Gerando QR...
-                </div>
-              )}
-            </div>
-
-            <p className="break-all text-center font-mono text-[10px] text-slate-500">{qrModal.ticket.code}</p>
-
-            {qrModal.ticket.used_at ? (
-              <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-center text-xs text-emerald-700">
-                Validado em {formatDateTime(qrModal.ticket.used_at)}
-              </p>
-            ) : (
-              <p className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-center text-xs text-amber-700">
-                Ingresso pendente de validação
-              </p>
-            )}
-          </div>
-        )}
-      </Modal>
+      {qrModal && (
+        <TicketBadgeModal
+          ticket={qrModal.ticket}
+          qr={qrModal.qr}
+          onClose={() => setQrModal(null)}
+        />
+      )}
     </AppLayout>
   );
 }
@@ -388,5 +378,328 @@ function StatCard({
         </span>
       </div>
     </div>
+  );
+}
+
+function TicketBadgeModal({
+  ticket,
+  qr,
+  onClose,
+}: {
+  ticket: ProducerTicket;
+  qr: TicketQrData | null;
+  onClose: () => void;
+}) {
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCloseRef.current(); };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  const isUsed = ticket.used_at !== null;
+
+  return createPortal(
+    <div
+      className="print-badge-portal fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="presentation"
+    >
+      <div
+        className="flex min-h-full flex-col items-center justify-center gap-4 p-4"
+        onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        {/* Crachá */}
+        <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl">
+          {/* Header gradiente */}
+          <div className="relative bg-gradient-to-br from-brand-600 to-accent-600 px-6 pb-8 pt-6 text-white">
+            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+            <div className="absolute -left-4 bottom-0 h-20 w-20 rounded-full bg-white/10" />
+            <p className="relative text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+              Ingresso
+            </p>
+            <h2 className="relative mt-1 text-xl font-bold leading-tight">
+              {ticket.event.name}
+            </h2>
+            <div className="relative mt-3 flex flex-wrap gap-3 text-xs text-white/80">
+              <span className="flex items-center gap-1">
+                <Icons.calendar className="h-3.5 w-3.5" />
+                {formatDate(ticket.event.starts_at)}
+              </span>
+              {ticket.event.venue_name && (
+                <span className="flex items-center gap-1">
+                  <Icons.mapPin className="h-3.5 w-3.5" />
+                  {ticket.event.venue_name}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Separador picotado */}
+          <div className="relative flex items-center">
+            <div className="absolute -left-3 h-6 w-6 rounded-full bg-slate-900/70" />
+            <div className="absolute -right-3 h-6 w-6 rounded-full bg-slate-900/70" />
+            <div className="mx-3 flex-1 border-t-2 border-dashed border-slate-200" />
+          </div>
+
+          {/* Corpo do crachá */}
+          <div className="px-6 pb-6 pt-5">
+            {/* QR Code */}
+            <div className="mb-4 flex justify-center">
+              <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+                {qr ? (
+                  <img src={qr.qr_code} alt="QR Code" className="h-52 w-52 object-contain" />
+                ) : (
+                  <div className="flex h-52 w-52 items-center justify-center text-sm text-slate-400">
+                    <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-brand-400 border-t-transparent" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Participante */}
+            <div className="mb-4 text-center">
+              <p className="text-lg font-bold text-slate-900">{ticket.customer.name}</p>
+              <p className="text-sm text-slate-500">{ticket.customer.email}</p>
+            </div>
+
+            {/* Lote */}
+            <div className="mb-4 flex justify-center">
+              <span className="rounded-full bg-brand-50 px-4 py-1 text-sm font-semibold text-brand-700 ring-1 ring-brand-200">
+                {ticket.lot.name}
+              </span>
+            </div>
+
+            {/* Código */}
+            <p className="mb-4 break-all text-center font-mono text-[11px] text-slate-400">
+              {ticket.code}
+            </p>
+
+            {/* Status */}
+            {isUsed ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-700">
+                <Icons.checkCircle className="h-4 w-4" />
+                Validado em {formatDateTime(ticket.used_at)}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+                <Icons.sparkles className="h-4 w-4" />
+                Ingresso válido — aguardando validação
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Botões — ocultados na impressão */}
+        <div className="flex gap-3 print:hidden">
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-lg transition hover:bg-slate-50"
+          >
+            <Icons.printer className="h-4 w-4" />
+            Imprimir
+          </button>
+          <button
+            onClick={onClose}
+            className="flex items-center gap-2 rounded-xl bg-white/20 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/30"
+          >
+            <Icons.x className="h-4 w-4" />
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+type CustomerState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'found'; id: number; name: string }
+  | { status: 'not_found' };
+
+function IssueTicketModal({
+  open,
+  onClose,
+  events,
+  onIssued,
+}: {
+  open: boolean;
+  onClose: () => void;
+  events: EventModel[];
+  onIssued: (ticket: IssuedTicket) => void;
+}) {
+  const [eventId, setEventId] = useState('');
+  const [lots, setLots] = useState<TicketLot[]>([]);
+  const [lotId, setLotId] = useState('');
+  const [email, setEmail] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customer, setCustomer] = useState<CustomerState>({ status: 'idle' });
+  const [submitting, setSubmitting] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => {
+    if (!eventId) { setLots([]); setLotId(''); return; }
+    producerEventService
+      .listLots(Number(eventId))
+      .then((res) => setLots(res.data))
+      .catch((err: ApiError) => toast.error(err.message));
+  }, [eventId, toast]);
+
+  async function lookupEmail() {
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    setCustomer({ status: 'loading' });
+    try {
+      const res = await producerTicketService.lookupCustomer(trimmed);
+      if (res.found && res.data) {
+        setCustomer({ status: 'found', id: res.data.id, name: res.data.name });
+      } else {
+        setCustomer({ status: 'not_found' });
+        setCustomerName('');
+      }
+    } catch {
+      setCustomer({ status: 'idle' });
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!lotId || !email.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await producerTicketService.issue({
+        ticket_lot_id: Number(lotId),
+        customer_email: email.trim(),
+        customer_name: customer.status === 'not_found' ? customerName : undefined,
+      });
+      toast.success('Ingresso emitido com sucesso!');
+      onIssued(res.data);
+      handleClose();
+    } catch (err) {
+      toast.error((err as ApiError).message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleClose() {
+    setEventId('');
+    setLots([]);
+    setLotId('');
+    setEmail('');
+    setCustomerName('');
+    setCustomer({ status: 'idle' });
+    onClose();
+  }
+
+  const canSubmit =
+    !!lotId &&
+    !!email.trim() &&
+    customer.status !== 'idle' &&
+    customer.status !== 'loading' &&
+    (customer.status !== 'not_found' || !!customerName.trim());
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Emitir ingresso manualmente">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Evento</label>
+          <select
+            value={eventId}
+            onChange={(e) => { setEventId(e.target.value); setLotId(''); }}
+            className="input w-full"
+            required
+          >
+            <option value="">Selecione um evento</option>
+            {events.map((ev) => (
+              <option key={ev.id} value={ev.id}>{ev.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Lote / Ingresso</label>
+          <select
+            value={lotId}
+            onChange={(e) => setLotId(e.target.value)}
+            className="input w-full"
+            required
+            disabled={!eventId || lots.length === 0}
+          >
+            <option value="">Selecione um lote</option>
+            {lots.map((lot) => (
+              <option key={lot.id} value={lot.id}>
+                {lot.name} — {lot.price === 0 ? 'Gratuito' : formatBRL(lot.price)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">E-mail do participante</label>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setCustomer({ status: 'idle' }); }}
+              onBlur={lookupEmail}
+              placeholder="participante@email.com"
+              className="input flex-1"
+              required
+            />
+            <button
+              type="button"
+              onClick={lookupEmail}
+              disabled={!email.trim() || customer.status === 'loading'}
+              className="btn-secondary shrink-0 px-3"
+            >
+              {customer.status === 'loading' ? (
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                'Verificar'
+              )}
+            </button>
+          </div>
+          {customer.status === 'found' && (
+            <p className="mt-1 text-xs text-emerald-600">✓ {customer.name} encontrado.</p>
+          )}
+          {customer.status === 'not_found' && (
+            <p className="mt-1 text-xs text-amber-600">E-mail não cadastrado — um novo participante será criado.</p>
+          )}
+        </div>
+
+        {customer.status === 'not_found' && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Nome do participante</label>
+            <input
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Nome completo"
+              className="input w-full"
+              required
+            />
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" onClick={handleClose} className="btn-secondary">
+            Cancelar
+          </button>
+          <button type="submit" disabled={submitting || !canSubmit} className="btn-primary">
+            {submitting ? 'Emitindo...' : 'Emitir ingresso'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

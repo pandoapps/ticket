@@ -32,6 +32,19 @@ export interface TicketQrData {
   used_at: string | null;
 }
 
+export interface IssuedTicket {
+  id: number;
+  code: string;
+  customer: { id: number; name: string; email: string };
+  lot: { id: number; name: string };
+  event: { id: number; name: string };
+}
+
+export interface CustomerLookupResult {
+  found: boolean;
+  data?: { id: number; name: string; email: string };
+}
+
 export const producerTicketService = {
   list: (params: { status?: 'used' | 'unused'; event_id?: number; q?: string; page?: number } = {}) => {
     const qs = new URLSearchParams();
@@ -43,4 +56,8 @@ export const producerTicketService = {
     return api.get<TicketListResponse>(`/producer/tickets${tail}`);
   },
   show: (id: number) => api.get<{ data: TicketQrData }>(`/producer/tickets/${id}`),
+  lookupCustomer: (email: string) =>
+    api.get<CustomerLookupResult>(`/producer/customers/lookup?email=${encodeURIComponent(email)}`),
+  issue: (payload: { ticket_lot_id: number; customer_email: string; customer_name?: string }) =>
+    api.post<{ data: IssuedTicket }>('/producer/tickets', payload),
 };

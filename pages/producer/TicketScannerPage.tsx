@@ -11,7 +11,7 @@ import { formatDateTime } from '@utils/format';
 const SCANNER_ID = 'ticket-scanner-region';
 const COOLDOWN_MS = 1200;
 
-type Flash = 'success' | 'warn' | 'error' | null;
+type Flash = 'success' | 'warn' | 'error' | 'pending' | null;
 
 export function TicketScannerPage() {
   const [scanning, setScanning] = useState(false);
@@ -20,9 +20,16 @@ export function TicketScannerPage() {
   const [result, setResult] = useState<RedemptionResult | null>(null);
   const [processing, setProcessing] = useState(false);
   const [flash, setFlash] = useState<Flash>(null);
+  const [autoValidate, setAutoValidate] = useState(() => {
+    return localStorage.getItem('scanner_auto_validate') !== 'false';
+  });
+  const [pendingCode, setPendingCode] = useState<string | null>(null);
+
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const lastCodeRef = useRef<string | null>(null);
   const lockRef = useRef(false);
+  const autoValidateRef = useRef(autoValidate);
+  const pendingCodeRef = useRef<string | null>(null);
   const toast = useToast();
 
   useEffect(
@@ -32,6 +39,18 @@ export function TicketScannerPage() {
     },
     [],
   );
+
+  function toggleAutoValidate() {
+    const next = !autoValidate;
+    setAutoValidate(next);
+    autoValidateRef.current = next;
+    localStorage.setItem('scanner_auto_validate', String(next));
+    pendingCodeRef.current = null;
+    setPendingCode(null);
+    setResult(null);
+    lockRef.current = false;
+    lastCodeRef.current = null;
+  }
 
   async function startScanner() {
     if (scanning || starting) return;
@@ -73,18 +92,61 @@ export function TicketScannerPage() {
     setScanning(false);
     lastCodeRef.current = null;
     lockRef.current = false;
+    pendingCodeRef.current = null;
+    setPendingCode(null);
+    setResult(null);
   }
 
   async function handleScan(decoded: string) {
     const trimmed = decoded.trim();
     if (lockRef.current || trimmed === lastCodeRef.current) return;
+    if (pendingCodeRef.current) return;
     lockRef.current = true;
     lastCodeRef.current = trimmed;
-    await processCode(trimmed);
-    setTimeout(() => {
-      lockRef.current = false;
-      lastCodeRef.current = null;
-    }, COOLDOWN_MS);
+
+    if (autoValidateRef.current) {
+      await processCode(trimmed);
+      setTimeout(() => {
+        lockRef.current = false;
+        lastCodeRef.current = null;
+      }, COOLDOWN_MS);
+    } else {
+      await previewCode(trimmed);
+    }
+  }
+
+  async function previewCode(code: string) {
+    setProcessing(true);
+    try {
+      const res = await ticketRedemptionService.lookup(code);
+      setResult(res);
+      if (res.status === 'ok') {
+        beep(660, 80);
+        setFlash('pending');
+        setTimeout(() => setFlash(null), 900);
+        pendingCodeRef.current = code;
+        setPendingCode(code);
+      } else if (res.status === 'already_used') {
+        beep(440, 180, 'square');
+        setFlash('warn');
+        setTimeout(() => setFlash(null), 900);
+        toast.error('Ingresso já utilizado.');
+        resetLock();
+      } else {
+        beep(220, 250, 'square');
+        setFlash('error');
+        setTimeout(() => setFlash(null), 900);
+        toast.error(res.message);
+        resetLock();
+      }
+    } catch (err) {
+      setFlash('error');
+      setTimeout(() => setFlash(null), 900);
+      toast.error(err instanceof Error ? err.message : 'Erro ao consultar ingresso.');
+      resetLock();
+    } finally {
+      setProcessing(false);
+    }
   }
 
   async function processCode(code: string) {
@@ -95,7 +157,7 @@ export function TicketScannerPage() {
       if (res.status === 'ok') {
         beep(880);
         setFlash('success');
-        toast.success('Ingresso validado automaticamente.');
+        toast.success('Ingresso validado.');
       } else if (res.status === 'already_used') {
         beep(440, 180, 'square');
         setFlash('warn');
@@ -115,17 +177,46 @@ export function TicketScannerPage() {
     }
   }
 
+  async function confirmEntry() {
+    const code = pendingCodeRef.current;
+    if (!code) return;
+    pendingCodeRef.current = null;
+    setPendingCode(null);
+    await processCode(code);
+    resetLock();
+  }
+
+  function cancelEntry() {
+    pendingCodeRef.current = null;
+    setPendingCode(null);
+    setResult(null);
+    resetLock();
+  }
+
+  function resetLock() {
+    setTimeout(() => {
+      lockRef.current = false;
+      lastCodeRef.current = null;
+    }, COOLDOWN_MS);
+  }
+
   async function handleManualSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const code = manualCode.trim();
     if (!code) return;
     setManualCode('');
-    await processCode(code);
+    if (autoValidate) {
+      await processCode(code);
+    } else {
+      await previewCode(code);
+    }
   }
 
   const flashRing =
     flash === 'success'
       ? 'ring-4 ring-emerald-400/80 shadow-[0_0_60px_rgba(16,185,129,0.55)]'
+      : flash === 'pending'
+      ? 'ring-4 ring-blue-400/80 shadow-[0_0_60px_rgba(59,130,246,0.5)]'
       : flash === 'warn'
       ? 'ring-4 ring-amber-400/80 shadow-[0_0_60px_rgba(245,158,11,0.5)]'
       : flash === 'error'
@@ -136,7 +227,11 @@ export function TicketScannerPage() {
     <AppLayout title="Produtor" nav={producerNav}>
       <PageHeader
         title="Leitor de ingressos"
-        description="A câmera valida cada ingresso automaticamente assim que o QR Code é lido."
+        description={
+          autoValidate
+            ? 'A câmera valida cada ingresso automaticamente assim que o QR Code é lido.'
+            : 'Modo manual: o operador confirma a entrada antes de validar o ingresso.'
+        }
         action={
           scanning ? (
             <button onClick={stopScanner} className="btn btn-secondary">
@@ -153,10 +248,27 @@ export function TicketScannerPage() {
 
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="glass-card overflow-hidden p-6 lg:col-span-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">Leitura automática</p>
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">
+              {autoValidate ? 'Leitura automática' : 'Confirmação manual'}
+            </p>
+            <button
+              onClick={toggleAutoValidate}
+              title={autoValidate ? 'Mudar para confirmação manual' : 'Mudar para validação automática'}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                autoValidate ? 'bg-brand-600' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                  autoValidate ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
 
           <div
-            className={`relative mx-auto mt-3 aspect-square w-full max-w-md overflow-hidden rounded-xl bg-slate-900/90 shadow-inner transition-all duration-300 ${flashRing}`}
+            className={`relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-xl bg-slate-900/90 shadow-inner transition-all duration-300 ${flashRing}`}
           >
             <div
               id={SCANNER_ID}
@@ -166,7 +278,10 @@ export function TicketScannerPage() {
             {!scanning && !starting && (
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center p-10 text-center text-sm text-white/70">
                 <Icons.ticket className="mb-3 h-10 w-10 opacity-70" />
-                Clique em “Iniciar câmera”. Cada QR lido é validado automaticamente.
+                Clique em "Iniciar câmera".{' '}
+                {autoValidate
+                  ? 'Cada QR lido é validado automaticamente.'
+                  : 'Cada QR lido aguardará confirmação do operador.'}
               </div>
             )}
             {starting && (
@@ -176,7 +291,7 @@ export function TicketScannerPage() {
             )}
             {scanning && processing && (
               <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-center bg-black/40 p-2 text-xs font-medium text-white">
-                Validando...
+                {autoValidate ? 'Validando...' : 'Consultando...'}
               </div>
             )}
           </div>
@@ -193,14 +308,20 @@ export function TicketScannerPage() {
                 className="input font-mono"
               />
               <button type="submit" disabled={processing} className="btn btn-primary">
-                Validar
+                {autoValidate ? 'Validar' : 'Consultar'}
               </button>
             </div>
           </form>
         </div>
 
         <div className="lg:col-span-2">
-          <ResultPanel result={result} processing={processing} />
+          <ResultPanel
+            result={result}
+            processing={processing}
+            pendingCode={pendingCode}
+            onConfirm={confirmEntry}
+            onCancel={cancelEntry}
+          />
         </div>
       </div>
     </AppLayout>
@@ -240,11 +361,23 @@ function beep(freq = 880, durationMs = 140, type: OscillatorType = 'sine') {
   }
 }
 
-function ResultPanel({ result, processing }: { result: RedemptionResult | null; processing: boolean }) {
+function ResultPanel({
+  result,
+  processing,
+  pendingCode,
+  onConfirm,
+  onCancel,
+}: {
+  result: RedemptionResult | null;
+  processing: boolean;
+  pendingCode: string | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
   if (processing) {
     return (
       <div className="glass-card flex h-full items-center justify-center p-10 text-sm text-slate-500">
-        Validando...
+        {pendingCode ? 'Validando...' : 'Consultando...'}
       </div>
     );
   }
@@ -259,25 +392,30 @@ function ResultPanel({ result, processing }: { result: RedemptionResult | null; 
     );
   }
 
-  const gradient =
-    result.status === 'ok'
-      ? 'from-emerald-500 to-teal-600'
-      : result.status === 'already_used'
-      ? 'from-amber-500 to-orange-600'
-      : 'from-rose-500 to-red-600';
+  const isPendingConfirmation = pendingCode !== null && result.status === 'ok';
+
+  const gradient = isPendingConfirmation
+    ? 'from-blue-500 to-indigo-600'
+    : result.status === 'ok'
+    ? 'from-emerald-500 to-teal-600'
+    : result.status === 'already_used'
+    ? 'from-amber-500 to-orange-600'
+    : 'from-rose-500 to-red-600';
+
+  const headerLabel = isPendingConfirmation
+    ? 'Aguardando confirmação'
+    : result.status === 'ok'
+    ? 'Ingresso validado'
+    : result.status === 'already_used'
+    ? 'Já utilizado'
+    : result.status === 'forbidden'
+    ? 'Não pertence a você'
+    : 'Código inválido';
 
   return (
     <div className="glass-card overflow-hidden p-0 animate-fade-up">
       <div className={`bg-gradient-to-br p-5 text-white ${gradient}`}>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-90">
-          {result.status === 'ok'
-            ? 'Ingresso validado'
-            : result.status === 'already_used'
-            ? 'Já utilizado'
-            : result.status === 'forbidden'
-            ? 'Não pertence a você'
-            : 'Código inválido'}
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-90">{headerLabel}</p>
         <h3 className="mt-1 text-lg font-semibold">{result.message}</h3>
       </div>
 
@@ -296,6 +434,17 @@ function ResultPanel({ result, processing }: { result: RedemptionResult | null; 
               Validado em {formatDateTime(result.data.used_at)}
             </p>
           )}
+        </div>
+      )}
+
+      {isPendingConfirmation && (
+        <div className="flex gap-3 border-t border-slate-100 p-5">
+          <button onClick={onConfirm} className="btn btn-primary flex-1">
+            Confirmar entrada
+          </button>
+          <button onClick={onCancel} className="btn btn-secondary">
+            Cancelar
+          </button>
         </div>
       )}
     </div>
