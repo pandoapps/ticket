@@ -8,13 +8,18 @@ export interface CoverSlide {
   icon: string;
 }
 
+export interface PresenterSocial {
+  label: string;
+  url: string;
+}
+
 export interface PresenterSlide {
   type: 'presenter';
   name: string;
   role: string;
   color: string;
   bullets: string[];
-  cta: string;
+  socials: PresenterSocial[];
   photoUrl?: string;
 }
 
@@ -23,6 +28,9 @@ export interface StorySlide {
   title: string;
   color: string;
   hint: string;
+  delayedImages?: string[];
+  delayedImagesMs?: number;
+  delayedAudio?: string;
 }
 
 export interface AgendaSlide {
@@ -128,6 +136,37 @@ export interface FinalSlide {
   message: string;
 }
 
+export interface PartsSlideItem {
+  label: string;
+  description?: string;
+  icon: string;
+  imageUrl?: string;
+}
+
+export interface PartsSlide {
+  type: 'parts';
+  badge?: string;
+  title: string;
+  color: string;
+  items: PartsSlideItem[];
+}
+
+export interface GameCharacter {
+  id: string;
+  label: string;
+  imageUrl: string;
+}
+
+export interface GameSlide {
+  type: 'game';
+  title: string;
+  subtitle?: string;
+  color: string;
+  characters: [GameCharacter, GameCharacter];
+  winScore: number;
+  backgroundAudio?: string;
+}
+
 export type Slide =
   | CoverSlide
   | PresenterSlide
@@ -140,6 +179,8 @@ export type Slide =
   | ClosingSlide
   | LayersSlide
   | GlossarySlide
+  | PartsSlide
+  | GameSlide
   | FinalSlide;
 
 export const slidesData: Record<number, Slide[]> = {
@@ -156,16 +197,18 @@ export const slidesData: Record<number, Slide[]> = {
     {
       type: 'presenter',
       name: 'Thiago Ferreira',
-      role: 'Mentor de Vibe Coding · São José dos Campos',
+      role: 'Mentor de Vibe Coding · Fundador da Pandô APPs',
       color: '#d97757',
       photoUrl: '/images/thiago.png',
       bullets: [
         'Desenvolvedor há mais de duas décadas, com mais de 100 projetos publicados',
-        'Criador do método Vibe Coding — programar conversando com IA',
         'Acredita que programar é transformar ideias em realidade, não decorar sintaxe',
+        'Criador do método IED — Inteligência Empresarial Digital',
         'Ajuda pessoas comuns a criar suas próprias soluções com tecnologia',
       ],
-      cta: '@cafecomcifrao',
+      socials: [
+        { label: '@cafecomcifrao', url: 'https://www.instagram.com/cafecomcifrao/' },
+      ],
     },
     {
       type: 'presenter',
@@ -179,13 +222,66 @@ export const slidesData: Record<number, Slide[]> = {
         'Diretor de Crescimento do BNI Leste Paulista; mais de 20 anos empreendendo em SJCampos',
         'Já foi candidato a vereador em 2020 e é aluno da Glider Brasil para piloto de paraglider',
       ],
-      cta: '@jeftepavam',
+      socials: [
+        { label: '@jeftepavam', url: 'https://www.instagram.com/jeftepavam/' },
+      ],
     },
     {
       type: 'story',
       title: 'Minha História',
       color: '#d97757',
       hint: '— espaço para você contar —',
+    },
+    {
+      type: 'story',
+      title: 'Quebra Gelo',
+      color: '#d97757',
+      hint: 'Para que serve a IA?',
+      delayedImages: ['/images/thiago-timao.png', '/images/jefte-pumba.png'],
+      delayedAudio: '/audio/burper.mp3',
+    },
+    {
+      type: 'parts',
+      title: 'Como Usar a IA',
+      color: '#d97757',
+      items: [
+        {
+          label: 'Conversacional',
+          description: 'Você pergunta, a IA responde — ChatGPT, Claude, Gemini',
+          icon: '💬',
+          imageUrl: '/images/forms-conversacional.gif',
+        },
+        {
+          label: 'Co-work',
+          description: 'IA no seu PC — Copilot, Cursor — Seu assistente pessoal',
+          icon: '🤝',
+          imageUrl: '/images/forms-cowork.gif',
+        },
+        {
+          label: 'CLI',
+          description: 'IA no terminal — Claude Code e agentes que executam tarefas',
+          icon: '⌨️',
+          imageUrl: '/images/forms-cli.gif',
+        },
+        {
+          label: 'API',
+          description: 'Integração programática — IA dentro do seu próprio produto',
+          icon: '🔌',
+          imageUrl: '/images/forms-api.gif',
+        },
+      ],
+    },
+    {
+      type: 'game',
+      title: 'Timão vs Pumbá',
+      subtitle: 'Escolha seu personagem e a dificuldade',
+      color: '#d97757',
+      winScore: 5,
+      backgroundAudio: '/audio/duello.mp3',
+      characters: [
+        { id: 'timao', label: 'Timão', imageUrl: '/images/thiago-timao.png' },
+        { id: 'pumba', label: 'Pumbá', imageUrl: '/images/jefte-pumba.png' },
+      ],
     },
     {
       type: 'agenda',
