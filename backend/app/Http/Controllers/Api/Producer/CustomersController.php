@@ -23,7 +23,7 @@ class CustomersController extends Controller
 
         return response()->json([
             'found' => true,
-            'data'  => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+            'data' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
         ]);
     }
 

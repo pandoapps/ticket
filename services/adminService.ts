@@ -84,6 +84,7 @@ export interface UpdateEventPayload {
   banner_url?: string | null;
   header_url?: string | null;
   is_featured?: boolean;
+  is_active?: boolean;
   accepts_pix?: boolean;
   accepts_card?: boolean;
 }

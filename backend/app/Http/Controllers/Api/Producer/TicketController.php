@@ -23,7 +23,7 @@ class TicketController extends Controller
         $validated = $request->validate([
             'ticket_lot_id' => ['required', 'integer', 'exists:ticket_lots,id'],
             'customer_email' => ['required', 'email', 'max:255'],
-            'customer_name'  => ['nullable', 'string', 'max:255'],
+            'customer_name' => ['nullable', 'string', 'max:255'],
         ]);
 
         $lot = TicketLot::with('event')->findOrFail($validated['ticket_lot_id']);
@@ -34,7 +34,7 @@ class TicketController extends Controller
             if (empty($validated['customer_name'])) {
                 return response()->json([
                     'message' => 'Nome é obrigatório para novos participantes.',
-                    'errors'  => ['customer_name' => ['O nome é obrigatório quando o e-mail não está cadastrado.']],
+                    'errors' => ['customer_name' => ['O nome é obrigatório quando o e-mail não está cadastrado.']],
                 ], 422);
             }
             $customer->name = $validated['customer_name'];
@@ -44,20 +44,20 @@ class TicketController extends Controller
         }
 
         $ticket = Ticket::create([
-            'order_id'      => null,
+            'order_id' => null,
             'ticket_lot_id' => $lot->id,
-            'customer_id'   => $customer->id,
+            'customer_id' => $customer->id,
         ]);
 
         $lot->increment('sold');
 
         return response()->json([
             'data' => [
-                'id'       => $ticket->id,
-                'code'     => $ticket->code,
+                'id' => $ticket->id,
+                'code' => $ticket->code,
                 'customer' => ['id' => $customer->id, 'name' => $customer->name, 'email' => $customer->email],
-                'lot'      => ['id' => $lot->id, 'name' => $lot->name],
-                'event'    => ['id' => $lot->event->id, 'name' => $lot->event->name],
+                'lot' => ['id' => $lot->id, 'name' => $lot->name],
+                'event' => ['id' => $lot->event->id, 'name' => $lot->event->name],
             ],
         ], 201);
     }

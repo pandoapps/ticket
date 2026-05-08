@@ -175,6 +175,7 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
   const [bannerUrl, setBannerUrl] = useState('');
   const [headerUrl, setHeaderUrl] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isActive, setIsActive] = useState(true);
   const [acceptsPix, setAcceptsPix] = useState(true);
   const [acceptsCard, setAcceptsCard] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -195,6 +196,7 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
     setBannerUrl(event.banner_url ?? '');
     setHeaderUrl(event.header_url ?? '');
     setIsFeatured(event.is_featured);
+    setIsActive(event.is_active);
     setAcceptsPix(event.accepts_pix);
     setAcceptsCard(event.accepts_card);
     setErrors({});
@@ -219,6 +221,7 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
         banner_url: bannerUrl || null,
         header_url: headerUrl || null,
         is_featured: isFeatured,
+        is_active: isActive,
         accepts_pix: acceptsPix,
         accepts_card: acceptsCard,
       });
@@ -400,6 +403,16 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
             className="h-4 w-4 rounded border-slate-300"
           />
           Evento em destaque
+        </label>
+
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300"
+          />
+          Evento ativo (visível na landing)
         </label>
 
         <div className="flex justify-end gap-2 pt-2">

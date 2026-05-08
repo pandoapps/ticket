@@ -41,11 +41,16 @@ export default {
       },
       animation: {
         'fade-up': 'fadeUp 0.4s ease-out both',
+        'slide-fade': 'slideFade 0.45s ease-out both',
       },
       keyframes: {
         fadeUp: {
           '0%': { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideFade: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
         },
       },
     },

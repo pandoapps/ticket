@@ -20,6 +20,7 @@ const EMPTY: EventPayload = {
   banner_url: '',
   header_url: '',
   is_featured: false,
+  is_active: true,
   accepts_pix: true,
   accepts_card: true,
 };
@@ -52,6 +53,7 @@ export function EventFormPage() {
           banner_url: e.banner_url ?? '',
           header_url: e.header_url ?? '',
           is_featured: e.is_featured,
+          is_active: e.is_active,
           accepts_pix: e.accepts_pix,
           accepts_card: e.accepts_card,
         });
@@ -238,6 +240,21 @@ export function EventFormPage() {
             </span>
             <span className="mt-0.5 block text-xs text-slate-500">
               Eventos em destaque aparecem no banner principal da página inicial.
+            </span>
+          </div>
+        </label>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/60 bg-gradient-to-br from-emerald-50 to-teal-50/60 p-4 transition hover:from-emerald-100">
+          <input
+            type="checkbox"
+            checked={form.is_active ?? true}
+            onChange={(e) => setField('is_active', e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-brand-600"
+          />
+          <div>
+            <span className="text-sm font-semibold text-slate-900">Evento ativo</span>
+            <span className="mt-0.5 block text-xs text-slate-500">
+              Quando desativado, o evento não aparece na página inicial nem na listagem pública.
             </span>
           </div>
         </label>

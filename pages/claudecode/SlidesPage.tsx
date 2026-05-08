@@ -66,7 +66,11 @@ export function SlidesPage() {
       </header>
 
       <main className="flex flex-1 items-stretch justify-center overflow-hidden px-3 py-3 md:px-6 md:py-4">
-        {current && <SlideRenderer slide={current} />}
+        {current && (
+          <div key={index} className="flex w-full animate-slide-fade items-stretch justify-center">
+            <SlideRenderer slide={current} />
+          </div>
+        )}
       </main>
 
       <footer className="flex items-center justify-between border-t border-white/10 bg-slate-950/70 px-4 py-2 text-white backdrop-blur md:px-8">

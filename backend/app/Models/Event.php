@@ -32,6 +32,7 @@ class Event extends Model
         'status',
         'published_at',
         'is_featured',
+        'is_active',
         'accepts_pix',
         'accepts_card',
     ];
@@ -45,6 +46,7 @@ class Event extends Model
             'status' => EventStatus::class,
             'venue_type' => VenueType::class,
             'is_featured' => 'boolean',
+            'is_active' => 'boolean',
             'accepts_pix' => 'boolean',
             'accepts_card' => 'boolean',
         ];

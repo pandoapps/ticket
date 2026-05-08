@@ -44,6 +44,7 @@ export interface EventModel {
   status: EventStatus;
   published_at: string | null;
   is_featured: boolean;
+  is_active: boolean;
   accepts_pix: boolean;
   accepts_card: boolean;
   platform_fees?: PlatformFees;
@@ -69,6 +70,7 @@ export interface EventPayload {
   short_description?: string | null;
   description?: string | null;
   is_featured?: boolean;
+  is_active?: boolean;
   starts_at: string;
   ends_at?: string | null;
   venue_type: VenueType;

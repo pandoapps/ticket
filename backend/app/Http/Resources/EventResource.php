@@ -33,6 +33,7 @@ class EventResource extends JsonResource
             'status' => $this->status?->value,
             'published_at' => $this->published_at?->toIso8601String(),
             'is_featured' => (bool) $this->is_featured,
+            'is_active' => (bool) $this->is_active,
             'accepts_pix' => (bool) $this->accepts_pix,
             'accepts_card' => (bool) $this->accepts_card,
             'platform_fees' => [

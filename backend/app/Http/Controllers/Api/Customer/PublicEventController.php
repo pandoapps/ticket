@@ -17,6 +17,7 @@ class PublicEventController extends Controller
 
         $query = Event::with(['producer', 'lots' => fn ($q) => $q->where('is_active', true)])
             ->where('status', EventStatus::Published->value)
+            ->where('is_active', true)
             ->where('starts_at', '>=', now())
             ->orderByDesc('is_featured')
             ->orderBy('starts_at');
@@ -42,6 +43,7 @@ class PublicEventController extends Controller
         $event = Event::with(['producer', 'lots' => fn ($q) => $q->where('is_active', true)])
             ->where('slug', $slug)
             ->where('status', EventStatus::Published->value)
+            ->where('is_active', true)
             ->firstOrFail();
 
         return response()->json(['data' => new EventResource($event)]);

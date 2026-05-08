@@ -31,6 +31,7 @@ class UpdateEventRequest extends FormRequest
             'banner_url' => ['nullable', 'url', 'max:500'],
             'header_url' => ['nullable', 'url', 'max:500'],
             'is_featured' => ['boolean'],
+            'is_active' => ['boolean'],
             'accepts_pix' => ['boolean'],
             'accepts_card' => ['boolean'],
         ];
