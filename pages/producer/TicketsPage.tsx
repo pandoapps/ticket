@@ -554,22 +554,30 @@ function IssueTicketModal({
       .catch((err: ApiError) => toast.error(err.message));
   }, [eventId, toast]);
 
-  async function lookupEmail() {
+  useEffect(() => {
     const trimmed = email.trim();
-    if (!trimmed) return;
-    setCustomer({ status: 'loading' });
-    try {
-      const res = await producerTicketService.lookupCustomer(trimmed);
-      if (res.found && res.data) {
-        setCustomer({ status: 'found', id: res.data.id, name: res.data.name });
-      } else {
-        setCustomer({ status: 'not_found' });
-        setCustomerName('');
-      }
-    } catch {
+    if (!trimmed) {
       setCustomer({ status: 'idle' });
+      setCustomerName('');
+      return;
     }
-  }
+    setCustomer({ status: 'loading' });
+    const timer = setTimeout(async () => {
+      try {
+        const res = await producerTicketService.lookupCustomer(trimmed);
+        if (res.found && res.data) {
+          setCustomer({ status: 'found', id: res.data.id, name: res.data.name });
+          setCustomerName(res.data.name);
+        } else {
+          setCustomer({ status: 'not_found' });
+          setCustomerName('');
+        }
+      } catch {
+        setCustomer({ status: 'idle' });
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [email]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -579,9 +587,9 @@ function IssueTicketModal({
       const res = await producerTicketService.issue({
         ticket_lot_id: Number(lotId),
         customer_email: email.trim(),
-        customer_name: customer.status === 'not_found' ? customerName : undefined,
+        customer_name: customerName.trim() || undefined,
       });
-      toast.success('Ingresso emitido com sucesso!');
+      toast.success(`Ingresso emitido para ${res.data.customer.name}!`);
       onIssued(res.data);
       handleClose();
     } catch (err) {
@@ -604,9 +612,8 @@ function IssueTicketModal({
   const canSubmit =
     !!lotId &&
     !!email.trim() &&
-    customer.status !== 'idle' &&
-    customer.status !== 'loading' &&
-    (customer.status !== 'not_found' || !!customerName.trim());
+    !!customerName.trim() &&
+    customer.status !== 'loading';
 
   return (
     <Modal open={open} onClose={handleClose} title="Emitir ingresso manualmente">
@@ -646,50 +653,41 @@ function IssueTicketModal({
 
         <div>
           <label className="mb-1 block text-xs font-medium text-slate-600">E-mail do participante</label>
-          <div className="flex gap-2">
+          <div className="relative">
             <input
               type="email"
               value={email}
-              onChange={(e) => { setEmail(e.target.value); setCustomer({ status: 'idle' }); }}
-              onBlur={lookupEmail}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="participante@email.com"
-              className="input flex-1"
+              className="input w-full pr-8"
               required
             />
-            <button
-              type="button"
-              onClick={lookupEmail}
-              disabled={!email.trim() || customer.status === 'loading'}
-              className="btn btn-secondary shrink-0 px-3"
-            >
-              {customer.status === 'loading' ? (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                'Verificar'
-              )}
-            </button>
+            {customer.status === 'loading' && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-400 border-t-transparent" />
+              </span>
+            )}
           </div>
           {customer.status === 'found' && (
-            <p className="mt-1 text-xs text-emerald-600">✓ {customer.name} encontrado.</p>
+            <p className="mt-1 text-xs text-emerald-600">✓ Cliente existente — o ingresso será emitido para este participante.</p>
           )}
           {customer.status === 'not_found' && (
-            <p className="mt-1 text-xs text-amber-600">E-mail não cadastrado — um novo participante será criado.</p>
+            <p className="mt-1 text-xs text-blue-600">● Novo participante — preencha o nome abaixo.</p>
           )}
         </div>
 
-        {customer.status === 'not_found' && (
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">Nome do participante</label>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Nome completo"
-              className="input w-full"
-              required
-            />
-          </div>
-        )}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Nome do participante</label>
+          <input
+            type="text"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            placeholder="Nome completo"
+            className={`input w-full ${customer.status === 'found' ? 'bg-slate-50 text-slate-600' : ''}`}
+            disabled={customer.status === 'found' || customer.status === 'loading'}
+            required
+          />
+        </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={handleClose} className="btn btn-secondary">

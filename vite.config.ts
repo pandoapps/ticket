@@ -11,6 +11,7 @@ export default defineConfig({
       '@services': path.resolve(__dirname, './services'),
       '@hooks': path.resolve(__dirname, './hooks'),
       '@utils': path.resolve(__dirname, './utils'),
+      '@data': path.resolve(__dirname, './data'),
     },
   },
   server: {

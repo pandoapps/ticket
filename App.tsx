@@ -35,6 +35,10 @@ import { SettingsPage } from '@pages/admin/SettingsPage';
 import { AuditPage } from '@pages/admin/AuditPage';
 import { CouponsPage as AdminCouponsPage } from '@pages/admin/CouponsPage';
 
+import { CourseHomePage } from '@pages/claudecode/CourseHomePage';
+import { SlidesPage as ClaudeCodeSlidesPage } from '@pages/claudecode/SlidesPage';
+import { EbookPage as ClaudeCodeEbookPage } from '@pages/claudecode/EbookPage';
+
 import { ProtectedRoute } from '@components/ProtectedRoute';
 import { RoleRoute } from '@components/RoleRoute';
 
@@ -50,6 +54,10 @@ export default function App() {
       <Route path="/eventos/:slug" element={<PublicEventPage />} />
 
       <Route path="/pages/thiago" element={<ThiagoPage />} />
+
+      <Route path="/claudecode" element={<CourseHomePage />} />
+      <Route path="/claudecode/aulas/:id/slides" element={<ClaudeCodeSlidesPage />} />
+      <Route path="/claudecode/aulas/:id/ebook" element={<ClaudeCodeEbookPage />} />
 
       <Route
         path="/meus-pedidos"

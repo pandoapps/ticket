@@ -52,6 +52,67 @@
   .chip {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
+
+  .ebook-prose {
+    @apply text-slate-700;
+  }
+  .ebook-prose h1 {
+    @apply mt-8 mb-4 text-3xl font-bold text-slate-900 first:mt-0;
+  }
+  .ebook-prose h2 {
+    @apply mt-10 mb-3 text-2xl font-semibold text-slate-900;
+  }
+  .ebook-prose h3 {
+    @apply mt-6 mb-2 text-lg font-semibold text-slate-900;
+  }
+  .ebook-prose p {
+    @apply my-4 leading-relaxed;
+  }
+  .ebook-prose strong {
+    @apply font-semibold text-slate-900;
+  }
+  .ebook-prose ul {
+    @apply my-4 list-disc space-y-1.5 pl-6;
+  }
+  .ebook-prose ol {
+    @apply my-4 list-decimal space-y-1.5 pl-6;
+  }
+  .ebook-prose li {
+    @apply leading-relaxed;
+  }
+  .ebook-prose hr {
+    @apply my-8 border-slate-200;
+  }
+  .ebook-prose a {
+    @apply text-brand-600 underline-offset-2 hover:underline;
+  }
+  .ebook-prose code {
+    @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.85em] text-slate-900;
+  }
+  .ebook-prose pre {
+    @apply my-5 overflow-x-auto rounded-xl bg-slate-900 p-4 text-sm leading-relaxed text-slate-100;
+  }
+  .ebook-prose pre code {
+    @apply bg-transparent p-0 text-slate-100;
+  }
+  .ebook-prose blockquote {
+    @apply my-5 border-l-4 border-brand-300 bg-brand-50/40 px-4 py-2 italic text-slate-700;
+  }
+  .ebook-prose table {
+    @apply my-5 w-full border-collapse overflow-hidden rounded-xl border border-slate-200 text-sm;
+  }
+  .ebook-prose thead {
+    @apply bg-slate-50 text-left;
+  }
+  .ebook-prose th {
+    @apply border-b border-slate-200 px-3 py-2 font-semibold text-slate-900;
+  }
+  .ebook-prose td {
+    @apply border-b border-slate-100 px-3 py-2 align-top;
+  }
+  .ebook-prose tr:last-child td {
+    @apply border-b-0;
+  }
 }
 
 @media print {

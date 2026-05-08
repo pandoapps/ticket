@@ -24,7 +24,8 @@
       "@components/*": ["components/*"],
       "@services/*": ["services/*"],
       "@hooks/*": ["hooks/*"],
-      "@utils/*": ["utils/*"]
+      "@utils/*": ["utils/*"],
+      "@data/*": ["data/*"]
     }
   },
   "include": [
@@ -35,7 +36,8 @@
     "components/**/*",
     "services/**/*",
     "hooks/**/*",
-    "utils/**/*"
+    "utils/**/*",
+    "data/**/*"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
