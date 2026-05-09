@@ -417,6 +417,7 @@ export const slidesData: Record<number, Slide[]> = {
       color: '#d97757',
       imageUrl: '/images/business-model-template.jpg',
       imageAlt: 'Online Startup Business Model Template',
+      imageMaxHeight: '40vh',
     },
     {
       type: 'formStudy',
