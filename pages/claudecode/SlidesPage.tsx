@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { courseModules } from '@data/courseData';
-import { slidesData, type GameSlide, type PartsSlide, type Slide, type StorySlide } from '@data/slidesData';
+import {
+  slidesData,
+  type FormStudySlide,
+  type GameSlide,
+  type ImageSlide,
+  type PartsSlide,
+  type PromptBuilderSlide,
+  type Slide,
+  type StorySlide,
+} from '@data/slidesData';
 
 export function SlidesPage() {
   const { id } = useParams<{ id: string }>();
@@ -10,13 +19,18 @@ export function SlidesPage() {
     () => courseModules.find((m) => m.id === moduleId),
     [moduleId],
   );
-  const slides = module ? slidesData[module.id] ?? [] : [];
+  const slides = useMemo(
+    () => (module ? slidesData[module.id] ?? [] : []),
+    [module],
+  );
 
   const [index, setIndex] = useState(0);
   const [step, setStep] = useState(0);
+  const [gamePhase, setGamePhase] = useState<GamePhase>('setup');
 
   useEffect(() => {
     setStep(0);
+    setGamePhase('setup');
   }, [index]);
 
   useEffect(() => {
@@ -39,7 +53,12 @@ export function SlidesPage() {
     }
 
     function onKey(e: KeyboardEvent) {
-      if (cur?.type === 'game') return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+        return;
+      }
+      if (cur?.type === 'game' && gamePhase !== 'setup') return;
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         advance();
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
@@ -52,7 +71,7 @@ export function SlidesPage() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [slides, index, step]);
+  }, [slides, index, step, gamePhase]);
 
   if (!module) {
     return (
@@ -70,9 +89,10 @@ export function SlidesPage() {
   const current = slides[index];
   const total = slides.length;
   const partsTotal = current?.type === 'parts' ? current.items.length : 0;
-  const canRetreat = step > 0 || index > 0;
+  const navLocked = current?.type === 'game' && gamePhase !== 'setup';
+  const canRetreat = !navLocked && (step > 0 || index > 0);
   const canAdvance =
-    (current?.type === 'parts' && step < partsTotal - 1) || index < total - 1;
+    !navLocked && ((current?.type === 'parts' && step < partsTotal - 1) || index < total - 1);
 
   function advance() {
     if (current?.type === 'parts' && step < partsTotal - 1) {
@@ -111,7 +131,7 @@ export function SlidesPage() {
       <main className="flex flex-1 items-stretch justify-center overflow-hidden px-3 py-3 md:px-6 md:py-4">
         {current && (
           <div key={index} className="flex w-full animate-slide-fade items-stretch justify-center">
-            <SlideRenderer slide={current} step={step} />
+            <SlideRenderer slide={current} step={step} onGamePhaseChange={setGamePhase} />
           </div>
         )}
       </main>
@@ -149,7 +169,29 @@ export function SlidesPage() {
   );
 }
 
-function SlideRenderer({ slide, step }: { slide: Slide; step: number }) {
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((p, i) => {
+    if (p.startsWith('**') && p.endsWith('**')) {
+      return (
+        <strong key={i} className="font-bold">
+          {p.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={i}>{p}</span>;
+  });
+}
+
+function SlideRenderer({
+  slide,
+  step,
+  onGamePhaseChange,
+}: {
+  slide: Slide;
+  step: number;
+  onGamePhaseChange?: (phase: GamePhase) => void;
+}) {
   switch (slide.type) {
     case 'cover':
       return (
@@ -162,6 +204,18 @@ function SlideRenderer({ slide, step }: { slide: Slide; step: number }) {
           <span aria-hidden className="mt-10 block text-7xl md:text-9xl">
             {slide.icon}
           </span>
+          {slide.qrUrl && (
+            <div className="absolute bottom-6 right-6 flex flex-col items-center gap-1 md:bottom-10 md:right-10">
+              <img
+                src={slide.qrUrl}
+                alt="QR code"
+                className="h-48 w-48 rounded-lg border border-slate-200 bg-white p-1 shadow-md md:h-72 md:w-72"
+              />
+              {slide.qrCaption && (
+                <span className="text-xs font-semibold text-slate-500 md:text-sm">{slide.qrCaption}</span>
+              )}
+            </div>
+          )}
         </SlideCard>
       );
 
@@ -296,14 +350,31 @@ function SlideRenderer({ slide, step }: { slide: Slide; step: number }) {
           {slide.subtitle && <p className="mt-3 text-lg text-slate-600 md:text-2xl">{slide.subtitle}</p>}
           <ul className="mt-10 space-y-4 text-left">
             {slide.items.map((it, i) => (
-              <li key={i} className="flex items-start gap-4 text-lg text-slate-700 md:text-2xl">
+              <li key={i} className="flex items-center gap-4 text-lg text-slate-700 md:text-2xl">
                 <span
-                  className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-bold text-white md:h-11 md:w-11 md:text-lg"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-bold text-white md:h-11 md:w-11 md:text-lg"
                   style={{ background: slide.color }}
                 >
                   {i + 1}
                 </span>
-                {it}
+                <span className="flex flex-1 items-center gap-3">
+                  {typeof it !== 'string' && it.url && (
+                    <span aria-hidden className="text-xl md:text-2xl">🔗</span>
+                  )}
+                  {typeof it !== 'string' && it.url ? (
+                    <a
+                      href={it.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline-offset-4 hover:underline"
+                      style={{ color: slide.color }}
+                    >
+                      {renderInline(it.text)}
+                    </a>
+                  ) : (
+                    renderInline(typeof it === 'string' ? it : it.text)
+                  )}
+                </span>
               </li>
             ))}
           </ul>
@@ -425,7 +496,16 @@ function SlideRenderer({ slide, step }: { slide: Slide; step: number }) {
       return <PartsSlideView slide={slide} step={step} />;
 
     case 'game':
-      return <GameSlideView slide={slide} />;
+      return <GameSlideView slide={slide} onPhaseChange={onGamePhaseChange} />;
+
+    case 'image':
+      return <ImageSlideView slide={slide} />;
+
+    case 'formStudy':
+      return <FormStudySlideView slide={slide} />;
+
+    case 'promptBuilder':
+      return <PromptBuilderSlideView slide={slide} />;
 
     case 'final':
       return (
@@ -458,6 +538,249 @@ function randomWanderPositions(count: number): WanderPos[] {
   }));
 }
 
+function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
+  const storageKey = `pb-${slide.title}|${slide.subtitle ?? ''}`;
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    try {
+      const raw = sessionStorage.getItem(`${storageKey}:values`);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [generated, setGenerated] = useState<string>(() => {
+    try {
+      return sessionStorage.getItem(`${storageKey}:generated`) ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(`${storageKey}:values`, JSON.stringify(values));
+    } catch {
+      /* storage unavailable */
+    }
+  }, [storageKey, values]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(`${storageKey}:generated`, generated);
+    } catch {
+      /* storage unavailable */
+    }
+  }, [storageKey, generated]);
+
+  function generate() {
+    let prompt = slide.promptTemplate;
+    for (const input of slide.inputs) {
+      const value = values[input.id] ?? '';
+      prompt = prompt.split(`{${input.id}}`).join(value);
+    }
+    setGenerated(prompt);
+    setCopied(false);
+  }
+
+  async function copyToClipboard() {
+    if (!generated) return;
+    try {
+      await navigator.clipboard.writeText(generated);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
+
+  const fieldClass =
+    'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-transparent focus:ring-2 md:text-base';
+  const ringStyle = { ['--tw-ring-color' as never]: slide.color };
+
+  return (
+    <SlideCard color={slide.color}>
+      {slide.badge && (
+        <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+          {slide.badge}
+        </p>
+      )}
+      <h2 className="mt-3 text-3xl font-bold text-slate-900 md:text-5xl">{slide.title}</h2>
+      {slide.subtitle && <p className="mt-2 text-base text-slate-600 md:text-2xl">{slide.subtitle}</p>}
+
+      <div className="mt-6 flex w-full flex-col items-stretch gap-4 text-left md:flex-row md:gap-5">
+        <div className="flex w-full flex-col gap-3 md:w-[36%]">
+          {slide.inputs.map((input) => {
+            const id = `pb-${input.id}`;
+            return (
+              <div key={input.id} className="flex flex-col gap-1">
+                <label htmlFor={id} className="text-sm font-semibold text-slate-800 md:text-base">
+                  {input.label}
+                </label>
+                {input.multiline ? (
+                  <textarea
+                    id={id}
+                    rows={input.rows ?? 2}
+                    value={values[input.id] ?? ''}
+                    onChange={(e) => setValues((v) => ({ ...v, [input.id]: e.target.value }))}
+                    className={`${fieldClass} resize-none`}
+                    style={ringStyle}
+                  />
+                ) : (
+                  <input
+                    id={id}
+                    type="text"
+                    value={values[input.id] ?? ''}
+                    onChange={(e) => setValues((v) => ({ ...v, [input.id]: e.target.value }))}
+                    className={fieldClass}
+                    style={ringStyle}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center justify-center md:w-[14%]">
+          <button
+            type="button"
+            onClick={generate}
+            className="w-full rounded-2xl px-4 py-4 text-sm font-bold uppercase tracking-wider text-white shadow-lg transition hover:-translate-y-0.5 md:py-6 md:text-base"
+            style={{ background: slide.color }}
+          >
+            {slide.buttonLabel}
+          </button>
+        </div>
+
+        <div className="flex w-full flex-1 flex-col gap-2 md:w-[50%]">
+          <div className="flex items-center justify-between">
+            <label htmlFor="pb-output" className="text-sm font-semibold text-slate-800 md:text-base">
+              Prompt gerado
+            </label>
+            <button
+              type="button"
+              onClick={copyToClipboard}
+              disabled={!generated}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 md:text-sm"
+            >
+              {copied ? 'Copiado!' : 'Copiar'}
+            </button>
+          </div>
+          <textarea
+            id="pb-output"
+            value={generated}
+            readOnly
+            placeholder="Preencha os campos e clique em Gerar prompt"
+            className="min-h-[18rem] w-full flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-800 outline-none focus:ring-2 md:text-sm"
+            style={ringStyle}
+          />
+        </div>
+      </div>
+    </SlideCard>
+  );
+}
+
+function FormStudySlideView({ slide }: { slide: FormStudySlide }) {
+  const storageKey = `fs-${slide.title}|${slide.subtitle ?? ''}|${slide.imageUrl}`;
+  const [values, setValues] = useState<Record<number, string>>(() => {
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(values));
+    } catch {
+      /* storage unavailable */
+    }
+  }, [storageKey, values]);
+
+  return (
+    <SlideCard color={slide.color}>
+      {slide.badge && (
+        <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+          {slide.badge}
+        </p>
+      )}
+      <h2 className="mt-3 text-3xl font-bold text-slate-900 md:text-6xl">{slide.title}</h2>
+      {slide.subtitle && <p className="mt-2 text-base text-slate-600 md:text-2xl">{slide.subtitle}</p>}
+      <div className="mt-8 flex w-full flex-col gap-8 text-left md:flex-row md:items-stretch md:gap-12">
+        <div className="flex w-full shrink-0 items-center justify-center md:w-[42%]">
+          <img
+            src={slide.imageUrl}
+            alt={slide.imageAlt ?? ''}
+            className="max-h-[60vh] w-full rounded-2xl object-cover shadow-lg"
+          />
+        </div>
+        <div className="flex w-full flex-1 flex-col gap-5">
+          {slide.questions.map((q, i) => {
+            const id = `formstudy-q-${i}`;
+            const label = typeof q === 'string' ? q : q.label;
+            const multiline = typeof q === 'string' ? true : q.multiline !== false;
+            const inputClass =
+              'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 shadow-sm outline-none transition focus:border-transparent focus:ring-2 md:text-lg';
+            return (
+              <div key={i} className="flex flex-col gap-2">
+                <label htmlFor={id} className="text-base font-semibold text-slate-800 md:text-xl">
+                  {label}
+                </label>
+                {multiline ? (
+                  <textarea
+                    id={id}
+                    rows={2}
+                    value={values[i] ?? ''}
+                    onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
+                    className={`${inputClass} resize-none`}
+                    style={{ ['--tw-ring-color' as never]: slide.color }}
+                  />
+                ) : (
+                  <input
+                    id={id}
+                    type="text"
+                    value={values[i] ?? ''}
+                    onChange={(e) => setValues((v) => ({ ...v, [i]: e.target.value }))}
+                    className={inputClass}
+                    style={{ ['--tw-ring-color' as never]: slide.color }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </SlideCard>
+  );
+}
+
+function ImageSlideView({ slide }: { slide: ImageSlide }) {
+  return (
+    <SlideCard color={slide.color}>
+      {slide.badge && (
+        <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+          {slide.badge}
+        </p>
+      )}
+      <h2 className="mt-3 text-4xl font-bold text-slate-900 md:text-7xl">{slide.title}</h2>
+      {slide.subtitle && <p className="mt-3 text-lg text-slate-600 md:text-2xl">{slide.subtitle}</p>}
+      <div className="mt-8 flex w-full flex-1 items-center justify-center">
+        <img
+          src={slide.imageUrl}
+          alt={slide.imageAlt ?? ''}
+          className="w-full max-w-5xl rounded-2xl object-contain shadow-lg"
+          style={{ maxHeight: slide.imageMaxHeight ?? '60vh' }}
+        />
+      </div>
+      {slide.caption && (
+        <p className="mt-4 text-sm text-slate-500 md:text-base">{slide.caption}</p>
+      )}
+    </SlideCard>
+  );
+}
+
 type GamePhase = 'setup' | 'playing' | 'gameover';
 type Difficulty = 'easy' | 'hard';
 
@@ -472,7 +795,13 @@ interface GameRefState {
   lastDifficultyTick: number;
 }
 
-function GameSlideView({ slide }: { slide: GameSlide }) {
+function GameSlideView({
+  slide,
+  onPhaseChange,
+}: {
+  slide: GameSlide;
+  onPhaseChange?: (phase: GamePhase) => void;
+}) {
   const [phase, setPhase] = useState<GamePhase>('setup');
   const [characterId, setCharacterId] = useState<string>(slide.characters[0].id);
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
@@ -494,6 +823,10 @@ function GameSlideView({ slide }: { slide: GameSlide }) {
     timeSinceStart: 0,
     lastDifficultyTick: 0,
   });
+
+  useEffect(() => {
+    onPhaseChange?.(phase);
+  }, [phase, onPhaseChange]);
 
   useEffect(() => {
     if (!slide.backgroundAudio) return;
@@ -1031,10 +1364,10 @@ function StorySlideView({ slide }: { slide: StorySlide }) {
 function SlideCard({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <article
-      className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto rounded-3xl bg-white px-8 py-10 text-center shadow-2xl md:px-20 md:py-16"
+      className="relative flex h-full w-full flex-col items-center overflow-y-auto rounded-3xl bg-white px-8 py-10 text-center shadow-2xl md:px-20 md:py-16"
       style={{ boxShadow: `0 30px 80px -30px ${color}88` }}
     >
-      <div className="flex w-full max-w-[1600px] flex-col items-center">{children}</div>
+      <div className="my-auto flex w-full max-w-[1600px] flex-col items-center">{children}</div>
     </article>
   );
 }

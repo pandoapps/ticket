@@ -6,6 +6,8 @@ export interface CoverSlide {
   subtitle: string;
   color: string;
   icon: string;
+  qrUrl?: string;
+  qrCaption?: string;
 }
 
 export interface PresenterSocial {
@@ -57,13 +59,15 @@ export interface ContentSlide {
   blocks: ContentBlock[];
 }
 
+export type ListSlideItem = string | { text: string; url?: string };
+
 export interface ListSlide {
   type: 'list';
   badge: string;
   title: string;
   subtitle?: string;
   color: string;
-  items: string[];
+  items: ListSlideItem[];
 }
 
 export interface HighlightStep {
@@ -151,6 +155,50 @@ export interface PartsSlide {
   items: PartsSlideItem[];
 }
 
+export interface PromptBuilderInput {
+  id: string;
+  label: string;
+  placeholder?: string;
+  multiline?: boolean;
+  rows?: number;
+}
+
+export interface PromptBuilderSlide {
+  type: 'promptBuilder';
+  badge?: string;
+  title: string;
+  subtitle?: string;
+  color: string;
+  inputs: PromptBuilderInput[];
+  buttonLabel: string;
+  promptTemplate: string;
+}
+
+export type FormStudyQuestion = string | { label: string; multiline?: boolean };
+
+export interface FormStudySlide {
+  type: 'formStudy';
+  badge?: string;
+  title: string;
+  subtitle?: string;
+  color: string;
+  imageUrl: string;
+  imageAlt?: string;
+  questions: FormStudyQuestion[];
+}
+
+export interface ImageSlide {
+  type: 'image';
+  badge?: string;
+  title: string;
+  subtitle?: string;
+  color: string;
+  imageUrl: string;
+  imageAlt?: string;
+  caption?: string;
+  imageMaxHeight?: string;
+}
+
 export interface GameCharacter {
   id: string;
   label: string;
@@ -181,6 +229,9 @@ export type Slide =
   | GlossarySlide
   | PartsSlide
   | GameSlide
+  | ImageSlide
+  | FormStudySlide
+  | PromptBuilderSlide
   | FinalSlide;
 
 export const slidesData: Record<number, Slide[]> = {
@@ -193,6 +244,7 @@ export const slidesData: Record<number, Slide[]> = {
       subtitle: 'Instalação, configuração e primeiro projeto completo com Claude Code',
       color: '#d97757',
       icon: '🚀',
+      qrUrl: '/images/qr-aula-01.png',
     },
     {
       type: 'presenter',
@@ -273,14 +325,14 @@ export const slidesData: Record<number, Slide[]> = {
     },
     {
       type: 'game',
-      title: 'Timão vs Pumbá',
+      title: 'Timão vs Pumba',
       subtitle: 'Escolha seu personagem e a dificuldade',
       color: '#d97757',
       winScore: 5,
       backgroundAudio: '/audio/duello.mp3',
       characters: [
         { id: 'timao', label: 'Timão', imageUrl: '/images/thiago-timao.png' },
-        { id: 'pumba', label: 'Pumbá', imageUrl: '/images/jefte-pumba.png' },
+        { id: 'pumba', label: 'Pumba', imageUrl: '/images/jefte-pumba.png' },
       ],
     },
     {
@@ -288,17 +340,148 @@ export const slidesData: Record<number, Slide[]> = {
       title: 'O que vamos ver hoje',
       color: '#d97757',
       items: [
-        '01 — Instalação e configuração do ambiente',
-        '02 — Quando criar um projeto',
+        '01 — Quando criar um projeto',
+        '02 — Escopando um projeto',
         '03 — Criando as interfaces',
-        '04 — Primeiros comandos e fluxo de trabalho',
+        '04 — Instalação e configuração do ambiente',
         '05 — Construção do projeto do zero ao fim',
-        '06 — Boas práticas de prompt',
+        '06 — Primeiros comandos e fluxo de trabalho',
+        '07 — Boas práticas de prompt',
+        '08 — Gerando o documento de requisitos',
+        '09 — Gerando prompt para o Claude',
       ],
     },
     {
-      type: 'content',
+      type: 'list',
       badge: 'Parte 01',
+      title: 'Quando Criar um Projeto',
+      subtitle: 'Identificando a oportunidade certa',
+      color: '#d97757',
+      items: [
+        'Quando você consegue descrever em uma frase o que o projeto faz',
+        'Quando há uma oportunidade real e validada no mercado',
+        'Quando é financeiramente inteligente fazer isso',
+        'Quando você sabe quem vai usar e como',
+        '**Quando você sabe como distribuir isso!!!!!**',
+      ],
+    },
+    {
+      type: 'list',
+      badge: 'Cuidado',
+      title: 'Exemplos de Projetos Ruins',
+      subtitle: 'O que evitar antes de começar',
+      color: '#d97757',
+      items: [
+        '"Odeio mercado livre... vou criar um novo marketplace e deixar taxa 0 para todo mundo!"',
+        '"Quero criar uma automação para as lâmpadas de natal dos esquimós"',
+        '"Tenho uma padaria e NENHUM sistema serve para mim... vou criar meu próprio"',
+      ],
+    },
+    {
+      type: 'image',
+      badge: 'Parte 02',
+      title: 'Escopando um Projeto',
+      subtitle: 'O que pensar antes do projeto começar',
+      color: '#d97757',
+      imageUrl: '/images/business-model-template.jpg',
+      imageAlt: 'Online Startup Business Model Template',
+    },
+    {
+      type: 'formStudy',
+      badge: 'Parte 02',
+      title: 'Escopando um Projeto',
+      subtitle: 'Estudo de caso',
+      color: '#d97757',
+      imageUrl: '/images/vo-sonia.jpg',
+      imageAlt: 'Vó Sônia',
+      questions: [
+        { label: 'Qual o nome da plataforma?', multiline: false },
+        'Qual o problema que a plataforma quer resolver?',
+        'Qual o público alvo da plataforma?',
+        'Como você quer ganhar audiência com esse público?',
+      ],
+    },
+    {
+      type: 'formStudy',
+      badge: 'Parte 02',
+      title: 'Escopando um Projeto',
+      subtitle: 'Estudo de caso',
+      color: '#d97757',
+      imageUrl: '/images/palmeiras-mancha-verde.png',
+      imageAlt: 'Torcida do Palmeiras com bandeirão da Mancha Verde no Allianz Parque',
+      questions: [
+        { label: 'Qual o nome da plataforma?', multiline: false },
+        'Qual o problema que a plataforma quer resolver?',
+        'Qual o público alvo da plataforma?',
+        'Como você quer ganhar audiência com esse público?',
+      ],
+    },
+    {
+      type: 'list',
+      badge: 'Parte 03',
+      title: 'Criando as Interfaces',
+      subtitle: 'Construindo um prompt inicial',
+      color: '#d97757',
+      items: [],
+    },
+    {
+      type: 'list',
+      badge: 'Parte 03',
+      title: 'Criando as Interfaces',
+      subtitle: 'Conhecendo o Google AI Studio',
+      color: '#d97757',
+      items: [
+        'Entenda quais são os atores da sua plataforma',
+        'Entenda as jornadas de cada ator',
+        'Itere com o Claude: peça, veja o resultado, ajuste',
+        'Use componentes reutilizáveis para manter o visual consistente',
+      ],
+    },
+    {
+      type: 'image',
+      badge: 'Parte 03',
+      title: 'Criando as Interfaces',
+      subtitle: 'Desafio Copa do Mundo',
+      color: '#d97757',
+      imageUrl: '/images/figurinhas-copa.jpg',
+      imageAlt: 'Figurinhas da Copa do Mundo',
+      imageMaxHeight: '40vh',
+    },
+    {
+      type: 'promptBuilder',
+      badge: 'Parte 03',
+      title: 'Criando as Interfaces',
+      subtitle: 'Gerando um prompt inicial',
+      color: '#d97757',
+      buttonLabel: 'Gerar prompt de telas',
+      inputs: [
+        { id: 'NOME', label: 'Qual o nome da plataforma?' },
+        { id: 'OBJETIVO', label: 'Qual objetivo da plataforma?' },
+        { id: 'CORES', label: 'Quais as cores principais?' },
+        { id: 'ATORES', label: 'Quais atores do sistema e o que cada um pode fazer?', multiline: true },
+      ],
+      promptTemplate: `Estou criando as telas da plataforma chamada {NOME}, que terá como cores principais {CORES}
+
+Quero que você crie um prompt que será enviado para o google AI Studio criar as telas do meu sistema. Ele tem como objetivo {OBJETIVO}.
+
+Os principais atores da plataforma são:
+{ATORES}
+
+Quero que use glass design e que gere um visual moderno.
+
+Quero que as senhas dos usuários sejam 123456
+
+Quero que tenha um painel administrativo e que seu acesso seja realizado através de um botão no topo superior direito
+
+Quero que tenha uma landing page para o projeto com um botão de login no topo superior direito
+
+Quero que a plataforma seja responsiva
+
+Quero que crie um card abaixo do formulário de login com atalhos para preencher sozinho o login e senha dos usuários`,
+    },
+    {
+      type: 'content',
+      badge: 'Parte 04',
       title: 'Instalação e Configuração',
       color: '#d97757',
       blocks: [
@@ -339,49 +522,6 @@ export const slidesData: Record<number, Slide[]> = {
       ],
     },
     {
-      type: 'list',
-      badge: 'Parte 02',
-      title: 'Quando Criar um Projeto',
-      subtitle: 'Identificando a oportunidade certa',
-      color: '#d97757',
-      items: [
-        'Quando você consegue descrever em uma frase o que o projeto faz',
-        'Quando há um problema real seu ou de alguém próximo',
-        'Quando o esforço de criar é menor que o esforço de não ter',
-        'Quando você sabe quem vai usar e como',
-        'Quando o escopo cabe em um fim de semana — comece pequeno',
-      ],
-    },
-    {
-      type: 'list',
-      badge: 'Parte 03',
-      title: 'Criando as Interfaces',
-      subtitle: 'Conhecendo o Google AI Studio',
-      color: '#d97757',
-      items: [
-        'Comece pelas telas que o usuário toca primeiro',
-        'Descreva a UI em linguagem natural: "uma página com X, Y e Z"',
-        'Pense mobile-first — funciona no celular, funciona em qualquer lugar',
-        'Itere com o Claude: peça, veja o resultado, ajuste',
-        'Use componentes reutilizáveis para manter o visual consistente',
-      ],
-    },
-    {
-      type: 'list',
-      badge: 'Parte 04',
-      title: 'Primeiros Comandos',
-      subtitle: 'Fluxo de Desenvolvimento',
-      color: '#d97757',
-      items: [
-        'Iniciar uma sessão: claude dentro da pasta do projeto',
-        'Descrever o que você quer construir em linguagem natural',
-        'Revisar o que Claude propõe antes de confirmar',
-        'Iterar: corrigir, ajustar, adicionar funcionalidades',
-        'Usar /clear para limpar o contexto quando necessário',
-        'Salvar prompts que funcionaram para reutilizar',
-      ],
-    },
-    {
       type: 'highlight',
       badge: 'Parte 05',
       title: 'Construção do Projeto',
@@ -397,6 +537,21 @@ export const slidesData: Record<number, Slide[]> = {
     {
       type: 'list',
       badge: 'Parte 06',
+      title: 'Primeiros Comandos',
+      subtitle: 'Fluxo de Desenvolvimento',
+      color: '#d97757',
+      items: [
+        'Iniciar uma sessão: claude dentro da pasta do projeto',
+        'Descrever o que você quer construir em linguagem natural',
+        'Revisar o que Claude propõe antes de confirmar',
+        'Iterar: corrigir, ajustar, adicionar funcionalidades',
+        'Usar /clear para limpar o contexto quando necessário',
+        'Salvar prompts que funcionaram para reutilizar',
+      ],
+    },
+    {
+      type: 'list',
+      badge: 'Parte 07',
       title: 'Boas Práticas de Prompt',
       subtitle: 'Para Desenvolvimento de Software',
       color: '#d97757',
@@ -410,6 +565,242 @@ export const slidesData: Record<number, Slide[]> = {
       ],
     },
     {
+      type: 'promptBuilder',
+      badge: 'Parte 08',
+      title: 'Gerando o Documento de Requisitos',
+      subtitle: 'Mãos à obra!',
+      color: '#d97757',
+      buttonLabel: 'Gerar prompt de requisitos',
+      inputs: [
+        { id: 'PROMPT', label: 'Qual prompt da geração de telas?', multiline: true, rows: 14 },
+      ],
+      promptTemplate: `Estou criando uma plataforma web e para gerar as telas usei o seguinte prompt: {PROMPT}
+
+Quero que você analise esse prompt e gere o documento de requisitos funcionais do projeto. Não fale nada sobre a Stack, eu decidirei... descreva a lista de todas as funcionalidades e a descrição delas. Lembre-se de solicitar a criação de uma landing page e colocar um botão no topo para a tela de login`,
+    },
+    {
+      type: 'promptBuilder',
+      badge: 'Parte 09',
+      title: 'Gerando Prompt para o Claude',
+      subtitle: 'Buildando o app',
+      color: '#d97757',
+      buttonLabel: 'Gerar prompt para o Claude',
+      inputs: [
+        { id: 'REQUISITOS', label: 'Quais requisitos do projeto?', multiline: true, rows: 14 },
+      ],
+      promptTemplate: `🚀 Official Project Standard
+Software House – Thiago Ferreira
+
+1️⃣ Purpose of This Standard
+This document defines:
+Official company stack
+Folder structure
+Code standards
+Git standards
+Deployment standards
+Mandatory production checklist
+Project description
+
+
+It must be followed in all new projects, unless a justified exception is documented.
+
+2️⃣ Official Stack
+🔹 Backend
+Laravel 11+
+PHP 8.4+
+MySQL 8
+Laravel Sanctum (API authentication)
+MVC architecture
+REST JSON API
+
+
+🔹 Frontend
+React 19
+TypeScript 5+
+Vite
+Tailwind CSS
+React Router
+
+
+🔹 Infrastructure
+Docker + Docker Compose
+Nginx as reverse proxy
+Cloudflare (when applicable)
+Git
+Mandatory Makefile
+Db
+Sh
+Send (asking the comments after sending and pushing after it)
+Deploy (pulling and deploying in production environment)
+Thinker
+Migrate
+Install
+
+
+
+3️⃣ Official Project Structure
+/
+├── backend/
+├── pages/
+├── components/
+├── services/
+├── hooks/
+├── utils/
+├── docker/
+├── CLAUDE.md
+├── README.md
+├── Makefile
+├── docker-compose.yml
+└── package.json
+
+
+4️⃣ CLAUDE.md (Mandatory)
+Every project must include a CLAUDE.md containing:
+Rule prohibiting automatic commits
+Language standards (proper Portuguese accentuation required)
+Technology stack
+Folder structure
+Make commands
+Code conventions
+UI standards
+Modal, toast, and error handling rules. If the user clicks outside the modal or press ESC, close the modal.
+Treat error and send a clear message to the user, avoid simple "Error 500"
+
+
+This ensures consistency when using AI during development.
+
+5️⃣ Code Standards
+🔹 React
+Functional components only
+Hooks required
+Typed props using interfaces
+Services isolated in /services
+No direct fetch calls inside components
+
+
+🔹 Laravel
+Controllers must return consistent JSON
+Use FormRequest for validation
+Use API Resources for response transformation
+Business logic must live in Services
+No heavy logic inside Controllers
+
+
+
+6️⃣ Database Standard
+Every table must include:
+$table->id();
+$table->timestamps();
+$table->softDeletes();
+
+Relationships:
+$table->foreignId('user_id')
+      ->constrained()
+      ->onDelete('cascade');
+
+Seeders must use:
+updateOrCreate()
+
+Admin user and password should be:
+admin@admin.com / 123456
+
+Never use static inserts that break idempotency.
+
+7️⃣ Git Standard
+Branches
+main → Production
+develop → Development (optional)
+feature/xxx
+fix/xxx
+
+
+Commits
+Descriptive messages
+Do not mix unrelated features
+Choose one language standard per project
+Create a gitignore file with the best practices for laravel and react
+
+
+
+8️⃣ Makefile Standard (Mandatory)
+Minimum required commands:
+make up
+make up-prod
+make down
+make migrate
+make seed
+make fresh
+make deploy
+make send (ask me the comment after submitting make send and apply lint)
+make db
+make thinker
+make shell
+
+⚠️ Never use php artisan directly outside the Makefile.
+
+9️⃣ Deployment Standard
+Production must include:
+Docker
+Nginx
+Isolated frontend build
+Proper caching configuration
+Gzip enabled
+SPA fallback
+Migrations running with --force
+
+
+After deployment:
+Test login
+Test protected routes
+Test logout
+Test the main critical flow
+
+
+
+🔟 Mandatory Pre-Production Checklist
+ ✅ .env configured
+ ✅ APP_KEY generated
+ ✅ Sanctum working
+ ✅ CORS configured
+ ✅ Migrations executed
+ ✅ Seeders idempotent
+ ✅ Login working
+ ✅ Protected routes working
+ ✅ Logs clean
+ ✅ Errors handled with consistent JSON
+ ✅ Optimized frontend build
+ ✅ Cache enabled
+ ✅ Full authentication flow tested
+
+1️⃣1️⃣ Official New Project Flow
+Create repository
+Upload base template
+Configure Docker
+Create CLAUDE.md
+Create README.md
+Initialize Laravel
+Configure Sanctum
+Initialize React + TypeScript + Vite
+Configure Tailwind
+Implement base authentication
+Create Makefile
+Push first structured commit
+
+
+
+🧠 Company Strategic Rule
+ Structure first. Features second.
+ Standardization creates scale.
+ Scale creates profit.
+
+
+Project context
+
+Note: Ignore all the instructions in PROJECT CONTEXT that are divergent of the previous instructions
+
+{REQUISITOS}`,
+    },
+    {
       type: 'deliverables',
       title: 'Entregáveis do Encontro',
       color: '#d97757',
@@ -417,7 +808,6 @@ export const slidesData: Record<number, Slide[]> = {
       items: [
         'Ambiente Claude Code instalado e configurado em todas as máquinas',
         'Projeto exemplo funcional, desenvolvido durante o encontro',
-        'Repositório inicial do projeto criado e acessível à equipe',
         'Guia de referência rápida de comandos e fluxo de trabalho',
       ],
     },
