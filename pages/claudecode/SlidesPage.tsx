@@ -10,6 +10,7 @@ import {
   type PromptBuilderSlide,
   type Slide,
   type StorySlide,
+  type WordCloudSlide,
 } from '@data/slidesData';
 
 export function SlidesPage() {
@@ -507,6 +508,9 @@ function SlideRenderer({
     case 'promptBuilder':
       return <PromptBuilderSlideView slide={slide} />;
 
+    case 'wordCloud':
+      return <WordCloudSlideView slide={slide} />;
+
     case 'final':
       return (
         <SlideCard color={slide.color}>
@@ -536,6 +540,47 @@ function randomWanderPositions(count: number): WanderPos[] {
     y: -Math.random() * 28,
     rot: (Math.random() - 0.5) * 14,
   }));
+}
+
+const wordSizeClasses: Record<'sm' | 'md' | 'lg' | 'xl', string> = {
+  sm: 'text-base md:text-lg font-medium text-slate-500',
+  md: 'text-xl md:text-2xl font-semibold text-slate-700',
+  lg: 'text-3xl md:text-5xl font-bold text-slate-900',
+  xl: 'text-4xl md:text-7xl font-extrabold',
+};
+
+function WordCloudSlideView({ slide }: { slide: WordCloudSlide }) {
+  return (
+    <SlideCard color={slide.color}>
+      {slide.badge && (
+        <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+          {slide.badge}
+        </p>
+      )}
+      {slide.title && (
+        <h2 className="mt-3 text-3xl font-bold text-slate-900 md:text-5xl">{slide.title}</h2>
+      )}
+      {slide.subtitle && (
+        <p className="mt-2 text-base text-slate-600 md:text-2xl">{slide.subtitle}</p>
+      )}
+      <div className="mt-10 flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-8 gap-y-5 leading-tight">
+        {slide.words.map((w, i) => {
+          const text = typeof w === 'string' ? w : w.text;
+          const size = (typeof w === 'string' ? 'md' : w.size) ?? 'md';
+          const isXL = size === 'xl';
+          return (
+            <span
+              key={i}
+              className={wordSizeClasses[size]}
+              style={isXL ? { color: slide.color } : undefined}
+            >
+              {text}
+            </span>
+          );
+        })}
+      </div>
+    </SlideCard>
+  );
 }
 
 function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {

@@ -155,6 +155,21 @@ export interface PartsSlide {
   items: PartsSlideItem[];
 }
 
+export interface WordCloudWord {
+  text: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  emphasis?: boolean;
+}
+
+export interface WordCloudSlide {
+  type: 'wordCloud';
+  badge?: string;
+  title?: string;
+  subtitle?: string;
+  color: string;
+  words: (string | WordCloudWord)[];
+}
+
 export interface PromptBuilderInput {
   id: string;
   label: string;
@@ -232,6 +247,7 @@ export type Slide =
   | ImageSlide
   | FormStudySlide
   | PromptBuilderSlide
+  | WordCloudSlide
   | FinalSlide;
 
 export const slidesData: Record<number, Slide[]> = {
@@ -333,6 +349,22 @@ export const slidesData: Record<number, Slide[]> = {
       characters: [
         { id: 'timao', label: 'Timão', imageUrl: '/images/thiago-timao.png' },
         { id: 'pumba', label: 'Pumba', imageUrl: '/images/jefte-pumba.png' },
+      ],
+    },
+    {
+      type: 'wordCloud',
+      title: 'O que vocês esperam do curso',
+      color: '#d97757',
+      words: [
+        { text: 'Aprender desenvolver aplicações com IA', size: 'xl' },
+        { text: 'Conhecimento e Autonomia', size: 'lg' },
+        { text: 'Qualificação Profissional', size: 'lg' },
+        { text: 'meu próprio negócio futuro', size: 'lg' },
+        { text: 'Criar app para minha empresa', size: 'md' },
+        { text: 'Criar um app para clientes de desenvolvimento pessoal', size: 'md' },
+        { text: 'aprimorar minhas habilidades no ramo e buscar oportunidades', size: 'md' },
+        { text: 'Estar atualizado com as tendências', size: 'md' },
+        { text: 'conhecimento', size: 'sm' },
       ],
     },
     {
