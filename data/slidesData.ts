@@ -187,6 +187,11 @@ export interface PromptBuilderSlide {
   inputs: PromptBuilderInput[];
   buttonLabel: string;
   promptTemplate: string;
+  nextStep?: {
+    text: string;
+    linkLabel?: string;
+    linkUrl?: string;
+  };
 }
 
 export type FormStudyQuestion = string | { label: string; multiline?: boolean };
@@ -493,6 +498,11 @@ export const slidesData: Record<number, Slide[]> = {
         { id: 'CORES', label: 'Quais as cores principais?' },
         { id: 'ATORES', label: 'Quais atores do sistema e o que cada um pode fazer?', multiline: true },
       ],
+      nextStep: {
+        text: 'Cole a resposta do GPT no site',
+        linkLabel: 'Google AI Studio',
+        linkUrl: 'https://aistudio.google.com/',
+      },
       promptTemplate: `Estou criando as telas da plataforma chamada {NOME}, que terá como cores principais {CORES}
 
 Quero que você crie um prompt que será enviado para o google AI Studio criar as telas do meu sistema. Ele tem como objetivo {OBJETIVO}.
@@ -620,6 +630,7 @@ Quero que você analise esse prompt e gere o documento de requisitos funcionais 
       buttonLabel: 'Gerar prompt para o Claude',
       inputs: [
         { id: 'REQUISITOS', label: 'Quais requisitos do projeto?', multiline: true, rows: 14 },
+        { id: 'LINK_REPO', label: 'Qual o link do repositório no GitHub?' },
       ],
       promptTemplate: `🚀 Official Project Standard
 Software House – Thiago Ferreira
@@ -831,7 +842,9 @@ Project context
 
 Note: Ignore all the instructions in PROJECT CONTEXT that are divergent of the previous instructions
 
-{REQUISITOS}`,
+{REQUISITOS}
+
+Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda a estrutura desse repositório, use-o apenas para copiar a interface visual`,
     },
     {
       type: 'deliverables',

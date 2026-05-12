@@ -721,6 +721,26 @@ function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
           />
         </div>
       </div>
+
+      {slide.nextStep && (
+        <p className="mt-5 text-sm text-slate-600 md:text-base">
+          {slide.nextStep.text}
+          {slide.nextStep.linkUrl && (
+            <>
+              {' '}
+              <a
+                href={slide.nextStep.linkUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold underline-offset-4 hover:underline"
+                style={{ color: slide.color }}
+              >
+                {slide.nextStep.linkLabel ?? slide.nextStep.linkUrl}
+              </a>
+            </>
+          )}
+        </p>
+      )}
     </SlideCard>
   );
 }
