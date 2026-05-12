@@ -659,8 +659,17 @@ function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
             const id = `pb-${input.id}`;
             return (
               <div key={input.id} className="flex flex-col gap-1">
-                <label htmlFor={id} className="text-sm font-semibold text-slate-800 md:text-base">
-                  {input.label}
+                <label htmlFor={id} className="flex items-center gap-2 text-sm font-semibold text-slate-800 md:text-base">
+                  <span>{input.label}</span>
+                  {input.hint && (
+                    <span
+                      title={input.hint}
+                      aria-label={input.hint}
+                      className="inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-slate-400 text-xs font-bold text-slate-600 hover:border-slate-600 hover:text-slate-900"
+                    >
+                      ?
+                    </span>
+                  )}
                 </label>
                 {input.multiline ? (
                   <textarea
@@ -740,6 +749,33 @@ function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
             </>
           )}
         </p>
+      )}
+
+      {slide.nextSteps && (
+        <div className="mt-5 text-sm text-slate-600 md:text-base">
+          {slide.nextSteps.title && (
+            <p className="font-semibold text-slate-800">{slide.nextSteps.title}</p>
+          )}
+          <ol className="mt-2 list-decimal space-y-1 pl-6">
+            {slide.nextSteps.steps.map((step, idx) => (
+              <li key={idx}>
+                {step.text}
+                {step.linkUrl && (
+                  <a
+                    href={step.linkUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold underline-offset-4 hover:underline"
+                    style={{ color: slide.color }}
+                  >
+                    {step.linkLabel ?? step.linkUrl}
+                  </a>
+                )}
+                {step.suffix}
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
     </SlideCard>
   );

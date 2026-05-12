@@ -176,6 +176,7 @@ export interface PromptBuilderInput {
   placeholder?: string;
   multiline?: boolean;
   rows?: number;
+  hint?: string;
 }
 
 export interface PromptBuilderSlide {
@@ -191,6 +192,15 @@ export interface PromptBuilderSlide {
     text: string;
     linkLabel?: string;
     linkUrl?: string;
+  };
+  nextSteps?: {
+    title?: string;
+    steps: Array<{
+      text: string;
+      linkLabel?: string;
+      linkUrl?: string;
+      suffix?: string;
+    }>;
   };
 }
 
@@ -498,10 +508,20 @@ export const slidesData: Record<number, Slide[]> = {
         { id: 'CORES', label: 'Quais as cores principais?' },
         { id: 'ATORES', label: 'Quais atores do sistema e o que cada um pode fazer?', multiline: true },
       ],
-      nextStep: {
-        text: 'Cole a resposta do GPT no site',
-        linkLabel: 'Google AI Studio',
-        linkUrl: 'https://aistudio.google.com/',
+      nextSteps: {
+        title: 'Instruções:',
+        steps: [
+          {
+            text: 'Envie o prompt gerado nesse quadro para o ',
+            linkLabel: 'Claude',
+            linkUrl: 'https://claude.ai',
+          },
+          {
+            text: 'Copie a resposta do Claude e envie no ',
+            linkLabel: 'Google AI Studio',
+            linkUrl: 'https://aistudio.google.com/apps',
+          },
+        ],
       },
       promptTemplate: `Estou criando as telas da plataforma chamada {NOME}, que terá como cores principais {CORES}
 
@@ -615,11 +635,28 @@ Quero que crie um card abaixo do formulário de login com atalhos para preencher
       color: '#d97757',
       buttonLabel: 'Gerar prompt de requisitos',
       inputs: [
-        { id: 'PROMPT', label: 'Qual prompt da geração de telas?', multiline: true, rows: 14 },
+        {
+          id: 'PROMPT',
+          label: 'Qual prompt da geração de telas?',
+          multiline: true,
+          rows: 14,
+          hint: 'Qual foi a resposta enviada pelo GPT na Parte 03?',
+        },
       ],
       promptTemplate: `Estou criando uma plataforma web e para gerar as telas usei o seguinte prompt: {PROMPT}
 
 Quero que você analise esse prompt e gere o documento de requisitos funcionais do projeto. Não fale nada sobre a Stack, eu decidirei... descreva a lista de todas as funcionalidades e a descrição delas. Lembre-se de solicitar a criação de uma landing page e colocar um botão no topo para a tela de login`,
+      nextSteps: {
+        title: 'Instruções:',
+        steps: [
+          {
+            text: 'Copie o prompt gerado e envie para o ',
+            linkLabel: 'Claude.ai',
+            linkUrl: 'https://claude.ai',
+            suffix: '. A resposta será o documento de requisitos do projeto.',
+          },
+        ],
+      },
     },
     {
       type: 'promptBuilder',
@@ -629,8 +666,18 @@ Quero que você analise esse prompt e gere o documento de requisitos funcionais 
       color: '#d97757',
       buttonLabel: 'Gerar prompt para o Claude',
       inputs: [
-        { id: 'REQUISITOS', label: 'Quais requisitos do projeto?', multiline: true, rows: 14 },
-        { id: 'LINK_REPO', label: 'Qual o link do repositório no GitHub?' },
+        {
+          id: 'REQUISITOS',
+          label: 'Quais requisitos do projeto?',
+          multiline: true,
+          rows: 14,
+          hint: 'Documento de requisitos gerado pelo Claude depois de finalizar a Parte 08',
+        },
+        {
+          id: 'LINK_REPO',
+          label: 'Qual o link do repositório no GitHub?',
+          hint: 'Link do repositório gerado ao publicar o projeto no GitHub no passo 3',
+        },
       ],
       promptTemplate: `🚀 Official Project Standard
 Software House – Thiago Ferreira
