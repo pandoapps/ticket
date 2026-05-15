@@ -5,11 +5,18 @@ import {
   slidesData,
   type FormStudySlide,
   type GameSlide,
+  type ArchitectureSlide,
+  type FlashcardsSlide,
+  type FlowArrow,
+  type FlowSlide,
+  type NestedStackNode,
+  type NestedStackSlide,
   type ImageSlide,
   type PartsSlide,
   type PromptBuilderSlide,
   type Slide,
   type StorySlide,
+  type VideoSlide,
   type WordCloudSlide,
 } from '@data/slidesData';
 
@@ -37,9 +44,16 @@ export function SlidesPage() {
   useEffect(() => {
     const cur = slides[index];
     const partsTotal = cur?.type === 'parts' ? cur.items.length : 0;
+    const archTotal = cur?.type === 'architecture' ? cur.stages.length : 0;
+    const flowTotal =
+      cur?.type === 'flow' ? (cur.arrows?.length ?? 0) : 0;
 
     function advance() {
       if (cur?.type === 'parts' && step < partsTotal - 1) {
+        setStep((s) => s + 1);
+      } else if (cur?.type === 'architecture' && step < archTotal - 1) {
+        setStep((s) => s + 1);
+      } else if (cur?.type === 'flow' && step < flowTotal) {
         setStep((s) => s + 1);
       } else {
         setIndex((i) => Math.min(i + 1, slides.length - 1));
@@ -47,6 +61,10 @@ export function SlidesPage() {
     }
     function retreat() {
       if (cur?.type === 'parts' && step > 0) {
+        setStep((s) => s - 1);
+      } else if (cur?.type === 'architecture' && step > 0) {
+        setStep((s) => s - 1);
+      } else if (cur?.type === 'flow' && step > 0) {
         setStep((s) => s - 1);
       } else {
         setIndex((i) => Math.max(i - 1, 0));
@@ -90,13 +108,24 @@ export function SlidesPage() {
   const current = slides[index];
   const total = slides.length;
   const partsTotal = current?.type === 'parts' ? current.items.length : 0;
+  const archTotal = current?.type === 'architecture' ? current.stages.length : 0;
+  const flowTotal =
+    current?.type === 'flow' ? (current.arrows?.length ?? 0) : 0;
   const navLocked = current?.type === 'game' && gamePhase !== 'setup';
   const canRetreat = !navLocked && (step > 0 || index > 0);
   const canAdvance =
-    !navLocked && ((current?.type === 'parts' && step < partsTotal - 1) || index < total - 1);
+    !navLocked &&
+    ((current?.type === 'parts' && step < partsTotal - 1) ||
+      (current?.type === 'architecture' && step < archTotal - 1) ||
+      (current?.type === 'flow' && step < flowTotal) ||
+      index < total - 1);
 
   function advance() {
     if (current?.type === 'parts' && step < partsTotal - 1) {
+      setStep((s) => s + 1);
+    } else if (current?.type === 'architecture' && step < archTotal - 1) {
+      setStep((s) => s + 1);
+    } else if (current?.type === 'flow' && step < flowTotal) {
       setStep((s) => s + 1);
     } else {
       setIndex((i) => Math.min(i + 1, total - 1));
@@ -104,6 +133,10 @@ export function SlidesPage() {
   }
   function retreat() {
     if (current?.type === 'parts' && step > 0) {
+      setStep((s) => s - 1);
+    } else if (current?.type === 'architecture' && step > 0) {
+      setStep((s) => s - 1);
+    } else if (current?.type === 'flow' && step > 0) {
       setStep((s) => s - 1);
     } else {
       setIndex((i) => Math.max(i - 1, 0));
@@ -171,13 +204,27 @@ export function SlidesPage() {
 }
 
 function renderInline(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const parts = text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
   return parts.map((p, i) => {
     if (p.startsWith('**') && p.endsWith('**')) {
       return (
         <strong key={i} className="font-bold">
           {p.slice(2, -2)}
         </strong>
+      );
+    }
+    const linkMatch = p.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (linkMatch) {
+      return (
+        <a
+          key={i}
+          href={linkMatch[2]}
+          target="_blank"
+          rel="noreferrer"
+          className="font-semibold underline underline-offset-4 hover:opacity-80"
+        >
+          {linkMatch[1]}
+        </a>
       );
     }
     return <span key={i}>{p}</span>;
@@ -501,6 +548,21 @@ function SlideRenderer({
 
     case 'image':
       return <ImageSlideView slide={slide} />;
+
+    case 'video':
+      return <VideoSlideView slide={slide} />;
+
+    case 'architecture':
+      return <ArchitectureSlideView slide={slide} step={step} />;
+
+    case 'nestedStack':
+      return <NestedStackSlideView slide={slide} />;
+
+    case 'flashcards':
+      return <FlashcardsSlideView slide={slide} />;
+
+    case 'flow':
+      return <FlowSlideView slide={slide} step={step} />;
 
     case 'formStudy':
       return <FormStudySlideView slide={slide} />;
@@ -853,6 +915,468 @@ function FormStudySlideView({ slide }: { slide: FormStudySlide }) {
           })}
         </div>
       </div>
+    </SlideCard>
+  );
+}
+
+function FlowSlideView({ slide, step }: { slide: FlowSlide; step: number }) {
+  const arrows = slide.arrows ?? [];
+  const visibleCount = Math.min(step, arrows.length);
+  const visible = arrows.slice(0, visibleCount);
+  const topLanes = visible.map((a, i) => ({ ...a, _i: i })).filter((a) => (a.lane ?? 'top') === 'top');
+  const bottomLanes = visible.map((a, i) => ({ ...a, _i: i })).filter((a) => a.lane === 'bottom');
+
+  const N = slide.nodes.length;
+  const VBW = 1000;
+  const VBH_LANE = 80;
+  const colWidth = VBW / N;
+  const nodeCenterX = (idx: number) => idx * colWidth + colWidth / 2;
+
+  function ArrowPath({
+    a,
+    laneIdx,
+    laneCount,
+    isTop,
+  }: {
+    a: FlowArrow & { _i: number };
+    laneIdx: number;
+    laneCount: number;
+    isTop: boolean;
+  }) {
+    const fromX = nodeCenterX(a.fromIdx);
+    const toX = nodeCenterX(a.toIdx);
+    const baseY = isTop ? VBH_LANE - 8 : 8;
+    const arcDir = isTop ? -1 : 1;
+    const offset = laneCount > 1 ? (laneIdx - (laneCount - 1) / 2) * 18 : 0;
+    const startY = baseY + offset * arcDir;
+    const midX = (fromX + toX) / 2;
+    const midY = isTop ? 6 + Math.abs(offset) : VBH_LANE - 6 - Math.abs(offset);
+    const id = `flow-arr-${isTop ? 't' : 'b'}-${a._i}`;
+    return (
+      <g>
+        <defs>
+          <marker
+            id={id}
+            markerWidth="10"
+            markerHeight="10"
+            refX="7"
+            refY="5"
+            orient="auto"
+          >
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+          </marker>
+        </defs>
+        <path
+          d={`M ${fromX} ${startY} Q ${midX} ${midY} ${toX} ${startY}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          markerEnd={`url(#${id})`}
+        />
+      </g>
+    );
+  }
+
+  return (
+    <SlideCard color={slide.color}>
+      {slide.badge && (
+        <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+          {slide.badge}
+        </p>
+      )}
+      <h2 className="mt-3 text-3xl font-bold text-slate-900 md:text-5xl">{slide.title}</h2>
+      {slide.subtitle && <p className="mt-2 text-base text-slate-600 md:text-2xl">{slide.subtitle}</p>}
+
+      <div className="mt-10 flex w-full flex-1 items-center justify-center">
+        <div className="flex w-full max-w-5xl flex-col items-stretch">
+          <svg
+            viewBox={`0 0 ${VBW} ${VBH_LANE}`}
+            className="h-16 w-full text-slate-600 md:h-20"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            {topLanes.map((a, i) => (
+              <ArrowPath key={a._i} a={a} laneIdx={i} laneCount={topLanes.length} isTop />
+            ))}
+          </svg>
+
+          <div className="flex w-full justify-around">
+            {slide.nodes.map((node, i) => {
+              const accent = node.accent ?? slide.color;
+              return (
+                <div key={i} className="flex flex-1 flex-col items-center">
+                  <div
+                    className="flex h-24 w-24 items-center justify-center rounded-2xl border-2 bg-white text-5xl shadow-md md:h-32 md:w-32 md:text-6xl"
+                    style={{ borderColor: accent }}
+                  >
+                    {node.icon}
+                  </div>
+                  <p className="mt-3 text-base font-bold md:text-xl" style={{ color: accent }}>
+                    {node.label}
+                  </p>
+                  {node.caption && (
+                    <p className="text-xs text-slate-500 md:text-sm">{node.caption}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <svg
+            viewBox={`0 0 ${VBW} ${VBH_LANE}`}
+            className="h-16 w-full text-slate-600 md:h-20"
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            {bottomLanes.map((a, i) => (
+              <ArrowPath key={a._i} a={a} laneIdx={i} laneCount={bottomLanes.length} isTop={false} />
+            ))}
+          </svg>
+        </div>
+      </div>
+
+      <div className="mt-4 flex w-full justify-center gap-2">
+        {arrows.map((_, i) => {
+          const isActive = i < visibleCount;
+          return (
+            <span
+              key={i}
+              className="h-2 rounded-full transition-all"
+              style={{
+                width: isActive ? '1.5rem' : '0.5rem',
+                background: isActive ? slide.color : '#cbd5e1',
+              }}
+            />
+          );
+        })}
+      </div>
+    </SlideCard>
+  );
+}
+
+function FlashcardsSlideView({ slide }: { slide: FlashcardsSlide }) {
+  const [flipped, setFlipped] = useState<Record<number, boolean>>({});
+  const toggle = (i: number) => setFlipped((prev) => ({ ...prev, [i]: !prev[i] }));
+
+  return (
+    <SlideCard color={slide.color}>
+      {slide.badge && (
+        <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+          {slide.badge}
+        </p>
+      )}
+      <h2 className="mt-3 text-3xl font-bold text-slate-900 md:text-5xl">{slide.title}</h2>
+      {slide.subtitle && <p className="mt-2 text-base text-slate-600 md:text-xl">{slide.subtitle}</p>}
+
+      <div className="mt-6 grid w-full grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+        {slide.cards.map((card, i) => {
+          const isFlipped = !!flipped[i];
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => toggle(i)}
+              className="group h-32 w-full md:h-40"
+              style={{ perspective: '900px' }}
+              aria-label={`Flashcard ${card.term}`}
+            >
+              <div
+                className="relative h-full w-full transition-transform duration-500"
+                style={{
+                  transformStyle: 'preserve-3d',
+                  transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                }}
+              >
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 bg-white p-3 shadow-md group-hover:shadow-lg"
+                  style={{
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    borderColor: slide.color,
+                  }}
+                >
+                  {card.icon && <span className="text-3xl md:text-4xl">{card.icon}</span>}
+                  <span className="text-base font-bold text-slate-900 md:text-lg">{card.term}</span>
+                </div>
+                <div
+                  className="absolute inset-0 flex items-center justify-center rounded-2xl p-3 text-white shadow-md"
+                  style={{
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)',
+                    background: slide.color,
+                  }}
+                >
+                  <span className="text-center text-xs leading-snug md:text-sm">{card.def}</span>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </SlideCard>
+  );
+}
+
+function NestedStackBox({ node, depth }: { node: NestedStackNode; depth: number }) {
+  const accent = node.accent ?? '#6ea8fe';
+  const hasChildren = !!node.children && node.children.length > 0;
+  const childrenAreLeaves = hasChildren && node.children!.every((c) => !c.children?.length);
+
+  if (!hasChildren) {
+    return (
+      <div
+        className="flex min-w-[8rem] flex-1 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 shadow-md"
+        style={{ borderLeft: `6px solid ${accent}` }}
+      >
+        {node.icon && <span className="text-2xl md:text-3xl">{node.icon}</span>}
+        <span className="text-base font-semibold text-slate-800 md:text-lg">{node.label}</span>
+      </div>
+    );
+  }
+
+  const padding = depth === 0 ? 'p-4 md:p-6' : 'p-3 md:p-5';
+  return (
+    <div
+      className={`relative flex w-full flex-col gap-3 rounded-2xl border-2 ${padding}`}
+      style={{
+        borderColor: accent,
+        background: `linear-gradient(135deg, ${accent}14, ${accent}06)`,
+      }}
+    >
+      <div className="flex items-center gap-2">
+        {node.icon && <span className="text-2xl md:text-3xl">{node.icon}</span>}
+        <span
+          className="text-sm font-bold uppercase tracking-[0.2em] md:text-base"
+          style={{ color: accent }}
+        >
+          {node.label}
+        </span>
+      </div>
+      <div
+        className={`flex w-full ${
+          childrenAreLeaves ? 'flex-col gap-3 md:flex-row md:gap-4' : 'flex-col gap-4'
+        }`}
+      >
+        {node.children!.map((child, i) => (
+          <NestedStackBox key={i} node={child} depth={depth + 1} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NestedStackSlideView({ slide }: { slide: NestedStackSlide }) {
+  const roots = slide.roots ?? (slide.root ? [slide.root] : []);
+  const multi = roots.length > 1;
+  return (
+    <SlideCard color={slide.color}>
+      {slide.topLeftCloud && (
+        <div className="pointer-events-none absolute left-4 top-4 z-10 md:left-6 md:top-6">
+          <div className="relative h-20 w-40 md:h-24 md:w-52">
+            <svg
+              viewBox="0 0 200 110"
+              className="h-full w-full drop-shadow-md"
+              preserveAspectRatio="none"
+              aria-hidden
+            >
+              <path
+                d="M40,95 Q8,95 8,68 Q8,45 36,42 Q44,18 76,18 Q112,18 118,42 Q170,38 178,65 Q196,68 196,85 Q196,100 178,100 L40,100 Z"
+                fill="white"
+                stroke="#cbd5e1"
+                strokeWidth="2"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center gap-2 pt-4 md:pt-5">
+              {slide.topLeftCloud.iconName === 'github' && (
+                <svg
+                  viewBox="0 0 16 16"
+                  className="h-5 w-5 text-slate-900 md:h-6 md:w-6"
+                  fill="currentColor"
+                  aria-hidden
+                >
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+              )}
+              <span className="text-sm font-bold text-slate-800 md:text-base">
+                {slide.topLeftCloud.label}
+              </span>
+            </div>
+          </div>
+          {slide.topLeftCloud.arrowDown && (
+            <svg
+              viewBox="0 0 120 180"
+              className="ml-10 h-32 w-24 md:ml-14 md:h-44 md:w-28"
+              aria-hidden
+            >
+              <defs>
+                <marker
+                  id="cloud-arrowhead"
+                  markerWidth="10"
+                  markerHeight="10"
+                  refX="6"
+                  refY="5"
+                  orient="auto"
+                >
+                  <path d="M0,0 L10,5 L0,10 z" fill="#475569" />
+                </marker>
+              </defs>
+              <path
+                d="M 20 5 Q 30 90 90 165"
+                fill="none"
+                stroke="#475569"
+                strokeWidth="3"
+                strokeLinecap="round"
+                markerEnd="url(#cloud-arrowhead)"
+              />
+            </svg>
+          )}
+        </div>
+      )}
+      {slide.badge && (
+        <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+          {slide.badge}
+        </p>
+      )}
+      <h2 className="mt-3 text-3xl font-bold text-slate-900 md:text-5xl">{slide.title}</h2>
+      {slide.subtitle && <p className="mt-2 text-base text-slate-600 md:text-2xl">{slide.subtitle}</p>}
+
+      <div className="mt-8 flex w-full flex-1 items-center justify-center">
+        <div
+          className={`w-full ${
+            multi
+              ? 'flex flex-col items-stretch gap-4 md:flex-row md:gap-6'
+              : 'max-w-4xl'
+          }`}
+        >
+          {roots.map((root, i) => (
+            <div key={i} className={multi ? 'flex-1' : ''}>
+              <NestedStackBox node={root} depth={0} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </SlideCard>
+  );
+}
+
+function ArchitectureSlideView({ slide, step }: { slide: ArchitectureSlide; step: number }) {
+  const stageIdx = Math.min(step, slide.stages.length - 1);
+  const stage = slide.stages[stageIdx];
+  return (
+    <SlideCard color={slide.color}>
+      {slide.badge && (
+        <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+          {slide.badge}
+        </p>
+      )}
+      <h2 className="mt-3 text-3xl font-bold text-slate-900 md:text-5xl">{slide.title}</h2>
+      {slide.subtitle && <p className="mt-2 text-base text-slate-600 md:text-2xl">{slide.subtitle}</p>}
+
+      <div className="mt-4 flex items-center gap-3">
+        <span
+          className="rounded-full px-3 py-1 text-sm font-bold text-white md:text-base"
+          style={{ background: slide.color }}
+        >
+          {stageIdx + 1} / {slide.stages.length}
+        </span>
+        <div className="flex flex-col">
+          <p className="text-lg font-semibold text-slate-800 md:text-2xl">{stage.label}</p>
+          {stage.description && (
+            <p className="text-sm text-slate-600 md:text-base">{stage.description}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6 flex w-full flex-1 items-center justify-center">
+        <div className="flex w-full flex-wrap items-stretch justify-center gap-4 md:gap-6">
+          {stage.groups.map((group) => {
+            const accent = group.accent ?? slide.color;
+            return (
+              <div
+                key={group.id}
+                className="flex min-w-[10rem] flex-1 flex-col gap-3 rounded-2xl border-2 bg-white/80 p-4 shadow-md md:min-w-[12rem] md:max-w-[16rem]"
+                style={{ borderColor: accent }}
+              >
+                <p
+                  className="text-center text-sm font-bold uppercase tracking-wider md:text-base"
+                  style={{ color: accent }}
+                >
+                  {group.label}
+                </p>
+                <div className="flex flex-col gap-2">
+                  {group.nodes.map((node, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-slate-800"
+                      style={{ borderLeft: `4px solid ${accent}` }}
+                    >
+                      {node.icon && <span className="text-xl md:text-2xl">{node.icon}</span>}
+                      <span className="text-sm font-semibold md:text-base">{node.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-4 flex w-full justify-center gap-2">
+        {slide.stages.map((_, i) => {
+          const isActive = i === stageIdx;
+          return (
+            <span
+              key={i}
+              className="h-2 rounded-full transition-all"
+              style={{
+                width: isActive ? '2rem' : '0.5rem',
+                background: isActive ? slide.color : '#cbd5e1',
+              }}
+            />
+          );
+        })}
+      </div>
+    </SlideCard>
+  );
+}
+
+function VideoSlideView({ slide }: { slide: VideoSlide }) {
+  const isPortrait = slide.orientation !== 'landscape';
+  return (
+    <SlideCard color={slide.color}>
+      {slide.badge && (
+        <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+          {slide.badge}
+        </p>
+      )}
+      {slide.title && (
+        <h2 className="mt-3 text-4xl font-bold text-slate-900 md:text-7xl">{slide.title}</h2>
+      )}
+      {slide.subtitle && <p className="mt-3 text-lg text-slate-600 md:text-2xl">{slide.subtitle}</p>}
+      <div className="mt-6 flex w-full flex-1 items-center justify-center">
+        <div
+          className="overflow-hidden rounded-2xl shadow-lg"
+          style={{
+            aspectRatio: isPortrait ? '9 / 16' : '16 / 9',
+            height: isPortrait ? 'min(70vh, 80vh)' : 'auto',
+            width: isPortrait ? 'auto' : 'min(100%, 64rem)',
+            maxWidth: '100%',
+          }}
+        >
+          <iframe
+            src={slide.videoUrl}
+            title={slide.title ?? 'Vídeo'}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="h-full w-full border-0"
+          />
+        </div>
+      </div>
+      {slide.caption && (
+        <p className="mt-4 text-sm text-slate-500 md:text-base">{slide.caption}</p>
+      )}
     </SlideCard>
   );
 }

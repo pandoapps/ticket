@@ -229,6 +229,105 @@ export interface ImageSlide {
   imageMaxHeight?: string;
 }
 
+export interface VideoSlide {
+  type: 'video';
+  badge?: string;
+  title?: string;
+  subtitle?: string;
+  color: string;
+  videoUrl: string;
+  caption?: string;
+  orientation?: 'portrait' | 'landscape';
+}
+
+export interface ArchitectureNode {
+  label: string;
+  icon?: string;
+}
+
+export interface ArchitectureGroup {
+  id: string;
+  label: string;
+  accent?: string;
+  nodes: ArchitectureNode[];
+}
+
+export interface ArchitectureStage {
+  label: string;
+  description?: string;
+  groups: ArchitectureGroup[];
+}
+
+export interface ArchitectureSlide {
+  type: 'architecture';
+  badge?: string;
+  title: string;
+  subtitle?: string;
+  color: string;
+  stages: ArchitectureStage[];
+}
+
+export interface NestedStackNode {
+  label: string;
+  icon?: string;
+  accent?: string;
+  children?: NestedStackNode[];
+}
+
+export interface FlowNode {
+  label: string;
+  icon: string;
+  caption?: string;
+  accent?: string;
+}
+
+export interface FlowArrow {
+  fromIdx: number;
+  toIdx: number;
+  lane?: 'top' | 'bottom';
+  label?: string;
+}
+
+export interface FlowSlide {
+  type: 'flow';
+  badge?: string;
+  title: string;
+  subtitle?: string;
+  color: string;
+  nodes: FlowNode[];
+  arrows?: FlowArrow[];
+}
+
+export interface FlashcardItem {
+  term: string;
+  def: string;
+  icon?: string;
+}
+
+export interface FlashcardsSlide {
+  type: 'flashcards';
+  badge?: string;
+  title: string;
+  subtitle?: string;
+  color: string;
+  cards: FlashcardItem[];
+}
+
+export interface NestedStackSlide {
+  type: 'nestedStack';
+  badge?: string;
+  title: string;
+  subtitle?: string;
+  color: string;
+  root?: NestedStackNode;
+  roots?: NestedStackNode[];
+  topLeftCloud?: {
+    label: string;
+    iconName?: 'github';
+    arrowDown?: boolean;
+  };
+}
+
 export interface GameCharacter {
   id: string;
   label: string;
@@ -260,6 +359,11 @@ export type Slide =
   | PartsSlide
   | GameSlide
   | ImageSlide
+  | VideoSlide
+  | ArchitectureSlide
+  | NestedStackSlide
+  | FlashcardsSlide
+  | FlowSlide
   | FormStudySlide
   | PromptBuilderSlide
   | WordCloudSlide
@@ -932,94 +1036,298 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
       items: [
         '01 — Estrutura de pastas e decisões de arquitetura',
         '02 — As camadas da aplicação',
-        '03 — Leitura de código gerado por IA',
+        '03 — Vamos ver isso na prática?',
         '04 — Vocabulário técnico essencial',
-        '05 — Prompts orientados à stack',
+        '05 — Iniciando envio de mensagens',
+        '06 — Entendendo API + WebHook',
+        '07 — Tarefa: implementando um gateway de pagamentos',
       ],
     },
     {
-      type: 'content',
+      type: 'video',
+      color: '#6ea8fe',
+      videoUrl: 'https://www.youtube.com/embed/Qk2T5qGBJ-w',
+      orientation: 'portrait',
+    },
+    {
+      type: 'architecture',
       badge: 'Parte 01',
-      title: 'Estrutura de Pastas',
-      subtitle: 'Cada arquivo tem um propósito',
+      title: 'Estrutura de um Projeto',
+      subtitle: 'Do mais simples ao mais completo',
       color: '#6ea8fe',
-      blocks: [
+      stages: [
         {
-          icon: '📁',
-          label: 'src/',
-          text: 'Código-fonte da aplicação — onde a mágica acontece',
+          label: 'SPA — Single Page Application',
+          description: 'Apenas frontend, sem servidor próprio',
+          groups: [
+            {
+              id: 'frontend',
+              label: 'Frontend',
+              accent: '#6ea8fe',
+              nodes: [{ label: 'React + Vite', icon: '🖥️' }],
+            },
+          ],
         },
         {
-          icon: '⚙️',
-          label: 'package.json',
-          text: 'Lista de dependências e scripts do projeto',
+          label: 'Aplicação Web',
+          description: 'Frontend + backend + banco de dados',
+          groups: [
+            {
+              id: 'frontend',
+              label: 'Frontend',
+              accent: '#6ea8fe',
+              nodes: [{ label: 'React + Vite', icon: '🖥️' }],
+            },
+            {
+              id: 'backend',
+              label: 'Backend',
+              accent: '#a78bfa',
+              nodes: [{ label: 'Laravel API', icon: '⚡' }],
+            },
+            {
+              id: 'database',
+              label: 'Banco de Dados',
+              accent: '#6ee7b7',
+              nodes: [{ label: 'MySQL', icon: '🗄️' }],
+            },
+          ],
         },
         {
-          icon: '🐳',
-          label: 'Dockerfile',
-          text: 'Receita para empacotar a aplicação em um container',
+          label: 'Com Integrações Internas',
+          description: 'Serviços próprios consumidos pelo backend',
+          groups: [
+            {
+              id: 'frontend',
+              label: 'Frontend',
+              accent: '#6ea8fe',
+              nodes: [{ label: 'React + Vite', icon: '🖥️' }],
+            },
+            {
+              id: 'backend',
+              label: 'Backend',
+              accent: '#a78bfa',
+              nodes: [{ label: 'Laravel API', icon: '⚡' }],
+            },
+            {
+              id: 'database',
+              label: 'Banco de Dados',
+              accent: '#6ee7b7',
+              nodes: [{ label: 'MySQL', icon: '🗄️' }],
+            },
+            {
+              id: 'internal',
+              label: 'Integrações Internas',
+              accent: '#fbbf24',
+              nodes: [
+                { label: 'Evolution', icon: '🟢' },
+                { label: 'Remotion', icon: '🎬' },
+                { label: '...', icon: '➕' },
+              ],
+            },
+          ],
         },
         {
-          icon: '🌿',
-          label: '.env',
-          text: 'Variáveis de ambiente — configurações sensíveis fora do código',
+          label: 'Com Integrações Externas',
+          description: 'Serviços de terceiros conectados via API',
+          groups: [
+            {
+              id: 'frontend',
+              label: 'Frontend',
+              accent: '#6ea8fe',
+              nodes: [
+                { label: 'React + Vite', icon: '🖥️' },
+                { label: 'App Android', icon: '🤖' },
+                { label: 'App iOS', icon: '🍎' },
+              ],
+            },
+            {
+              id: 'backend',
+              label: 'Backend',
+              accent: '#a78bfa',
+              nodes: [{ label: 'Laravel API', icon: '⚡' }],
+            },
+            {
+              id: 'database',
+              label: 'Banco de Dados',
+              accent: '#6ee7b7',
+              nodes: [{ label: 'MySQL', icon: '🗄️' }],
+            },
+            {
+              id: 'internal',
+              label: 'Integrações Internas',
+              accent: '#fbbf24',
+              nodes: [
+                { label: 'Evolution', icon: '🟢' },
+                { label: 'Remotion', icon: '🎬' },
+                { label: '...', icon: '➕' },
+              ],
+            },
+            {
+              id: 'external',
+              label: 'Integrações Externas',
+              accent: '#f472b6',
+              nodes: [
+                { label: 'Melhor Envio', icon: '📦' },
+                { label: 'PagSeguro', icon: '💳' },
+                { label: 'NanoBanana', icon: '🍌' },
+              ],
+            },
+          ],
         },
       ],
     },
     {
-      type: 'layers',
+      type: 'nestedStack',
       badge: 'Parte 02',
-      title: 'As Camadas da Aplicação',
+      title: 'Deployando uma Aplicação',
+      subtitle: 'Camadas de empacotamento que sustentam o app em produção',
       color: '#6ea8fe',
-      layers: [
-        { icon: '🖥️', label: 'Frontend', text: 'O que o usuário vê e clica — React, HTML, CSS', color: '#6ea8fe' },
-        { icon: '⚡', label: 'Backend / API', text: 'A lógica de negócio — processa pedidos e responde dados', color: '#a78bfa' },
-        { icon: '🗄️', label: 'Banco de Dados', text: 'Onde os dados vivem — PostgreSQL, SQLite, MongoDB', color: '#6ee7b7' },
-        { icon: '🔗', label: 'Integrações', text: 'Serviços externos — pagamentos, e-mail, IA, mapas', color: '#f472b6' },
+      root: {
+        label: 'Servidor Linux',
+        icon: '🐧',
+        accent: '#facc15',
+        children: [
+          {
+            label: 'Docker',
+            icon: '🐳',
+            accent: '#0ea5e9',
+            children: [
+              { label: 'Banco de Dados', icon: '🗄️', accent: '#6ee7b7' },
+              { label: 'Backend', icon: '⚡', accent: '#a78bfa' },
+              { label: 'Frontend', icon: '🖥️', accent: '#6ea8fe' },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      type: 'nestedStack',
+      badge: 'Parte 02',
+      title: 'Deployando uma Aplicação',
+      subtitle: 'Separando responsabilidades em servidores dedicados',
+      color: '#6ea8fe',
+      topLeftCloud: { label: 'GitHub', iconName: 'github', arrowDown: true },
+      roots: [
+        {
+          label: 'Servidor Linux (Aplicação)',
+          icon: '🐧',
+          accent: '#facc15',
+          children: [
+            {
+              label: 'Docker',
+              icon: '🐳',
+              accent: '#0ea5e9',
+              children: [
+                { label: 'Backend', icon: '⚡', accent: '#a78bfa' },
+                { label: 'Frontend', icon: '🖥️', accent: '#6ea8fe' },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Servidor Linux (Banco)',
+          icon: '🐧',
+          accent: '#facc15',
+          children: [
+            { label: 'Banco de Dados', icon: '🗄️', accent: '#6ee7b7' },
+          ],
+        },
+        {
+          label: 'Servidor Linux (Fotos)',
+          icon: '🐧',
+          accent: '#facc15',
+          children: [
+            { label: 'Fotos', icon: '🖼️', accent: '#f472b6' },
+          ],
+        },
       ],
     },
     {
       type: 'list',
       badge: 'Parte 03',
-      title: 'Lendo Código Gerado por IA',
-      subtitle: 'Você não precisa memorizar — precisa entender',
+      title: 'Vamos ver isso na prática?',
+      subtitle: 'Passo a passo para começar',
       color: '#6ea8fe',
       items: [
-        'Leia de cima para baixo: importações → definições → lógica',
-        'Pergunte ao Claude: "O que faz essa função?"',
-        'Use o Claude para explicar partes que não entendeu',
-        'Identifique padrões que se repetem — são convenções da stack',
-        'Foque em entender o PORQUÊ, não decorar o COMO',
-        'Código que você não entende é código que você não controla',
-      ],
-    },
-    {
-      type: 'glossary',
-      badge: 'Parte 04',
-      title: 'Vocabulário Técnico Essencial',
-      color: '#6ea8fe',
-      terms: [
-        { term: 'Componente', def: 'Bloco reutilizável de interface (botão, card, formulário)' },
-        { term: 'Rota / Endpoint', def: 'Endereço que o servidor responde — ex: /api/usuarios' },
-        { term: 'Estado (State)', def: 'Dados que mudam na tela sem recarregar a página' },
-        { term: 'Request / Response', def: 'Pedido do cliente → resposta do servidor' },
-        { term: 'CRUD', def: 'Create, Read, Update, Delete — as 4 operações básicas de dados' },
-        { term: 'Deploy', def: 'Publicar a aplicação para que outros possam acessar' },
+        'Clone o repositório - git clone [https://github.com/pandoapps/Figurex](https://github.com/pandoapps/Figurex)',
+        'Leia o README',
       ],
     },
     {
       type: 'list',
-      badge: 'Parte 05',
-      title: 'Prompts Orientados à Stack',
-      subtitle: 'Fale a língua do seu projeto',
+      badge: 'Parte 03',
+      title: 'Vamos ver isso na prática?',
+      subtitle: 'Os principais arquivos de um projeto',
       color: '#6ea8fe',
       items: [
-        '"Adicione um endpoint GET /api/produtos que retorna todos os produtos"',
-        '"Crie um componente React de card de produto com nome, preço e botão"',
-        '"Adicione validação de e-mail no formulário de cadastro"',
-        '"Crie uma migration para adicionar coluna status na tabela pedidos"',
-        '"Adicione autenticação JWT nas rotas protegidas"',
-        '"Documente esta função com um comentário explicativo"',
+        '**.env** — variáveis de ambiente sensíveis (chaves, senhas, URLs de banco)',
+        '**Makefile** — comandos padronizados do projeto: make up, make migrate, make deploy',
+        '**docker-compose.yml** — orquestração dos containers da aplicação (app, banco, nginx)',
+      ],
+    },
+    {
+      type: 'flashcards',
+      badge: 'Parte 04',
+      title: 'Vocabulário Técnico Essencial',
+      subtitle: 'Clique em um card para revelar a definição',
+      color: '#6ea8fe',
+      cards: [
+        { term: 'Frontend', icon: '🖥️', def: 'Camada visual da aplicação — o que o usuário vê e interage (React, Vite, Tailwind).' },
+        { term: 'Backend', icon: '⚡', def: 'Camada que processa lógica de negócio e expõe a API consumida pelo frontend (Laravel).' },
+        { term: 'Banco de Dados', icon: '🗄️', def: 'Onde os dados ficam armazenados de forma persistente (MySQL).' },
+        { term: 'Docker', icon: '🐳', def: 'Containeriza a aplicação — mesmo ambiente em qualquer máquina.' },
+        { term: 'WSL', icon: '🐧', def: 'Windows Subsystem for Linux — ambiente Unix dentro do Windows.' },
+        { term: 'GitHub', icon: '🐙', def: 'Plataforma para hospedar, versionar e colaborar em código-fonte usando Git.' },
+        { term: 'Servidor Linux', icon: '🖥️', def: 'Máquina remota rodando Linux que hospeda a aplicação em produção.' },
+        { term: 'Makefile', icon: '🛠️', def: 'Arquivo que padroniza comandos do projeto: make up, make migrate, make deploy.' },
+        { term: 'CLAUDE.md', icon: '📝', def: 'Arquivo com regras permanentes do projeto que o Claude lê em toda conversa.' },
+        { term: 'Prompt', icon: '💬', def: 'Instrução em linguagem natural enviada para a IA executar uma tarefa.' },
+        { term: 'API', icon: '🔌', def: 'Interface que permite que sistemas se comuniquem entre si, normalmente via HTTP/JSON.' },
+        { term: 'Deploy', icon: '🚀', def: 'Publicar a aplicação em produção para que outros usuários acessem.' },
+      ],
+    },
+    {
+      type: 'image',
+      badge: 'Parte 05',
+      title: 'Iniciando Envio de Mensagens',
+      subtitle: 'Conheça o Evolution API',
+      color: '#6ea8fe',
+      imageUrl: '/images/evolution-api.png',
+      imageAlt: 'Evolution API',
+      imageMaxHeight: '55vh',
+    },
+    {
+      type: 'flow',
+      badge: 'Parte 06',
+      title: 'Entendendo API + WebHook',
+      subtitle: 'Conheça o gateway Asaas',
+      color: '#6ea8fe',
+      nodes: [
+        { label: 'Cliente', icon: '🧑', accent: '#6ea8fe' },
+        { label: 'Aplicação', icon: '💻', accent: '#a78bfa', caption: 'Nosso sistema' },
+        { label: 'Asaas', icon: '💳', accent: '#fbbf24', caption: 'Gateway de pagamentos' },
+        { label: 'BACEN', icon: '🏦', accent: '#6ee7b7', caption: 'Banco Central' },
+      ],
+      arrows: [
+        { fromIdx: 0, toIdx: 1, lane: 'top' },
+        { fromIdx: 1, toIdx: 2, lane: 'top' },
+        { fromIdx: 2, toIdx: 3, lane: 'top' },
+        { fromIdx: 3, toIdx: 2, lane: 'bottom' },
+        { fromIdx: 2, toIdx: 1, lane: 'bottom' },
+        { fromIdx: 1, toIdx: 0, lane: 'bottom' },
+      ],
+    },
+    {
+      type: 'list',
+      badge: 'TAREFA',
+      title: 'Que tal implementarmos um gateway de pagamentos?',
+      subtitle: 'Crie um projeto SIMPLES para venda da sua própria figurinha (minhafigurinha.com)',
+      color: '#6ea8fe',
+      items: [
+        'Visitante entra no site e paga **R$ 5,00** pela figurinha',
+        'No checkout, informa **nome** e **telefone**',
+        'Você salva os dados no **banco de dados**',
+        'Depois, envia a **figurinha** para o cliente',
       ],
     },
     {
@@ -1029,9 +1337,9 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
       icon: '🏗️',
       items: [
         'Mapa visual da stack do projeto com anotações técnicas',
-        'Glossário de vocabulário técnico produzido coletivamente',
+        'Glossário de vocabulário técnico produzido coletivamente durante o encontro',
         'Documentação básica da arquitetura do projeto exemplo',
-        'Conjunto de prompts eficazes catalogados por camada da aplicação',
+        'Conjunto de prompts eficazes catalogados e organizados por camada da aplicação',
       ],
     },
     {
@@ -1039,7 +1347,7 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
       title: 'Próxima Aula',
       date: '23 de Maio',
       next: 'Fluxo de Equipe, Git e Segurança',
-      nextDesc: 'Aprender a trabalhar em equipe, versionar código e proteger dados sensíveis.',
+      nextDesc: 'Aprender a trabalhar em equipe, versionar código, proteger dados sensíveis e criar nossas próprias figurinhas.',
       color: '#6ea8fe',
       icon: '🔐',
     },
