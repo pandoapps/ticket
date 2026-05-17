@@ -1000,7 +1000,7 @@ Serviços de terceiros que você consome via API — empresas especializadas que
 
 | Serviço | O que faz | Por que usar em vez de construir |
 |---------|-----------|----------------------------------|
-| **Melhor Envio** | Calcula fretes de múltiplas transportadoras | Criar isso do zero exigiria integrar com Correios, Jadlog, Total Express, etc. |
+| **Frenet** | Calcula fretes de múltiplas transportadoras | Criar isso do zero exigiria integrar com Correios, Jadlog, Total Express, etc. |
 | **PagSeguro / Abacate Pay** | Processa pagamentos | Certificações bancárias, antifraude, integração com BACEN — anos de trabalho |
 | **SendGrid / Resend** | Envia e-mails em escala | Reputação de domínio, gerenciamento de bounces, compliance — extremamente complexo |
 | **Twilio** | SMS e ligações | Acordos com operadoras em dezenas de países |
@@ -1054,7 +1054,7 @@ Essa frase famosa descreve o pesadelo pré-Docker. O código funcionava perfeita
 
 **Imagem:** O "molde" para criar um container. É como uma receita de bolo — define tudo que o container vai ter. Imagens são baixadas do Docker Hub (como uma App Store de imagens).
 
-\`\`\`bash
+\`\`\`text
 docker pull node:20        # baixa a imagem oficial do Node.js versão 20
 docker pull mysql:8        # baixa a imagem oficial do MySQL versão 8
 docker pull nginx:alpine   # baixa a imagem do Nginx (servidor web)
@@ -1224,9 +1224,13 @@ Com o .env, você mantém o código seguro no repositório e as credenciais sepa
 
 O \`.env.example\` funciona como documentação: lista quais variáveis o projeto precisa, para que novos colaboradores saibam o que configurar.
 
+**O .env em produção:** Quando você publicar o projeto no servidor, não existe mágica — você precisará criar manualmente um arquivo \`.env\` diretamente no servidor, com os dados reais da aplicação: URL de produção, credenciais do banco de dados real, chaves de API dos serviços contratados (gateway de pagamento, e-mail, WhatsApp). Esse arquivo nunca sai do servidor e nunca vai para o GitHub. É uma das primeiras coisas a configurar ao fazer o deploy.
+
 ---
 
 ### O Makefile — A central de comandos
+
+Pense no Makefile como um **dicionário agregador de comandos**. Por baixo dos panos, cada receita pode executar dezenas de comandos em sequência — atualizar pacotes, entrar no container certo, rodar migrações, limpar cache. Você não precisa saber nem lembrar de nada disso. Basta memorizar \`make install\`, \`make up\`, \`make deploy\`. Um nome curto, tudo feito.
 
 O Makefile do nosso projeto padrão tem os seguintes comandos (todos internamente rodados com Docker):
 
@@ -1685,9 +1689,60 @@ public function handlePaymentWebhook(Request $request): JsonResponse
 
 ---
 
-## Parte 07 — Tarefa: Implementando um Gateway de Pagamento
+## Entregáveis desta Aula
 
-A tarefa prática foi criar um projeto simples do zero — a "Minha Figurinha" — que cobre o ciclo completo de uma venda digital.
+- ✅ **Mapa visual da stack** — diagrama da arquitetura com anotações pessoais
+- ✅ **Glossário coletivo** — termos explicados com as palavras do grupo
+- ✅ **Documentação da arquitetura** — o que cada arquivo do projeto Figurex faz
+- ✅ **Prompts catalogados** — prompts eficazes para frontend, backend e integrações
+
+---
+
+## Exercícios Práticos
+
+Três desafios para colocar em prática o que foi visto na aula. Cada um tem um nível diferente de complexidade — escolha pelo menos um e tente construir do zero com o Claude Code.
+
+---
+
+### 🟢 Nível Fácil — Landing Page de Produto
+
+O desafio é criar uma landing page de vendas para um produto real, usando apenas as informações disponíveis na página do Mercado Livre como referência de conteúdo.
+
+**O produto:** [Metralhadora de água de alta pressão automática](https://www.mercadolivre.com.br/metralhadora-de-agua-de-alta-pressao-automatica/up/MLBU2976940131)
+
+**O que construir:**
+
+Uma landing page estática (SPA, sem backend) com seções de apresentação do produto: título chamativo, lista de benefícios, imagens ou ilustrações, depoimentos fictícios e um botão de chamada para ação (CTA). O foco é em copywriting e design — não em funcionalidade técnica.
+
+**Sugestão de prompt para o Claude Code:**
+
+> "Crie uma landing page de vendas em React para uma metralhadora de água de alta pressão automática. A página deve ter: hero com título chamativo e CTA, seção de benefícios com ícones, seção 'como funciona' em 3 passos, depoimentos de clientes e rodapé. Use Tailwind CSS, design moderno com tons de azul, e deixe a página responsiva."
+
+**Por que esse exercício é valioso:** Landing pages são o tipo de projeto mais solicitado por clientes. Praticar estrutura, hierarquia visual e CTA é uma habilidade imediata e comercializável.
+
+---
+
+### 🟡 Nível Intermediário — Filtro de Árvores de São José dos Campos
+
+A Prefeitura de São José dos Campos disponibiliza publicamente um banco de dados georreferenciado com o inventário de árvores da cidade — espécie, bairro, localização e outras informações. O desafio é construir uma interface que permita consultar e filtrar esses dados.
+
+**O que construir:**
+
+Uma SPA (sem backend) que consome os dados públicos da prefeitura e exibe uma lista filtrável de árvores. O usuário deve conseguir filtrar por bairro, por tipo/espécie de árvore, ou por outros critérios disponíveis no dataset.
+
+**Fonte dos dados:** Portal GIS da Prefeitura de São José dos Campos — [geo.sjc.sp.gov.br](https://geo.sjc.sp.gov.br)
+
+**Sugestão de prompt para o Claude Code:**
+
+> "Crie uma SPA em React com TypeScript que consome a API pública de inventário de árvores da Prefeitura de São José dos Campos disponível em geo.sjc.sp.gov.br. Exiba os resultados em cards ou tabela e permita filtrar por bairro e por espécie de árvore. A interface deve ser responsiva e em português."
+
+**Por que esse exercício é valioso:** Você pratica consumir uma API pública real, tratar dados que você não controlou e construir filtros dinâmicos — habilidades que aparecem em qualquer projeto de listagem ou dashboard.
+
+---
+
+### 🔴 Nível Avançado — Minha Figurinha (Venda Digital com Pagamento)
+
+Crie um projeto simples do zero que cobre o ciclo completo de uma venda digital.
 
 **O que o sistema precisa fazer:**
 
@@ -1698,24 +1753,15 @@ A tarefa prática foi criar um projeto simples do zero — a "Minha Figurinha" �
 5. **WebHook:** Quando o pagamento for confirmado, atualiza para "paid"
 6. **Entrega:** Envia a figurinha para o WhatsApp do cliente via Evolution API
 
-**Por que essa tarefa é poderosa:**
+**Por que esse exercício é valioso:**
 
-Ela cobre **todo o fluxo** de uma venda digital real:
+Ele cobre **todo o fluxo** de uma venda digital real:
 
 \`\`\`
 Frontend → Backend → Gateway → BACEN → WebHook → Banco → WhatsApp
 \`\`\`
 
-Quando você entender cada pedaço desse fluxo, você consegue construir qualquer e-commerce, plataforma de assinaturas, marketplace ou serviço de venda online.
-
----
-
-## Entregáveis desta Aula
-
-- ✅ **Mapa visual da stack** — diagrama da arquitetura com anotações pessoais
-- ✅ **Glossário coletivo** — termos explicados com as palavras do grupo
-- ✅ **Documentação da arquitetura** — o que cada arquivo do projeto Figurex faz
-- ✅ **Prompts catalogados** — prompts eficazes para frontend, backend e integrações
+Quando você entender cada pedaço desse fluxo, consegue construir qualquer e-commerce, plataforma de assinaturas, marketplace ou serviço de venda online.
 
 ---
 
