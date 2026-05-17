@@ -38,6 +38,7 @@ import { CouponsPage as AdminCouponsPage } from '@pages/admin/CouponsPage';
 import { CourseHomePage } from '@pages/claudecode/CourseHomePage';
 import { SlidesPage as ClaudeCodeSlidesPage } from '@pages/claudecode/SlidesPage';
 import { EbookPage as ClaudeCodeEbookPage } from '@pages/claudecode/EbookPage';
+import { MaterialPage as ClaudeCodeMaterialPage } from '@pages/claudecode/MaterialPage';
 
 import { ProtectedRoute } from '@components/ProtectedRoute';
 import { RoleRoute } from '@components/RoleRoute';
@@ -58,6 +59,7 @@ export default function App() {
       <Route path="/claudecode" element={<CourseHomePage />} />
       <Route path="/claudecode/aulas/:id/slides" element={<ClaudeCodeSlidesPage />} />
       <Route path="/claudecode/aulas/:id/ebook" element={<ClaudeCodeEbookPage />} />
+      <Route path="/claudecode/aulas/:id/material" element={<ClaudeCodeMaterialPage />} />
 
       <Route
         path="/meus-pedidos"

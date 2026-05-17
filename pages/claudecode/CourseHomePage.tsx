@@ -89,6 +89,9 @@ function ModuleCard({ module }: { module: CourseModule }) {
         <Link to={`/claudecode/aulas/${module.id}/ebook`} className="btn btn-secondary">
           Ebook
         </Link>
+        <Link to={`/claudecode/aulas/${module.id}/material`} className="btn btn-secondary">
+          📖 Material
+        </Link>
       </div>
     </article>
   );

@@ -243,7 +243,7 @@ function SlideRenderer({
   switch (slide.type) {
     case 'cover':
       return (
-        <SlideCard color={slide.color}>
+        <SlideCard color={slide.color} backgroundColor={slide.backgroundColor}>
           <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
             {slide.aula} · {slide.date}
           </p>
@@ -974,6 +974,20 @@ function FlowSlideView({ slide, step }: { slide: FlowSlide; step: number }) {
           strokeLinecap="round"
           markerEnd={`url(#${id})`}
         />
+        {a.label && (
+          <text
+            x={midX}
+            y={midY + (isTop ? -6 : 6)}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="11"
+            fontWeight="700"
+            fill="currentColor"
+            style={{ userSelect: 'none' }}
+          >
+            {a.label}
+          </text>
+        )}
       </g>
     );
   }
@@ -1986,11 +2000,11 @@ function StorySlideView({ slide }: { slide: StorySlide }) {
   );
 }
 
-function SlideCard({ color, children }: { color: string; children: React.ReactNode }) {
+function SlideCard({ color, backgroundColor, children }: { color: string; backgroundColor?: string; children: React.ReactNode }) {
   return (
     <article
-      className="relative flex h-full w-full flex-col items-center overflow-y-auto rounded-3xl bg-white px-8 py-10 text-center shadow-2xl md:px-20 md:py-16"
-      style={{ boxShadow: `0 30px 80px -30px ${color}88` }}
+      className="relative flex h-full w-full flex-col items-center overflow-y-auto rounded-3xl px-8 py-10 text-center shadow-2xl md:px-20 md:py-16"
+      style={{ background: backgroundColor ?? '#ffffff', boxShadow: `0 30px 80px -30px ${color}88` }}
     >
       <div className="my-auto flex w-full max-w-[1600px] flex-col items-center">{children}</div>
     </article>

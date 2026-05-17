@@ -5,6 +5,7 @@ export interface CoverSlide {
   title: string;
   subtitle: string;
   color: string;
+  backgroundColor?: string;
   icon: string;
   qrUrl?: string;
   qrCaption?: string;
@@ -1315,6 +1316,7 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
         { fromIdx: 3, toIdx: 2, lane: 'bottom' },
         { fromIdx: 2, toIdx: 1, lane: 'bottom' },
         { fromIdx: 1, toIdx: 0, lane: 'bottom' },
+        { fromIdx: 2, toIdx: 1, lane: 'bottom', label: 'WebHook' },
       ],
     },
     {

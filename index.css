@@ -116,7 +116,8 @@
 }
 
 @media print {
-  body > *:not(.print-badge-portal) {
+  /* Caso padrão: esconde tudo exceto portal de ingressos */
+  body:not(.print-material-page) > *:not(.print-badge-portal) {
     display: none !important;
   }
   .print-badge-portal {
@@ -129,5 +130,71 @@
     display: block !important;
     padding: 0 !important;
     min-height: unset !important;
+  }
+
+  /* Material complementar: impressão limpa do conteúdo */
+  body.print-material-page {
+    background: white !important;
+  }
+  body.print-material-page header,
+  body.print-material-page footer,
+  body.print-material-page .no-print {
+    display: none !important;
+  }
+  body.print-material-page .ebook-prose {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #1e293b !important;
+    font-size: 11pt !important;
+    line-height: 1.6 !important;
+  }
+  body.print-material-page .ebook-prose h1 {
+    font-size: 20pt !important;
+    margin-top: 0 !important;
+    margin-bottom: 12pt !important;
+    page-break-after: avoid;
+  }
+  body.print-material-page .ebook-prose h2 {
+    font-size: 15pt !important;
+    margin-top: 18pt !important;
+    margin-bottom: 8pt !important;
+    page-break-after: avoid;
+  }
+  body.print-material-page .ebook-prose h3 {
+    font-size: 12pt !important;
+    margin-top: 12pt !important;
+    margin-bottom: 6pt !important;
+    page-break-after: avoid;
+  }
+  body.print-material-page .ebook-prose pre {
+    background: #f1f5f9 !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    font-size: 9pt !important;
+    page-break-inside: avoid;
+  }
+  body.print-material-page .ebook-prose pre code {
+    color: #1e293b !important;
+  }
+  body.print-material-page .ebook-prose code {
+    background: #f1f5f9 !important;
+    color: #1e293b !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+  body.print-material-page .ebook-prose blockquote {
+    background: #f8fafc !important;
+    border-left-color: #6ea8fe !important;
+  }
+  body.print-material-page .ebook-prose table {
+    page-break-inside: avoid;
+    font-size: 9pt !important;
+  }
+  body.print-material-page .ebook-prose tr {
+    page-break-inside: avoid;
+  }
+  body.print-material-page .ebook-prose a {
+    color: #1e293b !important;
+    text-decoration: none !important;
   }
 }
