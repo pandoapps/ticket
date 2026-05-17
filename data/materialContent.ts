@@ -190,6 +190,18 @@ Este é o mais perigoso — porque parece razoável. A realidade: criar um siste
 
 ---
 
+## Build to Earn vs. Build to Learn
+
+Antes de escopar qualquer projeto, é importante entender com qual intenção você está construindo. Existem dois tipos:
+
+**Build to Earn** é construir com foco em resultado financeiro. Aqui as perguntas que importam são: existe mercado? quem vai pagar? como vou distribuir? Os critérios das 5 perguntas da Parte 01 pesam muito — e um projeto mal validado vira prejuízo de tempo e dinheiro.
+
+**Build to Learn** é construir para aprender. O objetivo não é o produto final — é o processo. Você escolhe um desafio, coloca a mão na massa, erra, descobre, evolui. Não precisa ter mercado, não precisa ter cliente, não precisa escalar.
+
+Neste curso, estamos aqui para aprender. As regras de validação existem para você entender como pensar em projetos reais — mas o que eu encorajo agora é que você se desafie, escolha uma ideia que te interessa e coloque a mão na massa. O aprendizado que vem de construir algo do zero, mesmo que imperfeito, vale mais do que qualquer aula teórica.
+
+---
+
 ## Parte 02 — Escopando um Projeto
 
 Depois de validar a ideia, vem o escopo — definir exatamente o que o projeto vai incluir e o que vai ficar de fora.
@@ -1752,6 +1764,13 @@ Crie um projeto simples do zero que cobre o ciclo completo de uma venda digital.
 4. **Banco de dados:** Salva o pedido com status "pending"
 5. **WebHook:** Quando o pagamento for confirmado, atualiza para "paid"
 6. **Entrega:** Envia a figurinha para o WhatsApp do cliente via Evolution API
+
+**Integrações necessárias:**
+
+| Serviço | Para que serve |
+|---------|----------------|
+| **Abacate Pay** | Geração da cobrança Pix e recebimento do WebHook de confirmação |
+| **NanoBanana API** | Geração da imagem da figurinha personalizada |
 
 **Por que esse exercício é valioso:**
 
