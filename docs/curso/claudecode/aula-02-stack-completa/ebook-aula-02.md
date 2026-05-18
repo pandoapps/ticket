@@ -7,7 +7,7 @@
 ## Sumário
 
 1. [Introdução](#1-introdução)
-2. [Revisão do Projeto Exemplo](#2-revisão-do-projeto-exemplo)
+2. [Revisão do Projeto Exemplo](#2-revisão-do-projeto-exemplo) — Fluxo de construção com IA
 3. [Estrutura de Pastas e Decisões de Arquitetura](#3-estrutura-de-pastas-e-decisões-de-arquitetura)
 4. [Camada: Frontend](#4-camada-frontend)
 5. [Camada: Backend](#5-camada-backend)
@@ -34,6 +34,37 @@ A capacidade de comunicar com precisão o que cada parte do sistema faz é funda
 ---
 
 ## 2. Revisão do Projeto Exemplo
+
+### Fluxo Completo de Construção de Software com IA
+
+Antes de mergulhar na stack, veja o processo completo que usamos para construir um software — do humano à entrega:
+
+```mermaid
+flowchart LR
+    H["👤 Humano"] --> C1["🤖 Claude.ai"]
+    C1 --> DT["📄 Descritivo\nde Telas ①"]
+    DT --> F1{"😊 Humano\nFeliz?"}
+    F1 -- Não --> C1
+    F1 -- Sim --> GAS["🎨 Google AI\nStudio"]
+    GAS --> T["🖥️ Telas ②"]
+    T --> F2{"😊 Humano\nFeliz?"}
+    F2 -- Não --> GAS
+    F2 -- Sim --> C2["🤖 Claude.ai"]
+    C2 --> REQ["📋 Documento de\nRequisitos ③"]
+    REQ --> F3{"😊 Humano\nFeliz?"}
+    F3 -- Não --> C2
+    F3 -- Sim --> S["📊 Slide\nAula 01 ②③"]
+    S --> PP["📝 Prompt\ndo Projeto"]
+    PP --> CLI["⌨️ Claude CLI"]
+    CLI --> PR["📦 Projeto ④"]
+    PR --> F4{"😊 Humano\nFeliz?"}
+    F4 -- Não --> CLI
+    F4 -- Sim --> FIM["🏁 Fim"]
+```
+
+> Os números ①②③④ indicam os artefatos gerados em cada etapa que servem de insumo para as próximas.
+
+---
 
 Vamos revisitar a estrutura do projeto To-Do List criado na Aula 01.
 

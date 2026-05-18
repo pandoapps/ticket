@@ -21,9 +21,36 @@ Entenda cada peça da arquitetura
 
 ---
 
+# Revisão — Aula 01
+
+## Como construímos software com IA?
+
+---
+
+# Fluxo de Construção de Software
+
+```mermaid
+flowchart TD
+    A["👤 Humano"] --> B["🤖 Claude.ai"]
+    B --> C["📄 Descritivo de Telas"]
+    C --> D{"😊 Humano Feliz?"}
+    D -- Não --> B
+    D -- Sim --> E["🎨 Google AI Studio"]
+    E --> F["..."]
+
+    style A fill:#d97757,color:#fff,stroke:#d97757
+    style B fill:#16213e,color:#eee,stroke:#d97757
+    style C fill:#16213e,color:#eee,stroke:#d97757
+    style D fill:#e8a87c,color:#1a1a2e,stroke:#e8a87c
+    style E fill:#16213e,color:#eee,stroke:#d97757
+    style F fill:#2a2a4a,color:#aaa,stroke:#555
+```
+
+---
+
 # Agenda
 
-1. Revisão do Projeto Exemplo
+1. Revisão da Aula 01
 2. Estrutura de Pastas e Arquitetura
 3. Frontend: HTML, CSS, JavaScript
 4. Backend: Node.js, Express, API REST

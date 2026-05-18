@@ -280,6 +280,7 @@ export interface FlowNode {
   icon: string;
   caption?: string;
   accent?: string;
+  shape?: 'diamond';
 }
 
 export interface FlowArrow {
@@ -297,6 +298,33 @@ export interface FlowSlide {
   color: string;
   nodes: FlowNode[];
   arrows?: FlowArrow[];
+}
+
+export interface FlowchartStep {
+  id: string;
+  label: string;
+  icon: string;
+  shape?: 'diamond';
+  accent?: string;
+  badge?: string;
+  aboveBadges?: string[];
+}
+
+export interface FlowchartConnection {
+  from: string;
+  to: string;
+  label?: string;
+}
+
+export interface FlowchartSlide {
+  type: 'flowchart';
+  badge?: string;
+  title: string;
+  subtitle?: string;
+  color: string;
+  steps: FlowchartStep[];
+  connections: FlowchartConnection[];
+  rowBreak?: number; // index where the second row starts
 }
 
 export interface FlashcardItem {
@@ -365,6 +393,7 @@ export type Slide =
   | NestedStackSlide
   | FlashcardsSlide
   | FlowSlide
+  | FlowchartSlide
   | FormStudySlide
   | PromptBuilderSlide
   | WordCloudSlide
@@ -1029,6 +1058,54 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
       subtitle: 'Arquitetura, vocabulário técnico e entendimento profundo da aplicação',
       color: '#6ea8fe',
       icon: '🏗️',
+    },
+    {
+      type: 'flowchart',
+      badge: 'Revisão — Aula 01',
+      title: 'Fluxo de Construção de Software',
+      color: '#6ea8fe',
+      rowBreak: 7,
+      steps: [
+        // — Linha 1 —
+        { id: 'humano',     label: 'Humano',                  icon: '👤', accent: '#d97757' },
+        { id: 'claude',     label: 'Claude.ai',               icon: '🤖', accent: '#a78bfa' },
+        { id: 'descritivo', label: 'Descritivo de Telas',     icon: '📄', accent: '#6ea8fe', badge: '1' },
+        { id: 'feliz',      label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
+        { id: 'gas',        label: 'Google AI Studio',        icon: '🎨', accent: '#6ee7b7' },
+        { id: 'telas',      label: 'Telas',                   icon: '🖥️', accent: '#6ea8fe', badge: '2' },
+        { id: 'feliz2',     label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
+        // — Linha 2 —
+        { id: 'claude2',    label: 'Claude.ai',               icon: '🤖', accent: '#a78bfa' },
+        { id: 'requisitos', label: 'Documento de Requisitos', icon: '📋', accent: '#6ea8fe', badge: '3' },
+        { id: 'feliz3',     label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
+        { id: 'slide',      label: 'Slide Aula 01',            icon: '📊', accent: '#d97757', aboveBadges: ['2', '3'] },
+        { id: 'prompt',     label: 'Prompt do Projeto',       icon: '📝', accent: '#6ea8fe' },
+        { id: 'claudecli',  label: 'Claude CLI',              icon: '⌨️', accent: '#a78bfa' },
+        { id: 'projeto',    label: 'Projeto',                 icon: '📦', accent: '#6ee7b7', badge: '4' },
+        { id: 'feliz4',     label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
+        { id: 'fim',        label: '"Fim"',                   icon: '🏁', accent: '#6ee7b7' },
+      ],
+      connections: [
+        { from: 'humano',     to: 'claude'     },
+        { from: 'claude',     to: 'descritivo' },
+        { from: 'descritivo', to: 'feliz'      },
+        { from: 'feliz',      to: 'claude',    label: 'Não' },
+        { from: 'feliz',      to: 'gas',       label: 'Sim' },
+        { from: 'gas',        to: 'telas'      },
+        { from: 'telas',      to: 'feliz2'     },
+        { from: 'feliz2',     to: 'gas',       label: 'Não' },
+        { from: 'feliz2',     to: 'claude2',   label: 'Sim' },
+        { from: 'claude2',    to: 'requisitos' },
+        { from: 'requisitos', to: 'feliz3'     },
+        { from: 'feliz3',     to: 'claude2',   label: 'Não' },
+        { from: 'feliz3',     to: 'slide',     label: 'Sim' },
+        { from: 'slide',      to: 'prompt'     },
+        { from: 'prompt',     to: 'claudecli'  },
+        { from: 'claudecli',  to: 'projeto'    },
+        { from: 'projeto',    to: 'feliz4'     },
+        { from: 'feliz4',     to: 'fim',       label: 'Sim' },
+        { from: 'feliz4',     to: 'claudecli', label: 'Não' },
+      ],
     },
     {
       type: 'agenda',
