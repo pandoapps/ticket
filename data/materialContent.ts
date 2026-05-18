@@ -912,6 +912,13 @@ Esse conhecimento é o que separa quem usa IA de quem **entende** IA. Com ele, v
 
 ---
 
+## Revisão — Aula 01: Fluxo de Construção de Software
+
+\`\`\`flowchart-revisao-aula01
+\`\`\`
+
+---
+
 ## O vídeo de abertura
 
 A aula começou com um vídeo — um momento para reflexão antes de mergulhar no conteúdo técnico. É uma lembrança de que a tecnologia é um meio, não um fim. O que importa é o impacto que você gera com ela.

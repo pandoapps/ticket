@@ -4,8 +4,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 import { PublicLayout } from '@components/PublicLayout';
+import { FlowchartDiagram } from '@components/FlowchartDiagram';
 import { courseModules } from '@data/courseData';
 import { materialContent } from '@data/materialContent';
+import { slidesData, type FlowchartSlide } from '@data/slidesData';
 
 function CodeBlock({ children }: { children: string }) {
   const [copied, setCopied] = useState(false);
@@ -68,7 +70,11 @@ function ManosNaMassa({ children }: { children: React.ReactNode }) {
   );
 }
 
-const markdownComponents: Components = {
+function buildMarkdownComponents(moduleId: number): Components {
+  const slides = slidesData[moduleId] ?? [];
+  const flowchartSlide = slides.find((s): s is FlowchartSlide => s.type === 'flowchart');
+
+  return {
   blockquote({ node, children }) {
     const firstBlock = (node as any)?.children?.find((c: any) => c.type === 'element');
     const firstText = firstBlock?.children?.[0];
@@ -84,23 +90,32 @@ const markdownComponents: Components = {
     );
   },
 
-  pre({ children }) {
-    const codeEl = Array.isArray(children) ? children[0] : children;
-    if (!codeEl || typeof codeEl !== 'object' || !('props' in codeEl)) {
-      return <pre>{children}</pre>;
-    }
-    const lang: string = codeEl.props?.className ?? '';
-    const text = typeof codeEl.props?.children === 'string' ? codeEl.props.children : '';
-    if (lang.includes('language-bash')) {
-      return <CodeBlock>{text}</CodeBlock>;
-    }
-    return (
-      <pre className="my-5 overflow-x-auto rounded-xl bg-slate-900 p-4 text-sm leading-relaxed text-slate-100">
-        <code>{text}</code>
-      </pre>
-    );
-  },
-};
+    pre({ children }) {
+      const codeEl = Array.isArray(children) ? children[0] : children;
+      if (!codeEl || typeof codeEl !== 'object' || !('props' in codeEl)) {
+        return <pre>{children}</pre>;
+      }
+      const lang: string = codeEl.props?.className ?? '';
+      const text = typeof codeEl.props?.children === 'string' ? codeEl.props.children : '';
+      if (lang.includes('language-flowchart-revisao-aula01')) {
+        if (!flowchartSlide) return null;
+        return (
+          <div className="my-8 overflow-x-auto rounded-2xl bg-slate-50 p-4 shadow-sm ring-1 ring-slate-200">
+            <FlowchartDiagram slide={flowchartSlide} />
+          </div>
+        );
+      }
+      if (lang.includes('language-bash')) {
+        return <CodeBlock>{text}</CodeBlock>;
+      }
+      return (
+        <pre className="my-5 overflow-x-auto rounded-xl bg-slate-900 p-4 text-sm leading-relaxed text-slate-100">
+          <code>{text}</code>
+        </pre>
+      );
+    },
+  };
+}
 
 export function MaterialPage() {
   const { id } = useParams<{ id: string }>();
@@ -167,7 +182,7 @@ export function MaterialPage() {
       </header>
 
       <article className="ebook-prose mx-auto max-w-3xl px-4 py-12 md:px-8">
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={buildMarkdownComponents(moduleId)}>
           {markdown}
         </ReactMarkdown>
       </article>
