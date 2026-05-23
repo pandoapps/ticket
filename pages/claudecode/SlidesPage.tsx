@@ -341,7 +341,7 @@ function SlideRenderer({
           </p>
           <h2 className="mt-3 text-4xl font-bold text-slate-900 md:text-7xl">{slide.title}</h2>
           {slide.subtitle && <p className="mt-3 text-lg text-slate-600 md:text-2xl">{slide.subtitle}</p>}
-          <div className="mt-10 grid grid-cols-1 gap-5 text-left md:grid-cols-2">
+          <div className={`mt-10 gap-5 text-left ${slide.blocks.length === 1 ? 'flex justify-center' : 'grid grid-cols-1 md:grid-cols-2'}`}>
             {slide.blocks.map((b, i) => {
               const inner = (
                 <>
@@ -369,7 +369,7 @@ function SlideRenderer({
                   )}
                 </>
               );
-              const baseClass = 'rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8';
+              const baseClass = `rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8${slide.blocks.length === 1 ? ' w-full max-w-xl' : ''}`;
               return b.url ? (
                 <a
                   key={i}
