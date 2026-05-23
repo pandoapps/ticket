@@ -1855,4 +1855,449 @@ Quando você entender cada pedaço desse fluxo, consegue construir qualquer e-co
 | **npm** | Gerenciador de pacotes do Node.js |
 | **Composer** | Gerenciador de pacotes do PHP/Laravel |
 `,
+
+  3: `# Material Complementar — Aula 3
+## Fluxo de Equipe, Git e Segurança
+
+Chegamos na aula mais prática do curso até aqui. Se nas aulas anteriores você aprendeu a criar um projeto e entender sua arquitetura, agora você vai aprender a **trabalhar como um profissional de verdade** — com histórico organizado, código seguro e um fluxo que funciona tanto solo quanto em equipe.
+
+Esse conteúdo é o que separa projetos que crescem de projetos que viram caos.
+
+---
+
+## Revisão — Aula 01: Fluxo de Construção de Software
+
+\`\`\`flowchart-revisao-aula01
+\`\`\`
+
+---
+
+## Revisão — Aula 02: Stack Completa de um Projeto
+
+Na aula passada, entendemos como um projeto é organizado por dentro:
+
+- **Estrutura de um projeto**: começa simples (SPA) e cresce com integrações internas e externas
+- **As 3 camadas**: Frontend (React), Backend (Laravel) e Banco de Dados (MySQL)
+- **Deploy**: Docker em servidor Linux com Nginx como proxy reverso
+- **Vocabulário técnico**: API, endpoint, container, Makefile, CLAUDE.md
+- **API + WebHook**: como sistemas se comunicam e notificam em tempo real
+- **Tarefa**: integrar um gateway de pagamentos (Asaas) ao projeto
+
+---
+
+## Parte 01 — Git: Controle de Versão
+
+### O que é Git?
+
+Imagine que você está escrevendo um livro. A cada capítulo que termina, você salva uma cópia com o nome "livro-capitulo3-versao-final.docx". Depois de um tempo você tem:
+
+- livro-v1.docx
+- livro-v1-revisado.docx
+- livro-FINAL.docx
+- livro-FINAL-de-verdade.docx
+- livro-ESSE-É-O-CERTO.docx
+
+Já passou por isso? É um problema clássico. O **Git** resolve exatamente isso — mas para código.
+
+Git é um **sistema de controle de versão** que rastreia *cada mudança* feita no projeto. Quem mudou, quando mudou, o que exatamente foi alterado. E ainda permite voltar a qualquer ponto da história, trabalhar em paralelo com outras pessoas sem quebrar o código, e muito mais.
+
+---
+
+### Os 4 conceitos fundamentais
+
+#### 🌿 Branch
+
+Uma branch é uma **linha independente de desenvolvimento**. Pense assim: você tem o projeto principal funcionando (branch \`main\`). Você quer adicionar uma nova funcionalidade — mas não quer arriscar quebrar o que já funciona enquanto trabalha. Então você cria uma branch separada:
+
+\`\`\`bash
+git checkout -b feature/nova-funcionalidade
+\`\`\`
+
+Agora você trabalha nessa cópia paralela à vontade. Se der errado, o \`main\` continua intacto. Se der certo, você une as mudanças.
+
+**Regra de ouro:** nunca trabalhe diretamente na \`main\`. Sempre crie uma branch.
+
+---
+
+#### 📸 Commit
+
+Um commit é um **ponto salvo na história do projeto**. É como tirar uma foto do estado atual do código com uma legenda descritiva.
+
+\`\`\`bash
+git add arquivo.js
+git commit -m "feat: adiciona validação de e-mail no formulário"
+\`\`\`
+
+Cada commit tem:
+- Um identificador único (hash): \`a1b2c3d\`
+- Uma mensagem descritiva
+- O autor e a data
+- O que exatamente mudou
+
+**Mensagens de commit seguem uma convenção:**
+
+| Tipo | Quando usar |
+|---|---|
+| \`feat\` | Nova funcionalidade |
+| \`fix\` | Correção de bug |
+| \`docs\` | Documentação |
+| \`refactor\` | Refatoração sem mudar comportamento |
+| \`chore\` | Manutenção, configuração |
+
+Commits pequenos e frequentes são melhores do que commits gigantes. Cada commit deve representar *uma mudança lógica*.
+
+---
+
+#### 🔀 Merge
+
+Merge é **unir o trabalho de duas branches**. Quando você termina de trabalhar na sua feature branch e está satisfeito com o resultado, você une ela de volta ao \`main\`:
+
+\`\`\`bash
+git checkout main
+git merge feature/nova-funcionalidade
+\`\`\`
+
+Às vezes duas pessoas editam o mesmo trecho de código ao mesmo tempo. Isso gera um **conflito de merge** — o Git não sabe qual versão manter e pede que você decida:
+
+\`\`\`
+<<<<<<< HEAD
+código da main
+=======
+código da feature
+>>>>>>> feature/nova-funcionalidade
+\`\`\`
+
+Você escolhe qual versão fica, remove os marcadores e faz um novo commit. O Claude Code consegue ajudar a resolver conflitos — basta descrever o que cada versão estava tentando fazer.
+
+---
+
+#### 🔍 Pull Request
+
+Um Pull Request (PR) é um **pedido formal para que alguém revise e aprove suas mudanças** antes de elas entrarem na \`main\`.
+
+No fluxo profissional:
+1. Você termina o trabalho na sua branch
+2. Cria um Pull Request no GitHub
+3. Um colega revisa o código
+4. Se aprovado, o merge acontece
+5. Se não, você faz ajustes
+
+Isso garante que código com bugs, falhas de segurança ou problemas de lógica não chegue à produção.
+
+---
+
+### O fluxo Git em equipe
+
+Esse é o ciclo que deve virar hábito:
+
+\`\`\`
+1. git pull
+   Sempre comece buscando as mudanças mais recentes do repositório
+
+2. git checkout -b feature/nome-da-tarefa
+   Crie uma branch para cada funcionalidade ou correção
+
+3. Desenvolva com o Claude Code
+   Faça commits pequenos e frequentes enquanto trabalha
+
+4. git push -u origin feature/nome-da-tarefa
+   Envie sua branch para o repositório remoto
+
+5. Abra um Pull Request no GitHub
+   Peça revisão de um colega (ou revise você mesmo se for solo)
+
+6. Merge aprovado
+   Delete a branch e puxe a main atualizada
+
+7. Repita
+\`\`\`
+
+---
+
+## Parte 02 — Comandos do Makefile
+
+O Makefile é um arquivo que **padroniza os comandos do projeto**. Em vez de lembrar comandos longos e complexos, você usa atalhos simples. É como criar apelidos para comandos que você usa todo dia.
+
+Os 4 comandos que você vai usar constantemente:
+
+---
+
+### ▶️ make up
+
+\`\`\`bash
+make up
+\`\`\`
+
+Sobe todos os containers do projeto: a aplicação (backend + frontend), o banco de dados MySQL e o Nginx. É o primeiro comando que você roda ao começar a trabalhar.
+
+**O que acontece por baixo:** o Docker Compose lê o arquivo \`docker-compose.yml\` e inicia todos os serviços configurados, conectados entre si na mesma rede interna.
+
+**Quando usar:** toda vez que for trabalhar no projeto. Equivale a "ligar o computador" do projeto.
+
+---
+
+### ⏹️ make down
+
+\`\`\`bash
+make down
+\`\`\`
+
+Para e remove todos os containers em execução. Os dados do banco são preservados (em volumes Docker), mas os processos são encerrados.
+
+**Quando usar:** quando terminar de trabalhar, ou quando precisar reiniciar tudo do zero. Equivale a "desligar o computador" do projeto.
+
+---
+
+### 📤 make send
+
+\`\`\`bash
+make send
+\`\`\`
+
+Este é o comando que substitui o fluxo manual de \`git add\`, \`git commit\` e \`git push\`. Ele:
+
+1. Aplica o **lint** — verifica formatação e problemas de código
+2. Pergunta a **mensagem do commit**
+3. Faz o commit com a mensagem informada
+4. Envia (\`push\`) para o repositório remoto
+
+**Por que isso existe:** padroniza o fluxo de envio e garante que ninguém faz push sem passar pelo lint primeiro.
+
+**Regra do projeto:** nenhum commit é feito manualmente. Sempre via \`make send\`.
+
+---
+
+### 🚀 make deploy
+
+\`\`\`bash
+make deploy
+\`\`\`
+
+Atualiza a aplicação em produção. O comando executa em sequência:
+
+1. \`git pull\` — puxa as mudanças mais recentes
+2. Build do frontend — compila os arquivos React otimizados
+3. \`php artisan migrate --force\` — roda as migrations pendentes
+4. Limpeza de cache — garante que a aplicação usa os arquivos novos
+
+**Quando usar:** após aprovação de um Pull Request, quando você quer publicar uma nova versão para os usuários. **Nunca rodar sem ter testado antes.**
+
+---
+
+## Parte 03 — Segurança da Informação
+
+Esta é a parte mais crítica do curso. Erros de segurança podem custar caro — vazamento de dados de clientes, acesso indevido a servidores, cobranças não autorizadas em APIs pagas.
+
+### O que NUNCA deve ir para o Git
+
+**Regra absoluta:** se contém credencial ou dado sensível, não vai pro Git. Jamais.
+
+O que isso significa na prática:
+
+| O que nunca commitar | Por que |
+|---|---|
+| Chaves de API (\`sk-abc123...\`) | Qualquer pessoa com acesso ao repositório pode usar sua cota — e te cobrar |
+| Senhas de banco de dados | Acesso total a todos os dados dos seus usuários |
+| Tokens de autenticação | Roubo de identidade e acesso a serviços como você |
+| Chaves SSH privadas | Acesso completo aos seus servidores |
+| Dados pessoais de clientes | Violação da LGPD — multas e processos |
+
+O Git guarda **todo o histórico**. Mesmo que você remova o arquivo no próximo commit, o dado ainda está no histórico e pode ser recuperado. Se uma credencial vazou no Git, considere ela comprometida e gere uma nova imediatamente.
+
+---
+
+### O arquivo .env
+
+A solução é armazenar tudo que é sensível em variáveis de ambiente — no arquivo \`.env\`:
+
+\`\`\`env
+APP_KEY=base64:chave-gerada-automaticamente
+DB_PASSWORD=senha-segura-aqui
+NANOBANANA_API_KEY=nb_live_sua-chave
+\`\`\`
+
+E no código, você lê a variável — nunca escreve o valor diretamente:
+
+\`\`\`php
+// Laravel — lê do .env
+$apiKey = env('NANOBANANA_API_KEY');
+\`\`\`
+
+\`\`\`javascript
+// Node.js — lê do .env
+const apiKey = process.env.NANOBANANA_API_KEY;
+\`\`\`
+
+**O .env NUNCA vai pro Git.** Ele fica listado no \`.gitignore\`.
+
+---
+
+### O .gitignore
+
+O \`.gitignore\` é um arquivo que diz ao Git o que ele deve **ignorar completamente**:
+
+\`\`\`gitignore
+# Nunca commitar
+.env
+.env.local
+.env.production
+
+# Dependências (muito pesadas, recriadas com npm install)
+node_modules/
+
+# Banco local
+*.sqlite
+
+# Logs e sistema
+*.log
+.DS_Store
+\`\`\`
+
+**O que vai pro Git:** o arquivo \`.env.example\` — um template com os nomes das variáveis necessárias, mas *sem os valores reais*:
+
+\`\`\`env
+# Copie para .env e preencha com seus valores
+APP_KEY=
+DB_PASSWORD=
+NANOBANANA_API_KEY=
+\`\`\`
+
+Isso permite que qualquer pessoa que clonar o projeto saiba quais variáveis configurar — sem expor nenhum segredo.
+
+---
+
+## Parte 04 — Revisão Crítica de Código Gerado por IA
+
+O Claude Code é extremamente capaz. Mas isso não significa que o código gerado deve ir para produção sem revisão. Confie, mas verifique.
+
+### O checklist de revisão
+
+Antes de fazer \`make send\` em qualquer código gerado por IA, percorra essa lista:
+
+**✅ Leia cada arquivo gerado antes de commitar**
+
+Não precisa entender cada linha, mas você precisa ter uma ideia do que cada arquivo faz. Se algo parecer estranho ou desnecessariamente complexo, pergunte ao Claude: *"explique o que este arquivo faz em linguagem simples"*.
+
+**✅ Procure por credenciais hardcoded ou dados sensíveis**
+
+Busque por padrões suspeitos no código: strings longas que parecem chaves, senhas escritas diretamente, URLs com tokens na query string. Peça ao Claude para fazer essa busca: *"existe alguma credencial hardcoded neste código?"*
+
+**✅ Verifique se a lógica de negócio faz sentido para o seu contexto**
+
+A IA não conhece seu negócio tão bem quanto você. Ela pode implementar uma regra que parece certa tecnicamente, mas está errada para o seu caso específico. Você é o único que pode validar isso.
+
+**✅ Teste as funcionalidades antes de fazer push**
+
+Rode o projeto, clique nos botões, preencha os formulários. Se tem um fluxo de pagamento, teste com cartão de teste. Código que só funciona na teoria não serve.
+
+**✅ Use o Claude para revisar o próprio código**
+
+Uma das coisas mais poderosas que você pode fazer é pedir ao Claude para revisar o código que ele mesmo gerou:
+
+\`\`\`
+revise o código que você acabou de criar e identifique:
+1. problemas de segurança
+2. casos de erro não tratados
+3. algo que poderia quebrar em produção
+\`\`\`
+
+A IA consegue identificar seus próprios pontos cegos quando questionada diretamente.
+
+---
+
+## Parte 05 — Clonando Projetos Reais
+
+A melhor forma de aprender é estudar código que já funciona. Esses são projetos reais da Pandô APPs, disponíveis para você clonar, explorar e usar como referência.
+
+### Como clonar um projeto
+
+\`\`\`bash
+git clone <url-do-repositorio>
+cd nome-do-projeto
+\`\`\`
+
+Depois de clonar, leia sempre o \`README.md\` primeiro — ele explica como configurar o ambiente. Em seguida, copie o \`.env.example\` para \`.env\` e preencha as variáveis necessárias.
+
+---
+
+### 📣 Campanhas Já
+
+\`\`\`bash
+git clone https://github.com/pandoapps/CampanhasJ-
+\`\`\`
+
+Plataforma de criação e gestão de campanhas digitais. Estude como as campanhas são estruturadas no banco de dados e como o fluxo de criação funciona.
+
+---
+
+### 🃏 Figurex
+
+\`\`\`bash
+git clone https://github.com/pandoapps/Figurex
+\`\`\`
+
+Gerador de figurinhas digitais com integração de pagamentos. Este projeto é especialmente útil para entender como funciona a integração com gateway de pagamento — tema da tarefa da Aula 02.
+
+---
+
+### 🎬 VideoBoard
+
+\`\`\`bash
+git clone https://github.com/pandoapps/videoStoryBoard
+\`\`\`
+
+Criador de story boards e roteiros para vídeo com IA. Bom exemplo de como integrar geração de conteúdo com IA dentro de uma aplicação web.
+
+---
+
+### 📺 Maratonei
+
+\`\`\`bash
+git clone https://github.com/pandoapps/Maratonei
+\`\`\`
+
+Plataforma de acompanhamento de corridas e maratonas. Explore como os dados de progresso do usuário são estruturados e exibidos.
+
+---
+
+### 🦊 Bônus — Converseiro (GitLab)
+
+\`\`\`bash
+git clone https://gitlab.com/pandoapps/converseiro
+\`\`\`
+
+Projeto completo hospedado no GitLab — repositório exclusivo para alunos da mentoria. Use como referência de arquitetura, boas práticas e padrão de código adotado pela Pandô APPs.
+
+> **Nota:** Este projeto está em um repositório privado. Você precisará de acesso concedido pelo instrutor para conseguir clonar.
+
+---
+
+## Glossário da Aula 3
+
+| Termo | Definição |
+|---|---|
+| **Git** | Sistema de controle de versão que rastreia todas as mudanças do projeto |
+| **Repositório** | Pasta do projeto rastreada pelo Git, local ou remota (GitHub/GitLab) |
+| **Branch** | Linha independente de desenvolvimento — cópia paralela do código |
+| **Commit** | Ponto salvo na história do projeto com mensagem descritiva |
+| **Merge** | Unir o trabalho de duas branches em uma só |
+| **Conflito** | Quando duas pessoas editam o mesmo trecho e o Git não sabe qual versão manter |
+| **Pull Request** | Pedido formal de revisão e aprovação de mudanças antes do merge |
+| **Push** | Enviar commits locais para o repositório remoto |
+| **Pull** | Baixar mudanças do repositório remoto para a máquina local |
+| **Clone** | Baixar uma cópia completa de um repositório remoto |
+| **make up** | Sobe todos os containers do projeto via Docker Compose |
+| **make down** | Para e remove todos os containers em execução |
+| **make send** | Lint + commit + push em um único comando padronizado |
+| **make deploy** | Atualiza a aplicação em produção: pull + build + migrate |
+| **.env** | Arquivo com variáveis de ambiente sensíveis — nunca vai pro Git |
+| **.gitignore** | Lista de arquivos e pastas que o Git deve ignorar completamente |
+| **.env.example** | Template do .env com os nomes das variáveis, sem os valores reais |
+| **Variável de ambiente** | Configuração externa ao código que muda conforme o ambiente |
+| **Credencial** | Dado de autenticação: chave de API, senha, token — sempre no .env |
+| **Lint** | Verificação automática de formatação e padrões de código |
+| **GitHub** | Plataforma para hospedar repositórios Git e colaborar em equipe |
+| **GitLab** | Alternativa ao GitHub, com foco em pipelines de CI/CD |
+| **LGPD** | Lei Geral de Proteção de Dados — regula o uso de dados pessoais no Brasil |
+`,
 };
