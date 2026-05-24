@@ -1657,7 +1657,23 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
     },
     {
       type: 'content',
-      badge: 'Bônus',
+      badge: 'Bônus 01',
+      title: 'Projeto Bônus — Ticketeira',
+      subtitle: 'A plataforma que usamos neste curso, disponível para você explorar',
+      color: '#a78bfa',
+      blocks: [
+        {
+          icon: '🎟️',
+          label: 'Ticket',
+          text: 'Plataforma completa de venda de ingressos integrada ao Abacate Pay — o projeto real da mentoria',
+          url: 'https://github.com/pandoapps/ticket',
+          commands: ['git clone https://github.com/pandoapps/ticket'],
+        },
+      ],
+    },
+    {
+      type: 'content',
+      badge: 'Bônus 02',
       title: 'Projeto Privado — Acesso Especial',
       subtitle: 'Repositório exclusivo para alunos da mentoria',
       color: '#a78bfa',
