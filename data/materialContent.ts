@@ -2575,7 +2575,128 @@ Usuário digita seusite.com.br
 
 ---
 
-## Parte 04 — Monitoramento Pós-Deploy
+## Parte 04 — Boas Práticas de Segurança
+
+Uma das decisões de arquitetura mais importantes em qualquer aplicação de produção é a **separação de responsabilidades entre serviços**. Colocar banco de dados, aplicação e armazenamento de arquivos todos no mesmo servidor é conveniente no começo — e perigoso no médio prazo.
+
+A regra geral é simples: **cada serviço deve ter seu próprio espaço, suas próprias credenciais e seu próprio ciclo de vida.**
+
+---
+
+### 🗄️ Banco de Dados — Serviço Gerenciado e Isolado
+
+O banco de dados é o ativo mais valioso da sua aplicação. Se ele for comprometido ou perdido, você pode perder anos de histórico de clientes, pedidos e configurações.
+
+**Por que não rodar o banco no mesmo servidor da aplicação?**
+
+- **Acoplamento de falhas:** Se o servidor da aplicação cair (ou for reiniciado para um deploy), o banco cai junto — mesmo que o banco estivesse perfeitamente saudável.
+- **Acoplamento de recursos:** Um pico de tráfego na aplicação consome CPU e memória que o banco precisaria. Os dois competem pelos mesmos recursos.
+- **Backup mais difícil:** Bancos gerenciados fazem backup automático, point-in-time recovery e failover automático. Um banco no mesmo container que a aplicação exige que você configure tudo isso manualmente.
+- **Segurança:** O banco nunca deveria ser acessível pela internet. Um serviço gerenciado fica numa rede privada, acessível apenas pela aplicação via rede interna.
+
+**Opções de banco gerenciado:**
+
+| Serviço | Características |
+|---|---|
+| **DO Managed DB** | PostgreSQL/MySQL gerenciado na Digital Ocean — fácil integração se o app já está na DO |
+| **AWS RDS** | Serviço maduro da Amazon, suporta MySQL, PostgreSQL, MariaDB, SQL Server |
+| **PlanetScale** | MySQL compatível, serverless, escala automaticamente, generous free tier |
+| **Neon** | PostgreSQL serverless, excelente para projetos pequenos e médios |
+| **Railway DB** | Simples de configurar, bom para projetos em fase inicial |
+
+**Como a aplicação acessa:** Via variável de ambiente \`DATABASE_URL\` com a string de conexão — o servidor de banco nunca expõe a porta 3306/5432 para a internet, apenas para a rede privada onde a aplicação roda.
+
+---
+
+### ⚙️ Aplicação — Container Dedicado e com Princípio do Menor Privilégio
+
+O container da aplicação (onde roda o PHP-FPM, o Node, etc.) deve ter acesso apenas ao que precisa para funcionar — nada mais.
+
+**Boas práticas para o container da aplicação:**
+
+**🔒 Usuário não-root:** O processo dentro do container deve rodar como um usuário sem privilégios. Se um atacante explorar uma vulnerabilidade, ele fica preso no container sem acesso ao sistema host.
+
+\`\`\`dockerfile
+# No Dockerfile.prod
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+\`\`\`
+
+**🚫 Sem acesso ao filesystem de uploads:** O container da aplicação não deve ter uma pasta \`/storage/uploads\` que cresce indefinidamente. Uploads vão direto para um serviço de storage externo (S3, DO Spaces). Isso evita que o disco do servidor encha e que arquivos maliciosos fiquem no mesmo servidor que o código.
+
+**🔑 Credenciais mínimas:** A aplicação deve ter acesso ao banco com um usuário que só pode fazer SELECT, INSERT, UPDATE e DELETE — nunca DROP TABLE, CREATE USER ou acesso root. Se a aplicação for comprometida, o atacante não consegue apagar o banco inteiro.
+
+\`\`\`sql
+-- Criar usuário com privilégios mínimos
+CREATE USER 'appuser'@'%' IDENTIFIED BY 'senha_forte';
+GRANT SELECT, INSERT, UPDATE, DELETE ON meuapp.* TO 'appuser'@'%';
+-- Nunca GRANT ALL PRIVILEGES
+\`\`\`
+
+**📦 Imagem mínima:** Use imagens base enxutas como \`php:8.4-fpm-alpine\`. Menos pacotes instalados = menos superfície de ataque.
+
+---
+
+### 🪣 Storage — Armazenamento Externo de Arquivos
+
+Salvar uploads diretamente no disco do servidor é um dos erros mais comuns em aplicações iniciantes. Os problemas aparecem cedo:
+
+- **O disco enche:** Imagens, PDFs e vídeos são grandes. Um servidor com 25GB de disco pode encher em semanas.
+- **Deploy destrói os uploads:** Se o deploy recria o container, os arquivos que estavam no disco somem.
+- **Escala impossível:** Se você precisar de dois servidores de aplicação, cada um tem um conjunto diferente de arquivos — os uploads do servidor A não existem no servidor B.
+- **Backup complexo:** Arquivos no disco precisam de backup separado do banco de dados.
+
+**A solução: object storage externo**
+
+| Serviço | Compatível S3 | Preço | Observações |
+|---|---|---|---|
+| **AWS S3** | Nativo | ~$0,023/GB/mês | O padrão da indústria |
+| **Cloudflare R2** | Sim | $0,015/GB/mês, egress grátis | Ótima opção de custo |
+| **DO Spaces** | Sim | $5/mês fixo (250GB) | Fácil se já usa Digital Ocean |
+| **Backblaze B2** | Sim | $0,006/GB/mês | Mais barato do mercado |
+
+**Como funciona no Laravel:**
+
+\`\`\`env
+FILESYSTEM_DISK=s3
+AWS_ACCESS_KEY_ID=sua_chave
+AWS_SECRET_ACCESS_KEY=seu_secret
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=nome-do-bucket
+\`\`\`
+
+O Laravel (com o driver S3) envia os arquivos diretamente para o bucket. A aplicação nunca toca o disco local para uploads.
+
+**Boas práticas de bucket:**
+- **Nunca público por padrão:** Configure permissões granulares. Arquivos privados (documentos do usuário) só são acessíveis via URLs assinadas com expiração.
+- **URLs assinadas:** \`Storage::temporaryUrl('arquivo.pdf', now()->addMinutes(30))\` gera um link válido por 30 minutos — o arquivo nunca fica exposto permanentemente.
+- **Organização por tenant:** Organize os arquivos por produtor/cliente: \`uploads/{producer_id}/{year}/{month}/arquivo.jpg\`
+
+---
+
+### 🏗️ Visão geral da arquitetura segura
+
+\`\`\`
+Internet
+  └─ Cloudflare (DDoS, SSL, CDN)
+       └─ Servidor de Aplicação (Digital Ocean Droplet)
+            ├─ Nginx (porta 443)
+            ├─ PHP-FPM (porta interna)
+            ├─ Redis (porta interna, apenas localhost)
+            └─ [rede privada]
+                 ├─ DO Managed DB (MySQL/PostgreSQL)
+                 └─ DO Spaces / AWS S3 (object storage)
+\`\`\`
+
+Cada serviço tem:
+- Sua própria rede/firewall
+- Suas próprias credenciais (nunca compartilhadas)
+- Seu próprio ciclo de vida (deploy da app não afeta o banco)
+- Seu próprio backup independente
+
+---
+
+## Parte 05 — Monitoramento Pós-Deploy
 
 Publicou. E agora? O trabalho não acabou — começa uma nova fase: garantir que tudo continua funcionando.
 
@@ -2646,7 +2767,7 @@ Todo deploy pode dar errado. Antes de fazer qualquer deploy em produção, defin
 
 ---
 
-## Parte 05 — Próximos Passos
+## Parte 06 — Próximos Passos
 
 A mentoria termina. Mas o aprendizado não.
 
@@ -2725,5 +2846,12 @@ O limite não é mais técnico. É de imaginação e execução.
 | **Fingerprinting** | Hash adicionado ao nome de arquivos estáticos para controle de cache |
 | **Tree shaking** | Remoção automática de código não utilizado durante o build |
 | **Minificação** | Compressão de código removendo espaços e otimizando nomes |
+| **Object storage** | Armazenamento externo de arquivos por API — AWS S3, DO Spaces, Cloudflare R2 |
+| **Managed DB** | Banco de dados gerenciado pelo provedor — backup, failover e updates automáticos |
+| **Princípio do menor privilégio** | Conceder a cada serviço apenas as permissões mínimas necessárias para funcionar |
+| **URL assinada** | Link temporário e autenticado para acesso a arquivos privados no object storage |
+| **Egress** | Transferência de dados para fora do provedor — geralmente cobrada por GB |
+| **Tenant** | Cada cliente/produtor isolado dentro de um sistema multi-tenant |
+| **Rede privada** | Rede interna do provedor — serviços se comunicam sem passar pela internet pública |
 `,
 };
