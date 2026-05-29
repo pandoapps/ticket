@@ -115,6 +115,7 @@ export interface LayersSlide {
   type: 'layers';
   badge: string;
   title: string;
+  subtitle?: string;
   color: string;
   layers: Layer[];
 }
@@ -1790,8 +1791,9 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
         '01 — Preparação da aplicação para produção',
         '02 — Variáveis de ambiente em produção',
         '03 — Fluxo de uma requisição na internet',
-        '04 — Monitoramento pós-deploy',
-        '05 — Próximos passos após a mentoria',
+        '04 — Boas práticas de segurança',
+        '05 — Monitoramento pós-deploy',
+        '06 — Próximos passos após a mentoria',
       ],
     },
     {
@@ -1857,8 +1859,20 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
       ],
     },
     {
-      type: 'list',
+      type: 'layers',
       badge: 'Parte 04',
+      title: 'Boas Práticas de Segurança',
+      subtitle: 'Separe responsabilidades — limite o impacto de qualquer falha',
+      color: '#6ee7b7',
+      layers: [
+        { icon: '🗄️', label: 'Banco de Dados', text: 'Serviço gerenciado e isolado — DO Managed DB, AWS RDS, PlanetScale. Nunca no mesmo servidor da aplicação.', color: '#6ee7b7' },
+        { icon: '⚙️', label: 'Aplicação', text: 'Container dedicado com PHP-FPM + Nginx. Sem acesso direto ao filesystem de uploads nem ao banco via root.', color: '#6ea8fe' },
+        { icon: '🪣', label: 'Storage', text: 'Armazenamento de arquivos externo — AWS S3, DO Spaces, Cloudflare R2. Nunca salve uploads no disco do servidor.', color: '#a78bfa' },
+      ],
+    },
+    {
+      type: 'list',
+      badge: 'Parte 05',
       title: 'Monitoramento Pós-Deploy',
       subtitle: 'A aplicação está no ar — e agora?',
       color: '#6ee7b7',
@@ -1873,7 +1887,7 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
     },
     {
       type: 'highlight',
-      badge: 'Parte 05',
+      badge: 'Parte 06',
       title: 'Próximos Passos',
       color: '#6ee7b7',
       quote: 'A mentoria termina. A evolução técnica da equipe começa agora.',
