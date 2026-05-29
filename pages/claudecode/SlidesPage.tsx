@@ -234,7 +234,7 @@ function renderInline(text: string) {
   });
 }
 
-function SlideRenderer({
+export function SlideRenderer({
   slide,
   step,
   onGamePhaseChange,
