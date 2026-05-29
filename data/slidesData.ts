@@ -963,22 +963,73 @@ make shell
 
 ⚠️ Never use php artisan directly outside the Makefile.
 
-9️⃣ Deployment Standard
-Production must include:
-Docker
-Nginx
-Isolated frontend build
-Proper caching configuration
-Gzip enabled
-SPA fallback
-Migrations running with --force
+9️⃣  Deployment Standard
 
 
-After deployment:
-Test login
-Test protected routes
-Test logout
-Test the main critical flow
+Architecture
+Production runs entirely on Docker Compose (docker-compose.prod.yml), separate from the local dev compose. Services:
+- app — PHP-FPM (or your runtime), built from a dedicated Dockerfile.prod with OPcache enabled and opcache.validate_timestamps=0 (code is cached, not re-read per request).
+- nginx (nginx:alpine) — reverse proxy / web server, ports 80 + 443.
+- scheduler — runs the cron loop (schedule:run every 60s) as its own container.
+- queue — dedicated queue worker container.
+- redis — cache / sessions / queue (with healthcheck).
+- Any auxiliary services (e.g. extra DBs, integrations) with depends_on + healthchecks.
+- node — build-only container, NOT a long-running service.
+- certbot — Let's Encrypt issuance/renewal.
+All app/scheduler/queue containers share the same Dockerfile.prod and mount the code via volume.
+
+Nginx config (production.conf)
+Must include:
+- HTTP → HTTPS redirect (port 80 → 301 to 443), with /.well-known/acme-challenge/ left open for certbot.
+- SSL/TLS: TLSv1.2 + TLSv1.3, modern ciphers, session cache, HSTS.
+- Security headers: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy.
+- Gzip enabled: gzip on, gzip_vary on, comp level 6, covering text/css/js/json/svg/xml.
+- SPA / app fallback: location / { try_files $uri $uri/ /index.php?$query_string; }.
+- Long-cache for static + fingerprinted build assets: expires 1y; Cache-Control "public, immutable"; on /build/ and *.(js|css|png|woff2|...), with access_log off.
+- Deny dotfiles: block /\.ht and /\.env.
+- client_max_body_size aligned with the app's upload limit.
+Keep a two-config bootstrap for first deploy: an initial.conf (HTTP only, no SSL block) copied to active.conf so nginx can boot before certs exist; certbot issues the cert; then swap to the full SSL production.conf.
+
+Two-phase workflow
+Phase 1 — make send (code → main)
+One command from working tree to merged main:
+  1. Run make lint first.
+  2. Prompt for a commit message.
+  3. Create a timestamped branch auto/YYYYMMDD-HHMMSS, add -A, commit (bail cleanly if nothing to commit).
+  4. Push and open an MR/PR via CLI (glab/gh).
+  5. Auto-merge into main with source-branch removal, then checkout main && pull and delete the local branch.
+
+Phase 2 — make deploy (main → production)
+
+git stash + git pull, then call deploy-full.
+
+  deploy-full — the core deploy (6 steps, with timing)
+
+  Colored, numbered output. Track total time and maintenance downtime separately.
+  1. Prepare env — fix storage/bootstrap/cache perms, remove public/hot, ensure nginx active.conf exists.
+  2. Install backend deps — composer install --no-dev --optimize-autoloader --no-interaction inside the app container.
+  3. Isolated frontend build — docker compose run --rm node sh -c "npm install && npm run build". Abort the whole deploy if the build fails (don't take the app down for a broken build).
+  4. Maintenance mode — artisan down --secret="..." --retry=10 (the secret lets you preview prod while it's down). Start the downtime timer here.
+  5. Migrations + caches + restart:
+    - artisan migrate --force
+    - config:cache, route:cache, view:clear + view:cache
+    - storage:link
+    - bring up infra (up -d redis nginx ...) and up -d --force-recreate app scheduler queue
+    - re-fix perms, nginx -s reload
+  6. Exit maintenance — artisan up. Stop timers, write public/version.json with { git short hash, commit date }, print total time + downtime.
+
+Deploy variants
+
+  - make deploy — normal path: git pull + deploy-full, no image rebuild (fast; volume-mounted code).
+  - make deploy-rebuild — when Dockerfile.prod or PHP/Node packages changed: compose build → up -d app → rebuild client-side route helpers (e.g. Ziggy) → deploy-full.
+  - make deploy-first — initial server bring-up: nginx initial.conf, compose build, key:generate --force, rebuild route helpers, deploy-full, final config:cache.
+
+  Development (hot reload, no down/up cycle)
+
+- Code is volume-mounted, so backend changes are picked up live — no rebuild needed for normal edits.
+- Frontend dev server (Vite or equivalent) runs in the node container under a dev profile with its port exposed and HMR on; make up starts everything and you edit-and-save without make down/make up.
+- make up should self-heal: compose down --remove-orphans then up -d so stale containers never block a restart.
+- Keep dev OPcache timestamp validation ON (opposite of prod) so PHP changes reload.
 
 
 
@@ -1727,7 +1778,7 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
       items: [
         '01 — Preparação da aplicação para produção',
         '02 — Variáveis de ambiente em produção',
-        '03 — Plataformas e estratégias de deploy',
+        '03 — Fluxo de uma requisição na internet',
         '04 — Monitoramento pós-deploy',
         '05 — Próximos passos após a mentoria',
       ],
@@ -1777,15 +1828,24 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
       ],
     },
     {
-      type: 'layers',
+      type: 'flow',
       badge: 'Parte 03',
-      title: 'Plataformas de Deploy',
+      title: 'Fluxo de uma Requisição',
+      subtitle: 'O caminho do usuário até o servidor',
       color: '#6ee7b7',
-      layers: [
-        { icon: '🚂', label: 'Railway', text: 'Deploy simples de containers Docker — recomendado para o curso', color: '#6ee7b7' },
-        { icon: '▲', label: 'Vercel', text: 'Ideal para frontends estáticos e Next.js — CDN global automática', color: '#6ea8fe' },
-        { icon: '🟣', label: 'Render', text: 'Boa alternativa ao Railway com free tier generoso', color: '#a78bfa' },
-        { icon: '☁️', label: 'VPS / DigitalOcean', text: 'Controle total — mais complexo, mais flexível', color: '#f472b6' },
+      nodes: [
+        { label: 'Cliente', icon: '🧑', accent: '#6ee7b7', caption: 'Navegador / App' },
+        { label: 'registro.br', icon: '🌐', accent: '#6ea8fe', caption: 'DNS — traduz domínio em IP' },
+        { label: 'Cloudflare', icon: '☁️', accent: '#fbbf24', caption: 'CDN + proteção + SSL' },
+        { label: 'Digital Ocean', icon: '🌊', accent: '#a78bfa', caption: 'Servidor / VPS' },
+      ],
+      arrows: [
+        { fromIdx: 0, toIdx: 1, lane: 'top', label: 'domínio' },
+        { fromIdx: 1, toIdx: 2, lane: 'top', label: 'IP' },
+        { fromIdx: 2, toIdx: 3, lane: 'top', label: 'request' },
+        { fromIdx: 3, toIdx: 2, lane: 'bottom' },
+        { fromIdx: 2, toIdx: 1, lane: 'bottom' },
+        { fromIdx: 1, toIdx: 0, lane: 'bottom', label: 'resposta' },
       ],
     },
     {

@@ -93,6 +93,30 @@ function ModuleCard({ module }: { module: CourseModule }) {
           📖 Material
         </Link>
       </div>
+
+      {module.downloads.length > 0 && (
+        <div className="border-t border-slate-100 pt-4">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Downloads</p>
+          <ul className="flex flex-col gap-1.5">
+            {module.downloads.map((dl) => (
+              <li key={dl.url}>
+                <a
+                  href={dl.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={dl.url.startsWith('/') ? true : undefined}
+                  className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
+                >
+                  <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M8 2v8M5 7l3 3 3-3M2 12h12" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {dl.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </article>
   );
 }
