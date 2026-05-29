@@ -57,6 +57,7 @@ export function FlowchartDiagram({ slide }: { slide: FlowchartSlide }) {
     const twoLines = line2.length > 0;
 
     const badgeY = cy + (step.shape === 'diamond' ? DHH : NH / 2) + 18;
+    const captionY = badgeY + (step.badge ? 22 : 4);
     const aboveY = cy - (step.shape === 'diamond' ? DHH : NH / 2) - 18;
     const aboveCount = step.aboveBadges?.length ?? 0;
     const aboveSpacing = 30;
@@ -91,6 +92,9 @@ export function FlowchartDiagram({ slide }: { slide: FlowchartSlide }) {
               <text x={cx} y={badgeY} textAnchor="middle" dominantBaseline="middle" fontSize="13" fontWeight="800" fill="white">{step.badge}</text>
             </>
           )}
+          {step.caption && (
+            <text x={cx} y={captionY} textAnchor="middle" dominantBaseline="hanging" fontSize="10" fill="#64748b">{step.caption}</text>
+          )}
         </g>
       );
     }
@@ -112,6 +116,9 @@ export function FlowchartDiagram({ slide }: { slide: FlowchartSlide }) {
             <circle cx={cx} cy={badgeY} r={13} fill={accent} />
             <text x={cx} y={badgeY} textAnchor="middle" dominantBaseline="middle" fontSize="13" fontWeight="800" fill="white">{step.badge}</text>
           </>
+        )}
+        {step.caption && (
+          <text x={cx} y={captionY} textAnchor="middle" dominantBaseline="hanging" fontSize="10" fill="#64748b">{step.caption}</text>
         )}
       </g>
     );

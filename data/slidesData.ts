@@ -141,6 +141,15 @@ export interface FinalSlide {
   message: string;
 }
 
+export interface CertificateSlide {
+  type: 'certificate';
+  color: string;
+  course: string;
+  hours: number;
+  instructor: string;
+  company: string;
+}
+
 export interface PartsSlideItem {
   label: string;
   description?: string;
@@ -308,6 +317,7 @@ export interface FlowchartStep {
   accent?: string;
   badge?: string;
   aboveBadges?: string[];
+  caption?: string;
 }
 
 export interface FlowchartConnection {
@@ -397,7 +407,8 @@ export type Slide =
   | FormStudySlide
   | PromptBuilderSlide
   | WordCloudSlide
-  | FinalSlide;
+  | FinalSlide
+  | CertificateSlide;
 
 export const slidesData: Record<number, Slide[]> = {
   1: [
@@ -1828,24 +1839,21 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
       ],
     },
     {
-      type: 'flow',
+      type: 'flowchart',
       badge: 'Parte 03',
       title: 'Fluxo de uma Requisição',
       subtitle: 'O caminho do usuário até o servidor',
       color: '#6ee7b7',
-      nodes: [
-        { label: 'Cliente', icon: '🧑', accent: '#6ee7b7', caption: 'Navegador / App' },
-        { label: 'registro.br', icon: '🌐', accent: '#6ea8fe', caption: 'DNS — traduz domínio em IP' },
-        { label: 'Cloudflare', icon: '☁️', accent: '#fbbf24', caption: 'CDN + proteção + SSL' },
-        { label: 'Digital Ocean', icon: '🌊', accent: '#a78bfa', caption: 'Servidor / VPS' },
+      steps: [
+        { id: 'cliente',      label: 'Cliente',       icon: '🧑', accent: '#6ee7b7' },
+        { id: 'registro',     label: 'registro.br',   icon: '🌐', accent: '#6ea8fe', caption: 'Registrador de domínios (.com.br)' },
+        { id: 'cloudflare',   label: 'Cloudflare',    icon: '☁️',  accent: '#fbbf24', caption: 'CDN, firewall e SSL' },
+        { id: 'digitalocean', label: 'Digital Ocean', icon: '🌊', accent: '#a78bfa', caption: 'Servidor da aplicação' },
       ],
-      arrows: [
-        { fromIdx: 0, toIdx: 1, lane: 'top', label: 'domínio' },
-        { fromIdx: 1, toIdx: 2, lane: 'top', label: 'IP' },
-        { fromIdx: 2, toIdx: 3, lane: 'top', label: 'request' },
-        { fromIdx: 3, toIdx: 2, lane: 'bottom' },
-        { fromIdx: 2, toIdx: 1, lane: 'bottom' },
-        { fromIdx: 1, toIdx: 0, lane: 'bottom', label: 'resposta' },
+      connections: [
+        { from: 'cliente',    to: 'registro'     },
+        { from: 'registro',   to: 'cloudflare'   },
+        { from: 'cloudflare', to: 'digitalocean' },
       ],
     },
     {
@@ -1895,6 +1903,14 @@ Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda
       color: '#6ee7b7',
       icon: '🎉',
       message: 'Em 4 encontros, você instalou, construiu, versionou e publicou. Agora é sua vez de continuar.',
+    },
+    {
+      type: 'certificate',
+      color: '#6ee7b7',
+      course: 'WORKSHOP - Meu 1º Projeto com I.A.',
+      hours: 16,
+      instructor: 'Thiago Ferreira',
+      company: 'Pandô APPs',
     },
   ],
 };

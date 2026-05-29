@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { courseModules } from '@data/courseData';
 import {
   slidesData,
+  type CertificateSlide,
   type FormStudySlide,
   type GameSlide,
   type ArchitectureSlide,
@@ -589,6 +590,9 @@ function SlideRenderer({
           <p className="mt-8 max-w-4xl text-lg text-slate-700 md:text-2xl">{slide.message}</p>
         </SlideCard>
       );
+
+    case 'certificate':
+      return <CertificateSlideView slide={slide} />;
   }
 }
 
@@ -2029,6 +2033,238 @@ function StorySlideView({ slide }: { slide: StorySlide }) {
           })}
         </div>
       )}
+    </SlideCard>
+  );
+}
+
+function buildCertificateHTML(name: string, course: string, hours: number, instructor: string, company: string, _color: string): string {
+  const NAVY = '#162454';
+  const GOLD = '#c8a84b';
+
+  const cornerSVG = `
+    <polygon points="0,0 320,0 0,220" fill="${NAVY}"/>
+    <polygon points="0,0 264,0 0,181" fill="white"/>
+    <polygon points="0,0 244,0 0,167" fill="${NAVY}"/>
+    <polygon points="0,0 222,0 0,152" fill="${GOLD}"/>
+    <polygon points="0,0 208,0 0,143" fill="white"/>
+    <polygon points="0,0 184,0 0,126" fill="${NAVY}"/>
+    <polygon points="0,0 156,0 0,107" fill="white"/>`;
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Certificado — ${name}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4 landscape; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { width: 297mm; height: 210mm; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow: hidden; }
+
+    .page { width: 297mm; height: 210mm; position: relative; display: flex; align-items: center; justify-content: center; }
+
+    .border-rect { position: absolute; inset: 7mm; border: 1.5px solid ${NAVY}; pointer-events: none; }
+
+    .corner-tl { position: absolute; top: 0; left: 0; width: 105mm; height: 74mm; }
+    .corner-br { position: absolute; bottom: 0; right: 0; width: 105mm; height: 74mm; transform: rotate(180deg); }
+
+    .body { position: relative; z-index: 1; text-align: center; width: 100%; padding: 0 38mm; }
+
+    .cert-title {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 50pt;
+      font-weight: 700;
+      color: ${NAVY};
+      letter-spacing: 0.12em;
+      line-height: 1;
+      margin-bottom: 3.5mm;
+    }
+
+    .cert-sub {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8.5pt;
+      letter-spacing: 0.22em;
+      color: ${NAVY};
+      margin-bottom: 4mm;
+    }
+
+    .cert-name {
+      font-family: 'Dancing Script', cursive, Georgia, serif;
+      font-size: 38pt;
+      color: ${NAVY};
+      line-height: 1.15;
+      margin-bottom: 4.5mm;
+    }
+
+    .cert-desc {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8.5pt;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: ${NAVY};
+      line-height: 1.85;
+    }
+
+    .sig-area {
+      margin-top: 20mm;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5mm;
+    }
+
+    .sig-line { width: 62mm; border-top: 1px solid ${NAVY}; }
+
+    .sig-name {
+      font-family: Georgia, serif;
+      font-size: 9.5pt;
+      color: ${NAVY};
+    }
+
+    .sig-role {
+      font-family: Georgia, serif;
+      font-size: 8.5pt;
+      color: ${NAVY};
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <svg class="corner-tl" viewBox="0 0 320 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      ${cornerSVG}
+    </svg>
+    <svg class="corner-br" viewBox="0 0 320 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      ${cornerSVG}
+    </svg>
+
+    <div class="border-rect"></div>
+
+    <img src="/claude-logo.svg" aria-hidden
+      style="position:absolute;width:18%;top:4%;right:4%;opacity:0.1;pointer-events:none;z-index:0;" />
+
+    <div class="body">
+      <div class="cert-title">CERTIFICADO</div>
+      <div class="cert-sub">ESTE CERTIFICADO COMPROVA QUE</div>
+      <div class="cert-name">${name}</div>
+      <div class="cert-desc">
+        CONCLUIU COM ÊXITO O ${course.toUpperCase()}<br>
+        COM CARGA HORÁRIA DE ${hours} HORAS, MINISTRADO POR ${instructor.toUpperCase()} — ${company.toUpperCase()}<br>
+        AO LONGO DO MÊS DE MAIO DE 2026.
+      </div>
+      <div class="sig-area">
+        <div class="sig-line"></div>
+        <div class="sig-name">${instructor}</div>
+        <div class="sig-role">Instrutor — ${company}</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.fonts.ready.then(function() { window.print(); });
+  </script>
+</body>
+</html>`;
+}
+
+function CertificateSlideView({ slide }: { slide: CertificateSlide }) {
+  const [name, setName] = useState('');
+  const trimmed = name.trim();
+
+  function handleDownload() {
+    if (!trimmed) return;
+    const html = buildCertificateHTML(trimmed, slide.course, slide.hours, slide.instructor, slide.company, slide.color);
+    const w = window.open('', '_blank', 'width=900,height=650');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+  }
+
+  return (
+    <SlideCard color={slide.color}>
+      <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+        Certificado
+      </p>
+      <h2 className="mt-3 text-3xl font-bold text-slate-900 md:text-5xl">Seu certificado de conclusão</h2>
+      <p className="mt-2 text-base text-slate-500 md:text-xl">Preencha seu nome completo para gerar o certificado em PDF</p>
+
+      <div className="mt-10 flex w-full max-w-xl flex-col items-center gap-5">
+        <input
+          type="text"
+          placeholder="Seu nome completo"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleDownload(); }}
+          className="w-full rounded-2xl border-2 bg-white px-6 py-4 text-center text-xl text-slate-800 outline-none transition focus:ring-4"
+          style={{ borderColor: slide.color, ['--tw-ring-color' as never]: `${slide.color}44` }}
+        />
+
+        <button
+          onClick={handleDownload}
+          disabled={!trimmed}
+          className="flex items-center gap-3 rounded-2xl px-10 py-4 text-lg font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          style={{ background: slide.color }}
+        >
+          <span>⬇️</span> Baixar certificado em PDF
+        </button>
+      </div>
+
+      {/* Certificate preview */}
+      <div className="mt-10 w-full max-w-3xl overflow-hidden rounded-2xl shadow-2xl" style={{ border: '1.5px solid #162454', aspectRatio: '297/210', position: 'relative', background: '#fff' }}>
+        {/* Corner TL */}
+        <svg viewBox="0 0 320 220" preserveAspectRatio="none" className="absolute top-0 left-0" style={{ width: '35%', height: '45%' }}>
+          <polygon points="0,0 320,0 0,220" fill="#162454"/>
+          <polygon points="0,0 264,0 0,181" fill="white"/>
+          <polygon points="0,0 244,0 0,167" fill="#162454"/>
+          <polygon points="0,0 222,0 0,152" fill="#c8a84b"/>
+          <polygon points="0,0 208,0 0,143" fill="white"/>
+          <polygon points="0,0 184,0 0,126" fill="#162454"/>
+          <polygon points="0,0 156,0 0,107" fill="white"/>
+        </svg>
+        {/* Corner BR */}
+        <svg viewBox="0 0 320 220" preserveAspectRatio="none" className="absolute bottom-0 right-0" style={{ width: '35%', height: '45%', transform: 'rotate(180deg)' }}>
+          <polygon points="0,0 320,0 0,220" fill="#162454"/>
+          <polygon points="0,0 264,0 0,181" fill="white"/>
+          <polygon points="0,0 244,0 0,167" fill="#162454"/>
+          <polygon points="0,0 222,0 0,152" fill="#c8a84b"/>
+          <polygon points="0,0 208,0 0,143" fill="white"/>
+          <polygon points="0,0 184,0 0,126" fill="#162454"/>
+          <polygon points="0,0 156,0 0,107" fill="white"/>
+        </svg>
+
+        {/* Border */}
+        <div className="absolute" style={{ inset: '3%', border: '1px solid #162454', pointerEvents: 'none' }} />
+
+        {/* Watermark */}
+        <img
+          src="/claude-logo.svg"
+          aria-hidden
+          className="absolute"
+          style={{ width: '18%', top: '4%', right: '4%', opacity: 0.1, pointerEvents: 'none' }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 flex h-full flex-col items-center justify-center px-[18%] text-center">
+          <p className="text-[2.6cqw] font-bold tracking-[0.12em]" style={{ fontFamily: 'Georgia, serif', color: '#162454', lineHeight: 1 }}>
+            CERTIFICADO
+          </p>
+          <p className="mt-[1cqw] text-[0.75cqw] tracking-[0.2em]" style={{ fontFamily: 'Arial, sans-serif', color: '#162454' }}>
+            ESTE CERTIFICADO COMPROVA QUE
+          </p>
+          <p className="mt-[1cqw] text-[2cqw] italic" style={{ fontFamily: 'Georgia, serif', color: '#162454' }}>
+            {trimmed || <span style={{ color: '#cbd5e1' }}>Seu Nome Aqui</span>}
+          </p>
+          <p className="mt-[1cqw] text-[0.65cqw] uppercase tracking-[0.1em] leading-relaxed" style={{ fontFamily: 'Arial, sans-serif', color: '#162454' }}>
+            CONCLUIU COM ÊXITO O {slide.course.toUpperCase()}<br />
+            COM CARGA HORÁRIA DE {slide.hours} HORAS, MINISTRADO POR {slide.instructor.toUpperCase()} — {slide.company.toUpperCase()}<br />
+            AO LONGO DO MÊS DE MAIO DE 2026.
+          </p>
+          <div className="mt-[5cqw] flex flex-col items-center gap-[0.3cqw]">
+            <div style={{ width: '20cqw', borderTop: '1px solid #162454' }} />
+            <p className="text-[0.7cqw]" style={{ fontFamily: 'Georgia, serif', color: '#162454' }}>{slide.instructor}</p>
+            <p className="text-[0.6cqw]" style={{ fontFamily: 'Georgia, serif', color: '#162454' }}>Instrutor — {slide.company}</p>
+          </div>
+        </div>
+      </div>
     </SlideCard>
   );
 }
