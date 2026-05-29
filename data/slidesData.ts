@@ -997,7 +997,7 @@ Must include:
 - Gzip enabled: gzip on, gzip_vary on, comp level 6, covering text/css/js/json/svg/xml.
 - SPA / app fallback: location / { try_files $uri $uri/ /index.php?$query_string; }.
 - Long-cache for static + fingerprinted build assets: expires 1y; Cache-Control "public, immutable"; on /build/ and *.(js|css|png|woff2|...), with access_log off.
-- Deny dotfiles: block /\.ht and /\.env.
+- Deny dotfiles: block /.ht and /.env.
 - client_max_body_size aligned with the app's upload limit.
 Keep a two-config bootstrap for first deploy: an initial.conf (HTTP only, no SSL block) copied to active.conf so nginx can boot before certs exist; certbot issues the cert; then swap to the full SSL production.conf.
 
