@@ -2300,4 +2300,430 @@ Projeto completo hospedado no GitLab — repositório exclusivo para alunos da m
 | **GitLab** | Alternativa ao GitHub, com foco em pipelines de CI/CD |
 | **LGPD** | Lei Geral de Proteção de Dados — regula o uso de dados pessoais no Brasil |
 `,
+
+  4: `# Material Complementar — Aula 4
+## Deploy em Ambiente de Produção
+
+Chegamos à última aula da mentoria. E não é exagero dizer que este é o momento mais importante de todo o curso — porque é aqui que o seu projeto deixa de existir apenas no seu computador e passa a existir para o mundo.
+
+Publicar uma aplicação em produção é o rito de passagem de todo desenvolvedor. É quando tudo que você construiu se torna real, acessível, utilizável. E é também quando você descobre que existe uma diferença enorme entre "funciona no meu computador" e "funciona em produção".
+
+Este material vai te guiar por cada conceito apresentado na aula, com profundidade suficiente para que você entenda não apenas *o que fazer*, mas *por que fazer*.
+
+---
+
+## O que é "produção"?
+
+Antes de qualquer coisa, vamos definir os ambientes que existem no desenvolvimento de software. Você vai ouvir esses termos com frequência:
+
+### 💻 Desenvolvimento (local / localhost)
+
+É o ambiente que roda **na sua máquina**. Quando você digita \`make up\` e acessa \`http://localhost:3000\`, você está no ambiente de desenvolvimento.
+
+**Características:**
+- Só você consegue acessar
+- Erros são tolerados — você pode testar e quebrar à vontade
+- Os dados são fictícios (seeders, usuários de teste)
+- Performance não é prioridade
+- Logs detalhados ajudam a depurar
+
+**Analogia:** É o ensaio antes do espetáculo. Ninguém do público vê. Você pode parar, reiniciar, tentar de novo.
+
+---
+
+### 🌍 Produção (production / prod)
+
+É o ambiente que roda **em um servidor remoto** e está acessível para qualquer pessoa no mundo que tiver o link.
+
+**Características:**
+- Qualquer pessoa com o domínio consegue acessar
+- Erros têm consequências reais — um bug pode afetar clientes pagantes
+- Os dados são reais (cadastros, pedidos, pagamentos)
+- Performance é crítica — ninguém espera mais de 3 segundos
+- Logs são para auditoria, não para debug detalhado
+
+**Analogia:** É o espetáculo ao vivo. O público está assistindo. Não tem como pausar e recomeçar.
+
+---
+
+### 🧪 Staging (opcional, mas recomendado)
+
+É um ambiente intermediário — igual à produção em configuração, mas com dados fictícios. Serve para testar antes de ir a produção.
+
+**Quando usar:** Antes de qualquer deploy grande, você publica no staging, testa o fluxo completo e só aí vai pra produção.
+
+---
+
+## Parte 01 — Preparação para Produção
+
+O slide desta parte listou 6 itens. Vamos entender cada um em detalhe.
+
+---
+
+### 🏗️ Build de produção: \`npm run build\`
+
+Quando você desenvolve com Vite (o bundler que usamos), o frontend roda em modo de desenvolvimento — com hot reload, sourcemaps detalhados, sem minificação. Isso é ótimo para desenvolver, mas péssimo para produção.
+
+O comando \`npm run build\` transforma seu código React em arquivos estáticos otimizados:
+
+- **Minificação:** Remove espaços, comentários e encurta nomes de variáveis. Um arquivo de 500KB pode virar 80KB.
+- **Bundling:** Junta múltiplos arquivos em poucos bundles, reduzindo o número de requisições HTTP.
+- **Tree shaking:** Remove código que não é usado — se você importou uma biblioteca mas só usou 10% dela, apenas esses 10% vão pro bundle.
+- **Fingerprinting:** Adiciona um hash no nome do arquivo (\`main.a3f7c2d.js\`) para controle de cache.
+
+O resultado fica na pasta \`/dist\` (ou \`/public/build\` dependendo da configuração) e é esse conteúdo que o Nginx vai servir.
+
+---
+
+### 🧹 Remover console.log, dados de teste e usuários fictícios
+
+Durante o desenvolvimento, você provavelmente encheu o código de \`console.log\` para depurar. Isso é normal — mas em produção:
+
+1. **Vazamento de informação:** Um \`console.log(user)\` pode expor dados sensíveis no DevTools do usuário.
+2. **Performance:** Excesso de logs no servidor pode encher o disco.
+3. **Profissionalismo:** Logs de debug poluem os logs reais de produção.
+
+**Dados de teste:** Aquele usuário \`admin@admin.com / 123456\` que o seeder cria é conveniente para desenvolvimento. Em produção, ele é uma vulnerabilidade óbvia. Garanta que os seeders de produção criam apenas dados necessários e que a senha do admin é forte e única.
+
+---
+
+### 🔐 Variáveis de ambiente configuradas
+
+Todo dado que muda entre desenvolvimento e produção deve estar em variáveis de ambiente — nunca fixo no código. Se você tem um \`localhost:3306\` escrito diretamente no código, vai quebrar em produção.
+
+Veremos isso em detalhe na Parte 02.
+
+---
+
+### 🧪 Testar o fluxo completo antes
+
+Antes de ir a produção, percorra o fluxo principal do seu produto do começo ao fim:
+
+1. Cadastro de novo usuário
+2. Login
+3. Ação principal (comprar ingresso, criar evento, etc.)
+4. Logout
+
+Se qualquer etapa falhar no ambiente de staging, você não vai a produção até corrigir. Isso evita que bugs simples afetem usuários reais.
+
+---
+
+### 📦 Revisar dependências
+
+O comando \`composer install --no-dev\` instala apenas as dependências de produção do Laravel, ignorando ferramentas de desenvolvimento (debugbar, phpunit, etc.). Isso reduz o tamanho do build e a superfície de ataque.
+
+No frontend, \`npm run build\` já faz isso automaticamente — só o que está em \`dependencies\` (não \`devDependencies\`) vai para produção.
+
+---
+
+### 🙈 Verificar o .gitignore
+
+O \`.gitignore\` é a sua primeira linha de defesa contra vazamento acidental de credenciais. Verifique que ele inclui:
+
+\`\`\`
+.env
+.env.local
+.env.production
+/node_modules
+/vendor
+/storage/logs
+\`\`\`
+
+**Nunca commite o \`.env\`.** Se você já commitou acidentalmente uma chave de API, ela está no histórico do Git para sempre — você precisa revogar essa chave imediatamente, mesmo que tenha apagado o arquivo depois.
+
+---
+
+## Parte 02 — Variáveis de Ambiente em Produção
+
+Esta é uma das partes mais críticas de qualquer deploy. Vamos entender o que são variáveis de ambiente, por que existem e como gerenciá-las de forma segura.
+
+---
+
+### O que são variáveis de ambiente?
+
+São configurações externas ao código que mudam dependendo de onde a aplicação está rodando. Em vez de escrever valores diretamente no código, você referencia uma variável:
+
+**❌ Errado — hardcoded:**
+\`\`\`php
+$db = new PDO('mysql:host=localhost;dbname=meuapp', 'root', '');
+\`\`\`
+
+**✅ Certo — variável de ambiente:**
+\`\`\`php
+$db = new PDO(env('DATABASE_URL'), env('DB_USER'), env('DB_PASS'));
+\`\`\`
+
+O valor real de \`DATABASE_URL\` existe apenas no arquivo \`.env\`, que nunca vai para o Git.
+
+---
+
+### 🔑 DATABASE_URL
+
+A string de conexão com o banco de dados. Em desenvolvimento é \`localhost\`, em produção é o IP ou hostname do servidor de banco de dados — que pode ser o mesmo servidor da aplicação ou um serviço gerenciado separado (como o PlanetScale, Railway Database, ou RDS da AWS).
+
+**Exemplo:**
+\`\`\`
+# Desenvolvimento
+DB_HOST=localhost
+DB_DATABASE=meuapp_dev
+
+# Produção
+DB_HOST=147.182.241.209
+DB_DATABASE=meuapp_production
+\`\`\`
+
+---
+
+### 🔐 JWT_SECRET / APP_KEY
+
+A chave secreta usada para assinar tokens de autenticação. **Ela deve ser:**
+- Longa (mínimo 32 caracteres, idealmente 64+)
+- Completamente aleatória
+- Única por ambiente (dev e prod têm chaves diferentes)
+- Nunca compartilhada publicamente
+
+No Laravel, o comando \`php artisan key:generate\` gera uma chave segura automaticamente.
+
+**Se essa chave vazar:** Qualquer pessoa pode forjar tokens de autenticação e fingir ser qualquer usuário do sistema.
+
+---
+
+### 🌐 API_URL
+
+A URL base do backend que o frontend usa para fazer requisições. Em desenvolvimento é \`http://localhost:8000\`. Em produção é algo como \`https://api.seudominio.com.br\`.
+
+Se o frontend chamar \`localhost:8000\` em produção, vai tentar se conectar ao servidor de quem está usando — o que não funciona.
+
+---
+
+### 📧 SMTP / RESEND_KEY
+
+Credenciais do serviço de envio de e-mail. Em desenvolvimento, você pode usar o Mailtrap (que captura os e-mails sem enviá-los de verdade). Em produção, você usa um serviço real como Resend, SendGrid ou Amazon SES.
+
+**Por que importa:** E-mails transacionais (confirmação de cadastro, recuperação de senha, recibo de compra) são críticos para a experiência do usuário. Um erro de configuração de e-mail pode silenciosamente parar todos os e-mails da aplicação.
+
+---
+
+## Parte 03 — Fluxo de uma Requisição
+
+Este é um dos conceitos mais importantes para quem quer entender como a internet funciona. Quando você digita \`www.seusite.com.br\` no navegador, o que acontece nos bastidores?
+
+---
+
+### 🧑 1. Cliente (você, o navegador)
+
+Tudo começa com uma ação do usuário — digitar uma URL, clicar em um link, um app no celular fazendo uma requisição. O navegador precisa descobrir o endereço IP do servidor que hospeda aquele domínio.
+
+**O que o cliente sabe:** O nome do domínio (\`seusite.com.br\`).
+**O que o cliente precisa:** O endereço IP do servidor.
+
+---
+
+### 🌐 2. registro.br (DNS)
+
+O **DNS** (Domain Name System) é o sistema de tradução da internet — ele converte nomes de domínio legíveis por humanos em endereços IP legíveis por máquinas.
+
+**O registro.br** é o responsável por domínios \`.com.br\`, \`.net.br\`, \`.org.br\` no Brasil. Quando você compra um domínio \`.com.br\`, você registra pelo registro.br e configura para quais servidores DNS ele deve apontar.
+
+**Como funciona:**
+1. Seu navegador pergunta: *"Qual o IP de seusite.com.br?"*
+2. O DNS do registro.br responde: *"O IP é 104.21.45.67"* (o IP do Cloudflare, por exemplo)
+3. Essa resposta fica em cache por um tempo (TTL — Time To Live) para não precisar consultar toda vez
+
+**Analogia:** O DNS é como a lista telefônica da internet. Você sabe o nome da empresa, mas precisa do número de telefone para ligar. O DNS é quem te dá esse número.
+
+---
+
+### ☁️ 3. Cloudflare
+
+O Cloudflare fica entre o DNS e o seu servidor real. Ele atua como um intermediário poderoso que oferece vários serviços:
+
+**🛡️ Proteção DDoS:** Ataques de negação de serviço (DDoS) tentam derrubar sua aplicação enviando milhões de requisições simultâneas. O Cloudflare absorve esse tráfego antes que chegue ao seu servidor.
+
+**🔒 SSL/TLS gratuito:** O Cloudflare gerencia os certificados HTTPS para você. Seu navegador conecta com segurança ao Cloudflare, e o Cloudflare se conecta ao seu servidor (idealmente também com HTTPS).
+
+**⚡ CDN (Content Delivery Network):** Arquivos estáticos como imagens, CSS e JavaScript são armazenados em servidores do Cloudflare distribuídos pelo mundo. Um usuário no Japão baixa esses arquivos de um servidor em Tóquio, não do seu servidor no Brasil — muito mais rápido.
+
+**🔍 Cache:** O Cloudflare pode armazenar respostas inteiras e servir sem nem chegar ao seu servidor, reduzindo a carga e melhorando a velocidade.
+
+**Analogia:** O Cloudflare é como a recepção de um grande edifício corporativo. Ele filtra quem entra (segurança), tem cópias de documentos comuns para não precisar chamar o departamento toda vez (cache), e garante que a comunicação é segura (SSL).
+
+---
+
+### 🌊 4. Digital Ocean (Servidor da Aplicação)
+
+A requisição finalmente chega ao servidor — no nosso caso, um Droplet da Digital Ocean. É aqui que está rodando:
+
+- **Nginx:** O servidor web que recebe a requisição HTTP/HTTPS e decide o que fazer com ela. Para arquivos estáticos (JS, CSS, imagens), serve diretamente. Para requisições da API (\`/api/...)\`, faz proxy para o PHP-FPM.
+- **PHP-FPM:** Processa o código Laravel — lê o banco de dados, aplica regras de negócio, retorna JSON.
+- **MySQL:** Armazena os dados da aplicação.
+- **Redis:** Cache de sessões e filas de jobs.
+
+**O caminho completo de uma requisição:**
+
+\`\`\`
+Usuário digita seusite.com.br
+  → DNS resolve para o IP do Cloudflare
+  → Cloudflare verifica cache (se tiver, retorna direto)
+  → Cloudflare encaminha para o servidor da Digital Ocean
+  → Nginx recebe a requisição
+  → Para /api/*: PHP-FPM processa, consulta MySQL, retorna JSON
+  → Para /*: Nginx serve o index.html do React (SPA fallback)
+  → Resposta volta pelo mesmo caminho
+  → Usuário vê o resultado na tela
+\`\`\`
+
+---
+
+## Parte 04 — Monitoramento Pós-Deploy
+
+Publicou. E agora? O trabalho não acabou — começa uma nova fase: garantir que tudo continua funcionando.
+
+---
+
+### 📋 Verificar logs imediatamente após o deploy
+
+Os primeiros minutos após um deploy são críticos. Se algo quebrou, vai aparecer nos logs agora.
+
+**Como verificar no Docker:**
+\`\`\`bash
+docker logs ticketeira_app --tail=100 -f
+\`\`\`
+
+**O que procurar:**
+- Erros de conexão com banco de dados
+- Erros de variável de ambiente não encontrada
+- Exceções PHP não tratadas
+- Erros de permissão em arquivos
+
+---
+
+### 🧪 Testar todos os fluxos críticos na URL de produção
+
+Após o deploy, você mesmo deve testar:
+
+1. **Acesse o site pelo domínio real** — não pelo IP, pelo domínio
+2. **Teste o cadastro** de um novo usuário
+3. **Teste o login** com esse usuário
+4. **Execute a ação principal** do sistema (compra, agendamento, etc.)
+5. **Teste o logout**
+6. **Verifique o e-mail** — se a aplicação envia e-mails, teste se estão chegando
+
+---
+
+### 🚨 Configurar alertas de erro
+
+Não espere um usuário reclamar para saber que algo quebrou. Configure alertas proativos:
+
+- **Sentry:** Captura exceções em tempo real e te avisa por e-mail ou Slack
+- **Logtail / Better Stack:** Agrega logs de todos os serviços e permite criar alertas
+- **Uptime Robot:** Monitora se o site está online e te avisa se cair (gratuito para até 50 monitores)
+
+---
+
+### 📊 Monitorar uso de memória e CPU
+
+Um servidor sem monitoramento é um avião sem instrumentos. Você não sabe se está funcionando bem até cair.
+
+**Métricas importantes:**
+- **CPU:** Se consistentemente acima de 80%, pode estar sobrecarregado
+- **Memória RAM:** Se chegando no limite, PHP ou Redis podem começar a falhar
+- **Disco:** Logs crescem. Banco de dados cresce. Se o disco encher, tudo para.
+- **Conexões de banco:** Cada requisição PHP abre uma conexão. Se esgotar o pool, as requisições começam a falhar
+
+---
+
+### 🔄 Processo de rollback
+
+Todo deploy pode dar errado. Antes de fazer qualquer deploy em produção, defina o que fazer se algo quebrar:
+
+1. **Identificar o problema** nos logs
+2. **Decidir:** corrige agora ou reverte?
+3. **Se reverter:** \`git revert\` ou \`git reset\` para o commit anterior + \`make deploy\`
+4. **Se corrigir:** fix rápido, commit, \`make send\` + \`make deploy\`
+
+**Regra de ouro:** Um deploy ruim revertido em 5 minutos é infinitamente melhor do que 2 horas de produção quebrada enquanto você tenta consertar ao vivo.
+
+---
+
+## Parte 05 — Próximos Passos
+
+A mentoria termina. Mas o aprendizado não.
+
+---
+
+### 📚 Continue iterando com Claude Code
+
+O Claude Code não é uma ferramenta que você usa uma vez e guarda. É um colaborador permanente de desenvolvimento. Use-o para:
+
+- Adicionar novas funcionalidades ao projeto que construímos
+- Corrigir bugs que aparecerem em produção
+- Refatorar partes do código que ficaram confusas
+- Construir seu próximo projeto do zero
+
+**A curva de aprendizado:** No começo, você vai pedir coisas simples e ficar surpreso com o que a IA consegue fazer. Com o tempo, você vai aprender a fazer pedidos mais precisos, a entender o que foi feito e por quê, e a pedir revisões e melhorias. Isso é desenvolvimento de habilidade real.
+
+---
+
+### 🔁 Releia o material das 4 aulas periodicamente
+
+O conteúdo destas 4 aulas cobre conceitos que levam meses para sedimentar. Não espere lembrar de tudo na primeira leitura.
+
+**Sugestão:** Uma vez por mês, releia o material de uma das aulas enquanto aplica os conceitos em algum projeto ativo. A segunda leitura vai fazer muito mais sentido do que a primeira.
+
+---
+
+### 🤝 Use o fluxo Git em todo projeto novo
+
+O fluxo que aprendemos — branches, commits descritivos, \`make send\`, pull requests — não é opcional. É o mínimo profissional esperado em qualquer projeto de software.
+
+Mesmo que você trabalhe sozinho, o Git te protege de:
+- Perder trabalho por acidente
+- Não saber o que mudou e quando
+- Não conseguir voltar atrás quando algo quebra
+
+---
+
+### 🚀 Cada projeto novo é uma oportunidade de ir além
+
+Com o que você aprendeu nestas 4 aulas, você tem as ferramentas para:
+
+- Construir e publicar um SaaS (Software as a Service)
+- Criar ferramentas internas para sua empresa
+- Automatizar processos que hoje são manuais
+- Oferecer desenvolvimento de software como serviço para clientes
+
+O limite não é mais técnico. É de imaginação e execução.
+
+---
+
+## Glossário da Aula 4
+
+| Termo | Definição |
+|---|---|
+| **Produção** | Ambiente de servidor real, acessível para usuários finais |
+| **Staging** | Ambiente intermediário, igual à produção mas com dados fictícios |
+| **Deploy** | Processo de publicar uma nova versão da aplicação em produção |
+| **Build** | Processo de compilar e otimizar o código para produção |
+| **DNS** | Domain Name System — traduz domínios em endereços IP |
+| **registro.br** | Órgão responsável por domínios .com.br e outros TLDs brasileiros |
+| **TTL** | Time To Live — tempo que uma resposta DNS fica em cache |
+| **Cloudflare** | Serviço de CDN, firewall, SSL e proteção DDoS |
+| **DDoS** | Ataque de negação de serviço — envio massivo de requisições para derrubar um servidor |
+| **CDN** | Content Delivery Network — rede de servidores distribuídos para entrega rápida de conteúdo |
+| **SSL/TLS** | Protocolo de criptografia que garante conexões HTTPS seguras |
+| **Nginx** | Servidor web/proxy reverso de alta performance |
+| **PHP-FPM** | Gerenciador de processos PHP para servidores de produção |
+| **Droplet** | Nome dos servidores VPS da Digital Ocean |
+| **VPS** | Virtual Private Server — servidor virtual dedicado na nuvem |
+| **Proxy reverso** | Servidor que recebe requisições externas e as encaminha para servidores internos |
+| **Rollback** | Reverter uma implantação para uma versão anterior |
+| **Sentry** | Ferramenta de monitoramento de erros em tempo real |
+| **Uptime** | Tempo que um serviço permanece online e acessível |
+| **Variável de ambiente** | Configuração externa ao código que muda por ambiente |
+| **make deploy** | Comando que atualiza a aplicação em produção com pull + build + migrate |
+| **Fingerprinting** | Hash adicionado ao nome de arquivos estáticos para controle de cache |
+| **Tree shaking** | Remoção automática de código não utilizado durante o build |
+| **Minificação** | Compressão de código removendo espaços e otimizando nomes |
+`,
 };
