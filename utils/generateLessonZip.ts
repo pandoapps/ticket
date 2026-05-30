@@ -107,7 +107,7 @@ class Writer {
   }
 
   private footerPage() {
-    const n = this.doc.internal.getNumberOfPages();
+    const n = (this.doc.internal as any).getNumberOfPages();
     this.doc.setFontSize(8);
     this.doc.setFont('helvetica', 'normal');
     this.doc.setTextColor(190, 190, 190);
