@@ -94,6 +94,7 @@ export const producerService = {
           conversion_percent: number;
           tickets_issued: number;
           tickets_redeemed: number;
+          by_origin: Array<{ origin: string; orders: number; revenue: number; platform_fee: number; net: number }>;
         };
         series: Array<{ bucket: string; revenue: string; platform_fee: string; orders: number }>;
       };
