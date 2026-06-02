@@ -19,6 +19,7 @@ export function OrdersPage() {
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<AdminOrder | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -29,10 +30,31 @@ export function OrdersPage() {
     expired: { label: t('orders.expired'), color: 'bg-slate-100 text-slate-700' },
   };
 
+  const allSelected = orders.length > 0 && orders.every((o) => selectedIds.has(o.id));
+  const someSelected = selectedIds.size > 0;
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(orders.map((o) => o.id)));
+    }
+  }
+
+  function toggleOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   async function load() {
     try {
       const res = await adminService.listOrders({ status: status || undefined, q: q || undefined });
       setOrders(res.data);
+      setSelectedIds(new Set());
     } catch (err) {
       toast.error((err as ApiError).message);
     }
@@ -61,12 +83,35 @@ export function OrdersPage() {
     }
   }
 
+  async function handleBulkDelete() {
+    const count = selectedIds.size;
+    const ok = await confirm({
+      title: t('admin.deleteSelectedSalesTitle', { count }),
+      description: t('admin.deleteSelectedSalesDesc'),
+      confirmText: t('admin.deleteSelectedSalesBtn'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await Promise.all([...selectedIds].map((id) => adminService.deleteOrder(id)));
+      toast.success(t('admin.salesDeleted', { count }));
+      load();
+    } catch (err) {
+      toast.error((err as ApiError).message);
+    }
+  }
+
   return (
     <AppLayout title={t('admin.panel')} nav={adminNav}>
       <PageHeader
         title={t('admin.globalSales')}
         action={
           <div className="flex gap-2">
+            {someSelected && (
+              <button onClick={handleBulkDelete} className="btn btn-danger text-sm">
+                {t('admin.deleteSelected', { count: selectedIds.size })}
+              </button>
+            )}
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.search')} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
               <option value="">{t('admin.allStatuses')}</option>
@@ -86,6 +131,14 @@ export function OrdersPage() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  />
+                </th>
                 <Th>#</Th>
                 <Th>{t('admin.customerCol')}</Th>
                 <Th>{t('admin.eventCol')}</Th>
@@ -99,8 +152,17 @@ export function OrdersPage() {
             <tbody className="divide-y divide-slate-200">
               {orders.map((order) => {
                 const meta = STATUS[order.status] ?? { label: order.status, color: '' };
+                const isSelected = selectedIds.has(order.id);
                 return (
-                  <tr key={order.id}>
+                  <tr key={order.id} className={isSelected ? 'bg-brand-50' : ''}>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleOne(order.id)}
+                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      />
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs">#{order.id}</td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-900">{order.customer?.name}</p>

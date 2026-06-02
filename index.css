@@ -49,6 +49,9 @@
   .btn-ghost {
     @apply text-slate-600 hover:text-slate-900;
   }
+  .btn-danger {
+    @apply bg-rose-600 text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60;
+  }
   .chip {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }

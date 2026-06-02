@@ -40,13 +40,32 @@ export function EventsPage() {
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<EventModel | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const toast = useToast();
   const confirm = useConfirm();
+
+  const allSelected = events.length > 0 && events.every((e) => selectedIds.has(e.id));
+  const someSelected = selectedIds.size > 0;
+
+  function toggleAll() {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(events.map((e) => e.id)));
+  }
+
+  function toggleOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   async function load() {
     try {
       const res = await adminService.listEvents({ status: status || undefined, q: q || undefined });
       setEvents(res.data);
+      setSelectedIds(new Set());
     } catch (err) {
       toast.error((err as ApiError).message);
     }
@@ -75,12 +94,35 @@ export function EventsPage() {
     }
   }
 
+  async function handleBulkDelete() {
+    const count = selectedIds.size;
+    const ok = await confirm({
+      title: t('admin.deleteSelectedEventsTitle', { count }),
+      description: t('admin.deleteSelectedEventsDesc'),
+      confirmText: t('common.delete'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await Promise.all([...selectedIds].map((id) => adminService.deleteEvent(id)));
+      toast.success(t('admin.eventsDeleted', { count }));
+      load();
+    } catch (err) {
+      toast.error((err as ApiError).message);
+    }
+  }
+
   return (
     <AppLayout title={t('admin.panel')} nav={adminNav}>
       <PageHeader
         title={t('admin.globalEvents')}
         action={
           <div className="flex gap-2">
+            {someSelected && (
+              <button onClick={handleBulkDelete} className="btn btn-danger text-sm">
+                {t('admin.deleteSelected', { count: selectedIds.size })}
+              </button>
+            )}
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.search')} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
               <option value="">{t('admin.allStatuses')}</option>
@@ -99,6 +141,9 @@ export function EventsPage() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-4 py-3">
+                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                </th>
                 <Th>{t('admin.eventCol')}</Th>
                 <Th>{t('admin.producerCol')}</Th>
                 <Th>{t('admin.startCol')}</Th>
@@ -108,27 +153,33 @@ export function EventsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {events.map((event) => (
-                <tr key={event.id}>
-                  <td className="px-4 py-3 font-medium text-slate-900">
-                    <Link to={`/admin/eventos/${event.id}`} className="hover:text-brand-600 hover:underline">
-                      {event.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{event.producer?.company_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(event.starts_at)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLOR[event.status]}`}>{event.status}</span>
-                  </td>
-                  <td className="px-4 py-3">{event.lots?.length ?? 0}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <ActionIconButton onClick={() => setEditing(event)} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
-                      <ActionIconButton onClick={() => handleDelete(event)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {events.map((event) => {
+                const isSelected = selectedIds.has(event.id);
+                return (
+                  <tr key={event.id} className={isSelected ? 'bg-brand-50' : ''}>
+                    <td className="px-4 py-3">
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleOne(event.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                    </td>
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      <Link to={`/admin/eventos/${event.id}`} className="hover:text-brand-600 hover:underline">
+                        {event.name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{event.producer?.company_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(event.starts_at)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLOR[event.status]}`}>{event.status}</span>
+                    </td>
+                    <td className="px-4 py-3">{event.lots?.length ?? 0}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <ActionIconButton onClick={() => setEditing(event)} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
+                        <ActionIconButton onClick={() => handleDelete(event)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

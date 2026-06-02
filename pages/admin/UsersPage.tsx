@@ -20,6 +20,7 @@ export function UsersPage() {
   const [role, setRole] = useState('');
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<User | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -29,10 +30,28 @@ export function UsersPage() {
     customer: t('roles.customer'),
   };
 
+  const allSelected = users.length > 0 && users.every((u) => selectedIds.has(u.id));
+  const someSelected = selectedIds.size > 0;
+
+  function toggleAll() {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(users.map((u) => u.id)));
+  }
+
+  function toggleOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   async function load() {
     try {
       const res = await adminService.listUsers({ role: role || undefined, q: q || undefined });
       setUsers(res.data);
+      setSelectedIds(new Set());
     } catch (err) {
       toast.error((err as ApiError).message);
     }
@@ -61,12 +80,35 @@ export function UsersPage() {
     }
   }
 
+  async function handleBulkDelete() {
+    const count = selectedIds.size;
+    const ok = await confirm({
+      title: t('admin.deleteSelectedUsersTitle', { count }),
+      description: t('admin.deleteSelectedUsersDesc'),
+      confirmText: t('common.delete'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await Promise.all([...selectedIds].map((id) => adminService.deleteUser(id)));
+      toast.success(t('admin.usersDeleted', { count }));
+      load();
+    } catch (err) {
+      toast.error((err as ApiError).message);
+    }
+  }
+
   return (
     <AppLayout title={t('admin.panel')} nav={adminNav}>
       <PageHeader
         title={t('admin.usersPage')}
         action={
           <div className="flex gap-2">
+            {someSelected && (
+              <button onClick={handleBulkDelete} className="btn btn-danger text-sm">
+                {t('admin.deleteSelected', { count: selectedIds.size })}
+              </button>
+            )}
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.search')} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
             <select value={role} onChange={(e) => setRole(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
               <option value="">{t('admin.allProfiles')}</option>
@@ -85,6 +127,9 @@ export function UsersPage() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-4 py-3">
+                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                </th>
                 <Th>{t('admin.name')}</Th>
                 <Th>{t('admin.email')}</Th>
                 <Th>{t('admin.role')}</Th>
@@ -93,20 +138,26 @@ export function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td className="px-4 py-3 font-medium text-slate-900">{u.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{u.email}</td>
-                  <td className="px-4 py-3">{ROLE_LABEL[u.role] ?? u.role}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(u.created_at)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <ActionIconButton onClick={() => setEditing(u)} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
-                      <ActionIconButton onClick={() => handleDelete(u)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {users.map((u) => {
+                const isSelected = selectedIds.has(u.id);
+                return (
+                  <tr key={u.id} className={isSelected ? 'bg-brand-50' : ''}>
+                    <td className="px-4 py-3">
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleOne(u.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                    </td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{u.name}</td>
+                    <td className="px-4 py-3 text-slate-600">{u.email}</td>
+                    <td className="px-4 py-3">{ROLE_LABEL[u.role] ?? u.role}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(u.created_at)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <ActionIconButton onClick={() => setEditing(u)} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
+                        <ActionIconButton onClick={() => handleDelete(u)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

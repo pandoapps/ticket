@@ -20,6 +20,7 @@ export function ProducersPage() {
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<Producer | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const toast = useToast();
   const confirm = useConfirm();
   const prompt = usePrompt();
@@ -30,10 +31,28 @@ export function ProducersPage() {
     blocked: { label: t('admin.blockedFilter'), color: 'bg-rose-100 text-rose-700' },
   };
 
+  const allSelected = producers.length > 0 && producers.every((p) => selectedIds.has(p.id));
+  const someSelected = selectedIds.size > 0;
+
+  function toggleAll() {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(producers.map((p) => p.id)));
+  }
+
+  function toggleOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   async function load() {
     try {
       const res = await adminService.listProducers({ status: status || undefined, q: q || undefined });
       setProducers(res.data);
+      setSelectedIds(new Set());
     } catch (err) {
       toast.error((err as ApiError).message);
     }
@@ -99,6 +118,24 @@ export function ProducersPage() {
     }
   }
 
+  async function handleBulkDelete() {
+    const count = selectedIds.size;
+    const ok = await confirm({
+      title: t('admin.deleteSelectedProducersTitle', { count }),
+      description: t('admin.deleteSelectedProducersDesc'),
+      confirmText: t('common.delete'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await Promise.all([...selectedIds].map((id) => adminService.deleteProducer(id)));
+      toast.success(t('admin.producersDeleted', { count }));
+      load();
+    } catch (err) {
+      toast.error((err as ApiError).message);
+    }
+  }
+
   return (
     <AppLayout title={t('admin.panel')} nav={adminNav}>
       <PageHeader
@@ -106,6 +143,11 @@ export function ProducersPage() {
         description={t('admin.producersDesc')}
         action={
           <div className="flex gap-2">
+            {someSelected && (
+              <button onClick={handleBulkDelete} className="btn btn-danger text-sm">
+                {t('admin.deleteSelected', { count: selectedIds.size })}
+              </button>
+            )}
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.search')} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
               <option value="">{t('admin.allStatuses')}</option>
@@ -124,6 +166,9 @@ export function ProducersPage() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-4 py-3">
+                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                </th>
                 <Th>{t('admin.company')}</Th>
                 <Th>{t('admin.responsible')}</Th>
                 <Th>{t('admin.document')}</Th>
@@ -136,8 +181,12 @@ export function ProducersPage() {
             <tbody className="divide-y divide-slate-200">
               {producers.map((p) => {
                 const meta = STATUS[p.status];
+                const isSelected = selectedIds.has(p.id);
                 return (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={isSelected ? 'bg-brand-50' : ''}>
+                    <td className="px-4 py-3">
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleOne(p.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                    </td>
                     <td className="px-4 py-3 font-medium text-slate-900">{p.company_name}</td>
                     <td className="px-4 py-3">
                       <p className="text-slate-900">{p.user?.name}</p>

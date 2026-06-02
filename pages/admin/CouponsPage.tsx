@@ -24,8 +24,26 @@ export function CouponsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const toast = useToast();
   const confirm = useConfirm();
+
+  const allSelected = coupons.length > 0 && coupons.every((c) => selectedIds.has(c.id));
+  const someSelected = selectedIds.size > 0;
+
+  function toggleAll() {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(coupons.map((c) => c.id)));
+  }
+
+  function toggleOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const load = useCallback(async () => {
     try {
@@ -34,6 +52,7 @@ export function CouponsPage() {
       if (searchTerm.trim()) params.q = searchTerm.trim();
       const res = await adminCouponService.list(params);
       setCoupons(res.data);
+      setSelectedIds(new Set());
     } catch (err) {
       toast.error((err as ApiError).message);
     }
@@ -79,15 +98,40 @@ export function CouponsPage() {
     }
   }
 
+  async function handleBulkDelete() {
+    const count = selectedIds.size;
+    const ok = await confirm({
+      title: t('admin.deleteSelectedCouponsTitle', { count }),
+      description: t('admin.deleteSelectedCouponsDesc'),
+      confirmText: t('common.delete'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await Promise.all([...selectedIds].map((id) => adminCouponService.destroy(id)));
+      toast.success(t('admin.couponsDeleted', { count }));
+      load();
+    } catch (err) {
+      toast.error((err as ApiError).message);
+    }
+  }
+
   return (
     <AppLayout title={t('admin.panel')} nav={adminNav}>
       <PageHeader
         title={t('admin.couponsPage')}
         description={t('admin.couponsDesc')}
         action={
-          <button onClick={() => { setEditing(null); setModalOpen(true); }} className="btn btn-primary" disabled={events.length === 0}>
-            {t('admin.newCoupon')}
-          </button>
+          <div className="flex gap-2">
+            {someSelected && (
+              <button onClick={handleBulkDelete} className="btn btn-danger text-sm">
+                {t('admin.deleteSelected', { count: selectedIds.size })}
+              </button>
+            )}
+            <button onClick={() => { setEditing(null); setModalOpen(true); }} className="btn btn-primary" disabled={events.length === 0}>
+              {t('admin.newCoupon')}
+            </button>
+          </div>
         }
       />
 
@@ -112,6 +156,9 @@ export function CouponsPage() {
           <table className="min-w-full divide-y divide-white/60 text-sm">
             <thead className="bg-white/40">
               <tr>
+                <th className="px-4 py-3">
+                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                </th>
                 <Th>{t('admin.codeFilter')}</Th>
                 <Th>{t('admin.eventCol')}</Th>
                 <Th>{t('admin.producerCol')}</Th>
@@ -123,26 +170,32 @@ export function CouponsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/60">
-              {coupons.map((c) => (
-                <tr key={c.id} className="transition hover:bg-white/50">
-                  <td className="px-4 py-3 font-mono font-semibold text-slate-900">{c.code}</td>
-                  <td className="px-4 py-3 text-slate-600">{c.event?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">{c.event?.producer?.company_name ?? c.event?.producer?.user?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">{c.discount_percent}%</td>
-                  <td className="px-4 py-3 text-slate-600">{c.used_count}{c.max_uses !== null ? ` / ${c.max_uses}` : ` (${t('admin.unlimited')})`}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
-                    <div>{c.starts_at ? `${t('admin.fromDate')} ${formatDateTime(c.starts_at)}` : t('admin.noStart')}</div>
-                    <div>{c.ends_at ? `${t('admin.untilDate')} ${formatDateTime(c.ends_at)}` : t('admin.noEnd')}</div>
-                  </td>
-                  <td className="px-4 py-3"><StatusBadge coupon={c} /></td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <ActionIconButton onClick={() => { setEditing(c); setModalOpen(true); }} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
-                      <ActionIconButton onClick={() => handleDelete(c)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {coupons.map((c) => {
+                const isSelected = selectedIds.has(c.id);
+                return (
+                  <tr key={c.id} className={`transition ${isSelected ? 'bg-brand-50' : 'hover:bg-white/50'}`}>
+                    <td className="px-4 py-3">
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleOne(c.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+                    </td>
+                    <td className="px-4 py-3 font-mono font-semibold text-slate-900">{c.code}</td>
+                    <td className="px-4 py-3 text-slate-600">{c.event?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-600">{c.event?.producer?.company_name ?? c.event?.producer?.user?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-600">{c.discount_percent}%</td>
+                    <td className="px-4 py-3 text-slate-600">{c.used_count}{c.max_uses !== null ? ` / ${c.max_uses}` : ` (${t('admin.unlimited')})`}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">
+                      <div>{c.starts_at ? `${t('admin.fromDate')} ${formatDateTime(c.starts_at)}` : t('admin.noStart')}</div>
+                      <div>{c.ends_at ? `${t('admin.untilDate')} ${formatDateTime(c.ends_at)}` : t('admin.noEnd')}</div>
+                    </td>
+                    <td className="px-4 py-3"><StatusBadge coupon={c} /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <ActionIconButton onClick={() => { setEditing(c); setModalOpen(true); }} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
+                        <ActionIconButton onClick={() => handleDelete(c)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
