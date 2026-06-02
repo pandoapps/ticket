@@ -198,7 +198,14 @@
     "discount": "Desconto ({{percent}}% · {{code}})",
     "platformFee": "Taxa plataforma",
     "total": "Total",
-    "description": "Pedido #{{id}} • {{date}}"
+    "description": "Pedido #{{id}} • {{date}}",
+    "generatingPix": "Gerando QR Code PIX...",
+    "generatingCard": "Preparando checkout...",
+    "pixFormTitle": "Informe seus dados para gerar o PIX",
+    "pixPhone": "Telefone (com DDD)",
+    "pixCpf": "CPF",
+    "pixGenerate": "Gerar QR Code PIX",
+    "pixGenerating": "Gerando..."
   },
   "my_tickets": {
     "title": "Meus ingressos",

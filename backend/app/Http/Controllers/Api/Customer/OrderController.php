@@ -39,7 +39,7 @@ class OrderController extends Controller
     public function show(Request $request, Order $order): JsonResponse
     {
         abort_if($order->customer_id !== $request->user()->id, 403);
-        $order->load(['event', 'items.lot', 'tickets.lot', 'payments']);
+        $order->load(['customer', 'event', 'items.lot', 'tickets.lot', 'payments']);
 
         return response()->json(['data' => new OrderResource($order)]);
     }

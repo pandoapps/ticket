@@ -26,6 +26,7 @@ class OrderResource extends JsonResource
             'sale_origin' => $this->sale_origin?->value,
             'status' => $this->status?->value,
             'checkout_url' => $this->abacate_checkout_url,
+            'payment_token' => $this->payment_token,
             'pix_code' => $this->pix_code,
             'pix_qr_code' => $this->pix_qr_code,
             'items' => OrderItemResource::collection($this->whenLoaded('items')),

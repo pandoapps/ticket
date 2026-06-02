@@ -23,6 +23,7 @@ export interface Order {
   total: number;
   payment_method: PaymentMethod;
   status: OrderStatus;
+  payment_token: string | null;
   checkout_url: string | null;
   pix_code: string | null;
   pix_qr_code: string | null;
@@ -32,7 +33,7 @@ export interface Order {
   created_at: string;
   event?: EventModel;
   items?: OrderItem[];
-  customer?: { id: number; name: string; email: string };
+  customer?: { id: number; name: string; email: string; phone: string | null; cpf: string | null };
 }
 
 export const orderService = {
