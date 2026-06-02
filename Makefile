@@ -100,7 +100,9 @@ deploy:
 	@test -f .env || (echo "✘ .env not found. Create it before deploying." && exit 1)
 	@test -f backend/.env || (echo "✘ backend/.env not found. Create it before deploying." && exit 1)
 	@echo "▶ Pulling latest from origin..."
+	git stash --include-untracked --quiet || true
 	git pull --rebase
+	git stash pop --quiet || true
 	@echo "▶ Building frontend bundle (via docker, no host Node required)..."
 	docker run --rm -v "$$PWD:/app" -w /app node:20-alpine sh -c "npm ci && npm run build"
 	@echo "▶ Rebuilding production containers..."
