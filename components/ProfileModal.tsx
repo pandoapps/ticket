@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { useToast } from './Toast';
 import { useAuth } from '@hooks/useAuth';
@@ -12,6 +13,7 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ open, onClose }: ProfileModalProps) {
+  const { t } = useTranslation();
   const { user, setUser } = useAuth();
   const toast = useToast();
   const [name, setName] = useState(user?.name ?? '');
@@ -46,13 +48,11 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
         email,
         phone: phone || null,
         cpf: cpf || null,
-        ...(password
-          ? { current_password: currentPassword, password, password_confirmation: passwordConfirmation }
-          : {}),
+        ...(password ? { current_password: currentPassword, password, password_confirmation: passwordConfirmation } : {}),
       };
       const res = await profileService.update(payload);
       setUser(res.data);
-      toast.success('Perfil atualizado.');
+      toast.success(t('profile.profileUpdated'));
       onClose();
     } catch (err) {
       const apiErr = err as ApiError;
@@ -67,10 +67,10 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
   const fieldError = (key: string) => errors[key]?.[0];
 
   return (
-    <Modal open={open} onClose={onClose} title="Editar perfil">
+    <Modal open={open} onClose={onClose} title={t('profile.editProfile')}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Nome</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('profile.name')}</span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -81,7 +81,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">E-mail</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('profile.email')}</span>
           <input
             type="email"
             value={email}
@@ -94,7 +94,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">Telefone</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('profile.phone')}</span>
             <input
               value={phone}
               onChange={(e) => setPhone(formatPhone(e.target.value))}
@@ -106,9 +106,8 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
             />
             {fieldError('phone') && <p className="mt-1 text-xs text-rose-600">{fieldError('phone')}</p>}
           </label>
-
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">CPF</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('profile.cpf')}</span>
             <input
               value={cpf}
               onChange={(e) => setCpf(formatCPF(e.target.value))}
@@ -122,9 +121,9 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
         </div>
 
         <div className="rounded-xl border border-dashed border-slate-200 p-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Alterar senha (opcional)</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('profile.changePassword')}</p>
           <label className="mb-2 block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">Senha atual</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('profile.currentPassword')}</span>
             <input
               type="password"
               value={currentPassword}
@@ -138,7 +137,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
           </label>
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Nova senha</span>
+              <span className="mb-1 block text-sm font-medium text-slate-700">{t('profile.newPassword')}</span>
               <input
                 type="password"
                 minLength={8}
@@ -150,7 +149,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
               {fieldError('password') && <p className="mt-1 text-xs text-rose-600">{fieldError('password')}</p>}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Confirmar</span>
+              <span className="mb-1 block text-sm font-medium text-slate-700">{t('profile.confirm')}</span>
               <input
                 type="password"
                 minLength={8}
@@ -165,10 +164,10 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
 
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="btn btn-secondary">
-            Cancelar
+            {t('profile.cancel')}
           </button>
           <button type="submit" disabled={loading} className="btn btn-primary">
-            {loading ? 'Salvando...' : 'Salvar alterações'}
+            {loading ? t('common.saving') : t('profile.saveChanges')}
           </button>
         </div>
       </form>

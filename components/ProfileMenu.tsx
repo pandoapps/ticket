@@ -1,18 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@hooks/useAuth';
 import { useToast } from './Toast';
 import { Avatar } from './Avatar';
 import { ProfileModal } from './ProfileModal';
 import { Icons } from './Icon';
 
-const ROLE_LABEL: Record<string, string> = {
-  admin: 'Administrador',
-  producer: 'Produtor',
-  customer: 'Cliente',
-};
-
 export function ProfileMenu() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -33,10 +29,10 @@ export function ProfileMenu() {
     return (
       <div className="flex items-center gap-2">
         <Link to="/login" className="btn btn-ghost">
-          Entrar
+          {t('menu.signIn')}
         </Link>
         <Link to="/cadastro" className="btn btn-primary">
-          Criar conta
+          {t('menu.createAccount')}
         </Link>
       </div>
     );
@@ -45,9 +41,15 @@ export function ProfileMenu() {
   async function handleLogout() {
     await logout();
     setOpen(false);
-    toast.info('Sessão encerrada.');
+    toast.info(t('menu.sessionEnded'));
     navigate('/login', { replace: true });
   }
+
+  const roleLabel: Record<string, string> = {
+    admin: t('roles.admin'),
+    producer: t('roles.producer'),
+    customer: t('roles.customer'),
+  };
 
   return (
     <div className="relative" ref={wrapperRef}>
@@ -58,7 +60,7 @@ export function ProfileMenu() {
         <Avatar name={user.name} size="sm" />
         <div className="text-left">
           <p className="text-xs font-semibold text-slate-900 leading-tight">{user.name}</p>
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 leading-tight">{ROLE_LABEL[user.role]}</p>
+          <p className="text-[10px] uppercase tracking-wider text-slate-500 leading-tight">{roleLabel[user.role]}</p>
         </div>
       </button>
 
@@ -73,30 +75,27 @@ export function ProfileMenu() {
           </div>
           <div className="py-1">
             <MenuItem
-              onClick={() => {
-                setOpen(false);
-                setEditOpen(true);
-              }}
+              onClick={() => { setOpen(false); setEditOpen(true); }}
               icon={<Icons.user className="h-4 w-4" />}
-              label="Editar perfil"
+              label={t('menu.editProfile')}
             />
             {user.role === 'customer' && (
               <>
-                <MenuLink to="/meus-pedidos" icon={<Icons.bag className="h-4 w-4" />} label="Meus pedidos" onClick={() => setOpen(false)} />
-                <MenuLink to="/meus-ingressos" icon={<Icons.ticket className="h-4 w-4" />} label="Meus ingressos" onClick={() => setOpen(false)} />
+                <MenuLink to="/meus-pedidos" icon={<Icons.bag className="h-4 w-4" />} label={t('menu.myOrders')} onClick={() => setOpen(false)} />
+                <MenuLink to="/meus-ingressos" icon={<Icons.ticket className="h-4 w-4" />} label={t('menu.myTickets')} onClick={() => setOpen(false)} />
               </>
             )}
             {user.role === 'producer' && (
-              <MenuLink to="/produtor" icon={<Icons.chart className="h-4 w-4" />} label="Painel do produtor" onClick={() => setOpen(false)} />
+              <MenuLink to="/produtor" icon={<Icons.chart className="h-4 w-4" />} label={t('menu.producerPanel')} onClick={() => setOpen(false)} />
             )}
             {user.role === 'admin' && (
-              <MenuLink to="/admin" icon={<Icons.shield className="h-4 w-4" />} label="Painel admin" onClick={() => setOpen(false)} />
+              <MenuLink to="/admin" icon={<Icons.shield className="h-4 w-4" />} label={t('menu.adminPanel')} onClick={() => setOpen(false)} />
             )}
             <div className="my-1 border-t border-white/50" />
             <MenuItem
               onClick={handleLogout}
               icon={<Icons.logout className="h-4 w-4" />}
-              label="Sair"
+              label={t('menu.signOut')}
               destructive
             />
           </div>
@@ -108,17 +107,7 @@ export function ProfileMenu() {
   );
 }
 
-function MenuItem({
-  icon,
-  label,
-  onClick,
-  destructive,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick?: () => void;
-  destructive?: boolean;
-}) {
+function MenuItem({ icon, label, onClick, destructive }: { icon: React.ReactNode; label: string; onClick?: () => void; destructive?: boolean }) {
   return (
     <button
       onClick={onClick}
@@ -132,17 +121,7 @@ function MenuItem({
   );
 }
 
-function MenuLink({
-  to,
-  icon,
-  label,
-  onClick,
-}: {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  onClick?: () => void;
-}) {
+function MenuLink({ to, icon, label, onClick }: { to: string; icon: React.ReactNode; label: string; onClick?: () => void }) {
   return (
     <Link
       to={to}

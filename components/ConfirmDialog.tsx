@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icons } from './Icon';
 
 type Variant = 'default' | 'danger' | 'success' | 'warning' | 'info';
@@ -44,6 +45,7 @@ interface InternalState {
 }
 
 export function DialogProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const [state, setState] = useState<InternalState | null>(null);
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -163,9 +165,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
               <div className="px-6 py-4">
                 {(state.options as PromptOptions).inputType === 'textarea' ? (
                   <textarea
-                    ref={(el) => {
-                      inputRef.current = el;
-                    }}
+                    ref={(el) => { inputRef.current = el; }}
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
                     rows={3}
@@ -174,18 +174,13 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                   />
                 ) : (
                   <input
-                    ref={(el) => {
-                      inputRef.current = el;
-                    }}
+                    ref={(el) => { inputRef.current = el; }}
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
                     placeholder={(state.options as PromptOptions).placeholder}
                     className="input"
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleConfirm();
-                      }
+                      if (e.key === 'Enter') { e.preventDefault(); handleConfirm(); }
                     }}
                   />
                 )}
@@ -198,7 +193,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                 onClick={handleCancel}
                 className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
-                {state.options.cancelText ?? 'Cancelar'}
+                {state.options.cancelText ?? t('confirm_dialog.cancel')}
               </button>
               <button
                 type="button"
@@ -206,7 +201,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                 autoFocus={state.kind === 'confirm'}
                 className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${confirmBtnClass}`}
               >
-                {state.options.confirmText ?? 'Confirmar'}
+                {state.options.confirmText ?? t('confirm_dialog.confirm')}
               </button>
             </div>
           </div>

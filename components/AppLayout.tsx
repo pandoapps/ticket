@@ -1,6 +1,8 @@
 import { NavLink, Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ProfileMenu } from './ProfileMenu';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface NavItem {
   to: string;
@@ -16,6 +18,8 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ title, subtitle, nav, children }: AppLayoutProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="relative min-h-screen">
       <aside className="fixed inset-y-4 left-4 z-30 hidden w-60 flex-col rounded-3xl border border-white/50 bg-white/60 p-5 shadow-glass backdrop-blur-xl md:flex">
@@ -39,7 +43,7 @@ export function AppLayout({ title, subtitle, nav, children }: AppLayoutProps) {
               }
             >
               {item.icon && <span className="h-4 w-4">{item.icon}</span>}
-              {item.label}
+              {t(item.label)}
             </NavLink>
           ))}
         </nav>
@@ -51,7 +55,10 @@ export function AppLayout({ title, subtitle, nav, children }: AppLayoutProps) {
           <h1 className="text-sm font-semibold text-slate-900">{title}</h1>
         </div>
         <div className="hidden md:block" />
-        <ProfileMenu />
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <ProfileMenu />
+        </div>
       </header>
 
       <div className="md:ml-64">

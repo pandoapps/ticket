@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
 import { Icons } from '@components/Icon';
@@ -10,92 +11,44 @@ import { formatBRL } from '@utils/format';
 import type { ApiError } from '@services/api';
 
 export function AdminDashboardPage() {
+  const { t } = useTranslation();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const toast = useToast();
 
   useEffect(() => {
-    adminService
-      .dashboard()
-      .then((r) => setDashboard(r.data))
-      .catch((err: ApiError) => toast.error(err.message));
+    adminService.dashboard().then((r) => setDashboard(r.data)).catch((err: ApiError) => toast.error(err.message));
   }, [toast]);
 
   const chartData = useMemo(
-    () =>
-      dashboard?.gmv_series.map((row) => ({
-        bucket: row.bucket,
-        revenue: parseFloat(row.revenue),
-        platform_fee: parseFloat(row.platform_fee),
-      })) ?? [],
+    () => dashboard?.gmv_series.map((row) => ({ bucket: row.bucket, revenue: parseFloat(row.revenue), platform_fee: parseFloat(row.platform_fee) })) ?? [],
     [dashboard],
   );
 
   return (
-    <AppLayout title="Admin" subtitle="Painel" nav={adminNav}>
-      <PageHeader title="Visão geral da plataforma" description="Indicadores de performance e uso." />
+    <AppLayout title={t('admin.panel')} subtitle={t('admin.subtitle')} nav={adminNav}>
+      <PageHeader title={t('admin.overview')} description={t('admin.performanceDesc')} />
 
       {dashboard && (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              label="GMV"
-              value={formatBRL(dashboard.gmv)}
-              icon={<Icons.chart className="h-5 w-5" />}
-              gradient="from-brand-500 to-brand-700"
-            />
-            <StatCard
-              label="Taxa plataforma"
-              value={formatBRL(dashboard.platform_fee_total)}
-              icon={<Icons.sparkles className="h-5 w-5" />}
-              gradient="from-accent-500 to-rose-500"
-            />
-            <StatCard
-              label="Pedidos pagos"
-              value={String(dashboard.orders_paid)}
-              icon={<Icons.bag className="h-5 w-5" />}
-              gradient="from-emerald-500 to-teal-600"
-            />
-            <StatCard
-              label="Ingressos emitidos"
-              value={String(dashboard.tickets_sold)}
-              icon={<Icons.ticket className="h-5 w-5" />}
-              gradient="from-fuchsia-500 to-violet-600"
-            />
+            <StatCard label={t('admin.gmv')} value={formatBRL(dashboard.gmv)} icon={<Icons.chart className="h-5 w-5" />} gradient="from-brand-500 to-brand-700" />
+            <StatCard label={t('admin.platformFee')} value={formatBRL(dashboard.platform_fee_total)} icon={<Icons.sparkles className="h-5 w-5" />} gradient="from-accent-500 to-rose-500" />
+            <StatCard label={t('admin.paidOrders')} value={String(dashboard.orders_paid)} icon={<Icons.bag className="h-5 w-5" />} gradient="from-emerald-500 to-teal-600" />
+            <StatCard label={t('admin.ticketsIssued')} value={String(dashboard.tickets_sold)} icon={<Icons.ticket className="h-5 w-5" />} gradient="from-fuchsia-500 to-violet-600" />
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              label="Eventos publicados"
-              value={`${dashboard.events_published}/${dashboard.events_total}`}
-              icon={<Icons.calendar className="h-5 w-5" />}
-              gradient="from-sky-500 to-indigo-600"
-            />
-            <StatCard
-              label="Produtores"
-              value={String(dashboard.producers_total)}
-              icon={<Icons.users className="h-5 w-5" />}
-              gradient="from-purple-500 to-indigo-600"
-            />
-            <StatCard
-              label="Produtores pendentes"
-              value={String(dashboard.producers_pending)}
-              icon={<Icons.clock className="h-5 w-5" />}
-              gradient="from-amber-500 to-orange-600"
-              hot={dashboard.producers_pending > 0}
-            />
-            <StatCard
-              label="Clientes"
-              value={String(dashboard.customers_total)}
-              icon={<Icons.user className="h-5 w-5" />}
-              gradient="from-cyan-500 to-teal-500"
-            />
+            <StatCard label={t('admin.publishedEvents')} value={`${dashboard.events_published}/${dashboard.events_total}`} icon={<Icons.calendar className="h-5 w-5" />} gradient="from-sky-500 to-indigo-600" />
+            <StatCard label={t('admin.producers')} value={String(dashboard.producers_total)} icon={<Icons.users className="h-5 w-5" />} gradient="from-purple-500 to-indigo-600" />
+            <StatCard label={t('admin.pendingProducers')} value={String(dashboard.producers_pending)} icon={<Icons.clock className="h-5 w-5" />} gradient="from-amber-500 to-orange-600" hot={dashboard.producers_pending > 0} />
+            <StatCard label={t('admin.customers')} value={String(dashboard.customers_total)} icon={<Icons.user className="h-5 w-5" />} gradient="from-cyan-500 to-teal-500" />
           </div>
 
           <div className="mt-8 glass-card p-6">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">GMV</p>
-                <h3 className="text-lg font-semibold text-slate-900">Últimos 30 dias</h3>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">{t('admin.gmv')}</p>
+                <h3 className="text-lg font-semibold text-slate-900">{t('admin.last30Days')}</h3>
               </div>
             </div>
             <div className="h-72 w-full">
@@ -115,13 +68,13 @@ export function AdminDashboardPage() {
                   <XAxis dataKey="bucket" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${Math.round(v)}`} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="revenue" name="Receita" stroke="#2541f5" fill="url(#adminRevenue)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="platform_fee" name="Taxa" stroke="#c026d3" fill="url(#adminFee)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="revenue" name={t('admin.revenue')} stroke="#2541f5" fill="url(#adminRevenue)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="platform_fee" name={t('admin.fee')} stroke="#c026d3" fill="url(#adminFee)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
             {chartData.length === 0 && (
-              <p className="pt-4 text-center text-sm text-slate-500">Sem dados de receita ainda.</p>
+              <p className="pt-4 text-center text-sm text-slate-500">{t('admin.noRevenue')}</p>
             )}
           </div>
         </>
@@ -130,44 +83,22 @@ export function AdminDashboardPage() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  icon,
-  gradient,
-  hot,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  gradient: string;
-  hot?: boolean;
-}) {
+function StatCard({ label, value, icon, gradient, hot }: { label: string; value: string; icon: React.ReactNode; gradient: string; hot?: boolean }) {
   return (
-    <div
-      className={`relative overflow-hidden rounded-2xl border p-5 shadow-glass backdrop-blur-xl animate-fade-up ${
-        hot ? 'border-amber-300 bg-amber-50/70' : 'border-white/50 bg-white/60'
-      }`}
-    >
+    <div className={`relative overflow-hidden rounded-2xl border p-5 shadow-glass backdrop-blur-xl animate-fade-up ${hot ? 'border-amber-300 bg-amber-50/70' : 'border-white/50 bg-white/60'}`}>
       <div className={`absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br ${gradient} opacity-25 blur-2xl`} />
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
           <p className="mt-1 text-2xl font-semibold text-slate-900">{value}</p>
         </div>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-lg shadow-black/10`}>
-          {icon}
-        </span>
+        <span className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-lg shadow-black/10`}>{icon}</span>
       </div>
     </div>
   );
 }
 
-interface TooltipPayload {
-  name: string;
-  value: number;
-  color: string;
-}
+interface TooltipPayload { name: string; value: number; color: string; }
 
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipPayload[]; label?: string }) {
   if (!active || !payload?.length) return null;

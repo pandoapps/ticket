@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\Customer;
 
 use App\Enums\PaymentMethod;
+use App\Enums\SaleOrigin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\CreateOrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Event;
 use App\Models\Order;
+use App\Models\PlatformSetting;
 use App\Services\AuditLogger;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
@@ -50,6 +52,11 @@ class OrderController extends Controller
         abort_unless($event->producer->hasValidCredentials(), 422, 'Produtor sem credenciais de pagamento válidas.');
 
         $method = PaymentMethod::from($request->string('payment_method')->toString());
+
+        if ($method === PaymentMethod::Pix && PlatformSetting::current()->active_gateway === 'stripe') {
+            abort(422, 'PIX não está disponível quando o gateway ativo é o Stripe (pagamentos em USD).');
+        }
+
         if ($method === PaymentMethod::Pix && ! $event->accepts_pix) {
             abort(422, 'Este evento não aceita pagamento via PIX.');
         }
@@ -71,12 +78,16 @@ class OrderController extends Controller
             $user->fill($updates)->save();
         }
 
+        $originRaw = $validated['sale_origin'] ?? null;
+        $origin = $originRaw !== null ? SaleOrigin::tryFrom($originRaw) : SaleOrigin::Website;
+
         $order = $this->orders->createPendingOrder(
             $user->fresh(),
             $event,
             $validated['items'],
             $method,
             $validated['coupon_code'] ?? null,
+            $origin,
         );
 
         $this->audit->log('order.created', $order);

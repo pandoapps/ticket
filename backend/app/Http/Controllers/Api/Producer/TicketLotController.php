@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Producer;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Producer\StoreTicketLotRequest;
 use App\Http\Resources\TicketLotResource;
@@ -83,6 +84,10 @@ class TicketLotController extends Controller
 
     private function authorizeEvent(Request $request, Event $event): void
     {
+        if ($request->user()?->role === UserRole::Admin) {
+            return;
+        }
+
         $producer = $request->attributes->get('producer') ?? $request->user()->producer()->firstOrFail();
         abort_if($event->producer_id !== $producer->id, 403, 'Evento não pertence a este produtor.');
     }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\AuditLogController as AdminAuditLogController;
 use App\Http\Controllers\Api\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\EmailLogController as AdminEmailLogController;
 use App\Http\Controllers\Api\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProducerController as AdminProducerController;
@@ -13,16 +14,20 @@ use App\Http\Controllers\Api\Customer\CouponController as CustomerCouponControll
 use App\Http\Controllers\Api\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Api\Customer\PublicEventController;
 use App\Http\Controllers\Api\Customer\TicketController as CustomerTicketController;
+use App\Http\Controllers\Api\PlatformConfigController;
 use App\Http\Controllers\Api\Producer\CouponController as ProducerCouponController;
 use App\Http\Controllers\Api\Producer\CredentialController;
 use App\Http\Controllers\Api\Producer\CustomersController as ProducerCustomersController;
+use App\Http\Controllers\Api\Producer\EmailLogController as ProducerEmailLogController;
 use App\Http\Controllers\Api\Producer\EventController as ProducerEventController;
+use App\Http\Controllers\Api\Producer\PosController as ProducerPosController;
 use App\Http\Controllers\Api\Producer\ProducerProfileController;
 use App\Http\Controllers\Api\Producer\ReportController as ProducerReportController;
 use App\Http\Controllers\Api\Producer\SalesController as ProducerSalesController;
 use App\Http\Controllers\Api\Producer\TicketController as ProducerTicketController;
 use App\Http\Controllers\Api\Producer\TicketLotController;
 use App\Http\Controllers\Api\Producer\TicketRedemptionController;
+use App\Http\Controllers\Api\PublicPaymentController;
 use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,11 +45,17 @@ Route::prefix('auth')->group(function () {
 Route::prefix('public')->group(function () {
     Route::get('events', [PublicEventController::class, 'index']);
     Route::get('events/{slug}', [PublicEventController::class, 'show']);
+    Route::get('config', [PlatformConfigController::class, 'show']);
 });
 
 Route::post('customer/coupons/validate', [CustomerCouponController::class, 'validate']);
 
 Route::post('webhooks/abacate-pay', [WebhookController::class, 'abacatePay'])->middleware('throttle:webhook');
+
+Route::prefix('public/payment')->group(function () {
+    Route::get('{token}', [PublicPaymentController::class, 'show']);
+    Route::post('{token}/charge', [PublicPaymentController::class, 'charge'])->middleware('throttle:10,1');
+});
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -94,6 +105,10 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('tickets/redeem', [TicketRedemptionController::class, 'redeem']);
             Route::post('tickets/lookup', [TicketRedemptionController::class, 'lookup']);
 
+            Route::post('pos/orders', [ProducerPosController::class, 'store']);
+
+            Route::get('email-logs', [ProducerEmailLogController::class, 'index']);
+
             Route::get('coupons', [ProducerCouponController::class, 'index']);
             Route::post('coupons', [ProducerCouponController::class, 'store']);
             Route::get('coupons/{coupon}', [ProducerCouponController::class, 'show']);
@@ -117,8 +132,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('producers/{producer}/block', [AdminProducerController::class, 'block']);
 
         Route::get('events', [AdminEventController::class, 'index']);
+        Route::get('events/{event}', [AdminEventController::class, 'show']);
         Route::put('events/{event}', [AdminEventController::class, 'update']);
         Route::delete('events/{event}', [AdminEventController::class, 'destroy']);
+
+        Route::post('events/{event}/lots', [TicketLotController::class, 'store']);
+        Route::put('lots/{lot}', [TicketLotController::class, 'update']);
+        Route::delete('lots/{lot}', [TicketLotController::class, 'destroy']);
 
         Route::get('orders', [AdminOrderController::class, 'index']);
         Route::put('orders/{order}', [AdminOrderController::class, 'update']);
@@ -126,6 +146,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('settings', [AdminSettingsController::class, 'show']);
         Route::put('settings', [AdminSettingsController::class, 'update']);
+        Route::put('settings/gateway', [AdminSettingsController::class, 'updateGateway']);
+        Route::put('settings/email', [AdminSettingsController::class, 'updateEmail']);
 
         Route::get('coupons', [AdminCouponController::class, 'index']);
         Route::post('coupons', [AdminCouponController::class, 'store']);
@@ -134,5 +156,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('coupons/{coupon}', [AdminCouponController::class, 'destroy']);
 
         Route::get('audit-logs', [AdminAuditLogController::class, 'index']);
+        Route::get('email-logs', [AdminEmailLogController::class, 'index']);
+        Route::post('email-logs/{emailLog}/resend', [AdminEmailLogController::class, 'resend']);
     });
 });

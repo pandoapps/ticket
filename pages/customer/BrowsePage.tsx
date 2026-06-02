@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { PublicLayout } from '@components/PublicLayout';
 import { Empty } from '@components/Empty';
 import { useToast } from '@components/Toast';
@@ -9,6 +10,7 @@ import { formatBRL, formatDate, formatDateTime } from '@utils/format';
 import type { ApiError } from '@services/api';
 
 export function BrowsePage() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<EventModel[]>([]);
   const toast = useToast();
 
@@ -31,12 +33,12 @@ export function BrowsePage() {
 
       <section className="mx-auto max-w-7xl px-4 py-12 md:px-8">
         <div className="mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-brand-600">Próximos eventos</p>
-          <h2 className="mt-1 text-2xl font-semibold text-slate-900">Encontre sua próxima experiência</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-brand-600">{t('browse.upcomingEvents')}</p>
+          <h2 className="mt-1 text-2xl font-semibold text-slate-900">{t('browse.findYourExperience')}</h2>
         </div>
 
         {events.length === 0 ? (
-          <Empty title="Nenhum evento publicado agora." description="Volte em breve, novas experiências chegam toda semana." />
+          <Empty title={t('browse.noEvents')} description={t('browse.noEventsDesc')} />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {events.map((event, idx) => (
@@ -50,6 +52,7 @@ export function BrowsePage() {
 }
 
 function Hero({ event }: { event: EventModel }) {
+  const { t } = useTranslation();
   const minPrice = event.lots?.filter((lot) => lot.is_active).reduce((min, lot) => (lot.price < min ? lot.price : min), Infinity);
 
   return (
@@ -61,12 +64,11 @@ function Hero({ event }: { event: EventModel }) {
           <div className="absolute inset-0 bg-gradient-to-br from-brand-500 via-brand-700 to-accent-600" />
         )}
         <div className="absolute inset-0 bg-hero-fade" />
-
         <div className="absolute inset-x-0 bottom-0">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 md:px-8 md:py-12 lg:py-16">
             <div className="flex flex-wrap items-center gap-2">
               <span className="chip border border-white/30 bg-white/15 text-white backdrop-blur">
-                <Icons.star className="mr-1 h-3 w-3" /> Destaque
+                <Icons.star className="mr-1 h-3 w-3" /> {t('browse.featured')}
               </span>
               <span className="chip border border-white/30 bg-white/15 text-white backdrop-blur">
                 <Icons.calendar className="mr-1 h-3 w-3" />
@@ -87,11 +89,11 @@ function Hero({ event }: { event: EventModel }) {
             )}
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link to={`/eventos/${event.slug}`} className="btn btn-primary shadow-xl shadow-black/30">
-                Ver detalhes e comprar
+                {t('browse.seeDetails')}
               </Link>
               {minPrice !== undefined && Number.isFinite(minPrice) && (
                 <p className="text-sm text-white/85">
-                  A partir de{' '}
+                  {t('browse.from')}{' '}
                   <span className="font-semibold text-white">{formatBRL(minPrice)}</span>
                 </p>
               )}
@@ -104,6 +106,7 @@ function Hero({ event }: { event: EventModel }) {
 }
 
 function EventCard({ event, delay }: { event: EventModel; delay: number }) {
+  const { t } = useTranslation();
   const minPrice = event.lots?.filter((lot) => lot.is_active).reduce((min, lot) => (lot.price < min ? lot.price : min), Infinity);
 
   return (
@@ -114,17 +117,13 @@ function EventCard({ event, delay }: { event: EventModel; delay: number }) {
     >
       <div className="relative aspect-[16/10] w-full overflow-hidden">
         {event.banner_url ? (
-          <img
-            src={event.banner_url}
-            alt={event.name}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-          />
+          <img src={event.banner_url} alt={event.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-brand-500 to-accent-600" />
         )}
         {event.is_featured && (
           <span className="chip absolute left-3 top-3 bg-gradient-to-r from-brand-600 to-accent-600 text-white shadow-lg">
-            <Icons.star className="mr-1 h-3 w-3" /> Destaque
+            <Icons.star className="mr-1 h-3 w-3" /> {t('browse.featured')}
           </span>
         )}
       </div>
@@ -137,11 +136,11 @@ function EventCard({ event, delay }: { event: EventModel; delay: number }) {
         </h3>
         <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
           <Icons.mapPin className="h-3 w-3" />
-          {event.venue_type === 'online' ? 'Online' : event.venue_name ?? '—'}
+          {event.venue_type === 'online' ? t('browse.online') : event.venue_name ?? '—'}
         </p>
         {minPrice !== undefined && Number.isFinite(minPrice) && (
           <p className="mt-3 text-sm text-slate-600">
-            A partir de <span className="font-semibold text-slate-900">{formatBRL(minPrice)}</span>
+            {t('browse.from')} <span className="font-semibold text-slate-900">{formatBRL(minPrice)}</span>
           </p>
         )}
       </div>

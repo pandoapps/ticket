@@ -1,4 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
 import { Empty } from '@components/Empty';
@@ -33,6 +35,7 @@ function fromLocalInput(value: string): string | null {
 }
 
 export function EventsPage() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<EventModel[]>([]);
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
@@ -57,15 +60,15 @@ export function EventsPage() {
 
   async function handleDelete(event: EventModel) {
     const ok = await confirm({
-      title: `Excluir ${event.name}?`,
-      description: 'Esta ação remove o evento e os ingressos vinculados. Vendas já realizadas não serão desfeitas.',
-      confirmText: 'Excluir',
+      title: t('admin.deleteEventTitle', { name: event.name }),
+      description: t('admin.deleteEventDesc'),
+      confirmText: t('common.delete'),
       variant: 'danger',
     });
     if (!ok) return;
     try {
       await adminService.deleteEvent(event.id);
-      toast.success('Evento excluído.');
+      toast.success(t('admin.eventDeleted'));
       load();
     } catch (err) {
       toast.error((err as ApiError).message);
@@ -73,68 +76,55 @@ export function EventsPage() {
   }
 
   return (
-    <AppLayout title="Admin" nav={adminNav}>
+    <AppLayout title={t('admin.panel')} nav={adminNav}>
       <PageHeader
-        title="Eventos globais"
+        title={t('admin.globalEvents')}
         action={
           <div className="flex gap-2">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar..."
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-            />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.search')} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
-              <option value="">Todos</option>
-              <option value="draft">Rascunho</option>
-              <option value="published">Publicado</option>
-              <option value="cancelled">Cancelado</option>
+              <option value="">{t('admin.allStatuses')}</option>
+              <option value="draft">{t('admin.draft')}</option>
+              <option value="published">{t('admin.published')}</option>
+              <option value="cancelled">{t('admin.cancelled')}</option>
             </select>
           </div>
         }
       />
 
       {events.length === 0 ? (
-        <Empty title="Nenhum evento encontrado." />
+        <Empty title={t('admin.noEvents')} />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <Th>Evento</Th>
-                <Th>Produtor</Th>
-                <Th>Início</Th>
-                <Th>Status</Th>
-                <Th>Ingressos</Th>
-                <Th className="text-right">Ações</Th>
+                <Th>{t('admin.eventCol')}</Th>
+                <Th>{t('admin.producerCol')}</Th>
+                <Th>{t('admin.startCol')}</Th>
+                <Th>{t('admin.status')}</Th>
+                <Th>{t('admin.ticketsCol')}</Th>
+                <Th className="text-right">{t('admin.actions')}</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {events.map((event) => (
                 <tr key={event.id}>
-                  <td className="px-4 py-3 font-medium text-slate-900">{event.name}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">
+                    <Link to={`/admin/eventos/${event.id}`} className="hover:text-brand-600 hover:underline">
+                      {event.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-slate-600">{event.producer?.company_name ?? '—'}</td>
                   <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(event.starts_at)}</td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLOR[event.status]}`}>
-                      {event.status}
-                    </span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLOR[event.status]}`}>{event.status}</span>
                   </td>
                   <td className="px-4 py-3">{event.lots?.length ?? 0}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <ActionIconButton
-                        onClick={() => setEditing(event)}
-                        tone="brand"
-                        label="Editar"
-                        icon={<Icons.pencil className="h-4 w-4" />}
-                      />
-                      <ActionIconButton
-                        onClick={() => handleDelete(event)}
-                        tone="danger"
-                        label="Excluir"
-                        icon={<Icons.trash className="h-4 w-4" />}
-                      />
+                      <ActionIconButton onClick={() => setEditing(event)} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
+                      <ActionIconButton onClick={() => handleDelete(event)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
                     </div>
                   </td>
                 </tr>
@@ -144,25 +134,13 @@ export function EventsPage() {
         </div>
       )}
 
-      <EditEventModal
-        event={editing}
-        onClose={() => setEditing(null)}
-        onSaved={() => {
-          setEditing(null);
-          load();
-        }}
-      />
+      <EditEventModal event={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />
     </AppLayout>
   );
 }
 
-interface EditEventModalProps {
-  event: EventModel | null;
-  onClose: () => void;
-  onSaved: () => void;
-}
-
-function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
+function EditEventModal({ event, onClose, onSaved }: { event: EventModel | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [startsAt, setStartsAt] = useState('');
@@ -208,24 +186,8 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
     setErrors({});
     setLoading(true);
     try {
-      await adminService.updateEvent(event.id, {
-        name,
-        description: description || null,
-        starts_at: fromLocalInput(startsAt) ?? event.starts_at,
-        ends_at: fromLocalInput(endsAt),
-        status: eventStatus,
-        venue_type: venueType,
-        venue_name: venueName || null,
-        venue_address: venueAddress || null,
-        online_url: onlineUrl || null,
-        banner_url: bannerUrl || null,
-        header_url: headerUrl || null,
-        is_featured: isFeatured,
-        is_active: isActive,
-        accepts_pix: acceptsPix,
-        accepts_card: acceptsCard,
-      });
-      toast.success('Evento atualizado.');
+      await adminService.updateEvent(event.id, { name, description: description || null, starts_at: fromLocalInput(startsAt) ?? event.starts_at, ends_at: fromLocalInput(endsAt), status: eventStatus, venue_type: venueType, venue_name: venueName || null, venue_address: venueAddress || null, online_url: onlineUrl || null, banner_url: bannerUrl || null, header_url: headerUrl || null, is_featured: isFeatured, is_active: isActive, accepts_pix: acceptsPix, accepts_card: acceptsCard });
+      toast.success(t('admin.eventUpdated'));
       onSaved();
     } catch (err) {
       const apiErr = err as ApiError;
@@ -240,188 +202,93 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
   const fieldError = (key: string) => errors[key]?.[0];
 
   return (
-    <Modal open={event !== null} onClose={onClose} title="Editar evento">
+    <Modal open={event !== null} onClose={onClose} title={t('admin.editEvent')}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Nome</span>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className={`input ${fieldError('name') ? 'border-rose-400' : ''}`}
-          />
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.name')}</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} required className={`input ${fieldError('name') ? 'border-rose-400' : ''}`} />
           {fieldError('name') && <p className="mt-1 text-xs text-rose-600">{fieldError('name')}</p>}
         </label>
-
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Descrição</span>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className={`input ${fieldError('description') ? 'border-rose-400' : ''}`}
-          />
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.description')}</span>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={`input ${fieldError('description') ? 'border-rose-400' : ''}`} />
         </label>
-
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">Início</span>
-            <input
-              type="datetime-local"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
-              required
-              className={`input ${fieldError('starts_at') ? 'border-rose-400' : ''}`}
-            />
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.start')}</span>
+            <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} required className={`input ${fieldError('starts_at') ? 'border-rose-400' : ''}`} />
             {fieldError('starts_at') && <p className="mt-1 text-xs text-rose-600">{fieldError('starts_at')}</p>}
           </label>
-
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">Término</span>
-            <input
-              type="datetime-local"
-              value={endsAt}
-              onChange={(e) => setEndsAt(e.target.value)}
-              className={`input ${fieldError('ends_at') ? 'border-rose-400' : ''}`}
-            />
-            {fieldError('ends_at') && <p className="mt-1 text-xs text-rose-600">{fieldError('ends_at')}</p>}
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.end')}</span>
+            <input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} className={`input ${fieldError('ends_at') ? 'border-rose-400' : ''}`} />
           </label>
         </div>
-
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">Status</span>
-            <select
-              value={eventStatus}
-              onChange={(e) => setEventStatus(e.target.value as EventStatus)}
-              className="input"
-            >
-              <option value="draft">Rascunho</option>
-              <option value="published">Publicado</option>
-              <option value="cancelled">Cancelado</option>
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.status')}</span>
+            <select value={eventStatus} onChange={(e) => setEventStatus(e.target.value as EventStatus)} className="input">
+              <option value="draft">{t('admin.draft')}</option>
+              <option value="published">{t('admin.published')}</option>
+              <option value="cancelled">{t('admin.cancelled')}</option>
             </select>
           </label>
-
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">Tipo de local</span>
-            <select
-              value={venueType}
-              onChange={(e) => setVenueType(e.target.value as VenueType)}
-              className="input"
-            >
-              <option value="physical">Presencial</option>
-              <option value="online">Online</option>
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.venueType')}</span>
+            <select value={venueType} onChange={(e) => setVenueType(e.target.value as VenueType)} className="input">
+              <option value="physical">{t('admin.physical')}</option>
+              <option value="online">{t('admin.online')}</option>
             </select>
           </label>
         </div>
-
         {venueType === 'physical' ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Nome do local</span>
-              <input
-                value={venueName}
-                onChange={(e) => setVenueName(e.target.value)}
-                className={`input ${fieldError('venue_name') ? 'border-rose-400' : ''}`}
-              />
+              <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.venueName')}</span>
+              <input value={venueName} onChange={(e) => setVenueName(e.target.value)} className={`input ${fieldError('venue_name') ? 'border-rose-400' : ''}`} />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Endereço</span>
-              <input
-                value={venueAddress}
-                onChange={(e) => setVenueAddress(e.target.value)}
-                className={`input ${fieldError('venue_address') ? 'border-rose-400' : ''}`}
-              />
+              <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.address')}</span>
+              <input value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} className={`input ${fieldError('venue_address') ? 'border-rose-400' : ''}`} />
             </label>
           </div>
         ) : (
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">URL do evento online</span>
-            <input
-              type="url"
-              value={onlineUrl}
-              onChange={(e) => setOnlineUrl(e.target.value)}
-              placeholder="https://..."
-              className={`input ${fieldError('online_url') ? 'border-rose-400' : ''}`}
-            />
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.onlineUrl')}</span>
+            <input type="url" value={onlineUrl} onChange={(e) => setOnlineUrl(e.target.value)} placeholder="https://..." className={`input ${fieldError('online_url') ? 'border-rose-400' : ''}`} />
             {fieldError('online_url') && <p className="mt-1 text-xs text-rose-600">{fieldError('online_url')}</p>}
           </label>
         )}
-
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">URL do banner (card)</span>
-          <input
-            type="url"
-            value={bannerUrl}
-            onChange={(e) => setBannerUrl(e.target.value)}
-            placeholder="https://..."
-            className={`input ${fieldError('banner_url') ? 'border-rose-400' : ''}`}
-          />
-          {fieldError('banner_url') && <p className="mt-1 text-xs text-rose-600">{fieldError('banner_url')}</p>}
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.bannerUrl')}</span>
+          <input type="url" value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="https://..." className={`input ${fieldError('banner_url') ? 'border-rose-400' : ''}`} />
         </label>
-
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">URL do header (hero)</span>
-          <input
-            type="url"
-            value={headerUrl}
-            onChange={(e) => setHeaderUrl(e.target.value)}
-            placeholder="https://..."
-            className={`input ${fieldError('header_url') ? 'border-rose-400' : ''}`}
-          />
-          {fieldError('header_url') && <p className="mt-1 text-xs text-rose-600">{fieldError('header_url')}</p>}
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.headerUrl')}</span>
+          <input type="url" value={headerUrl} onChange={(e) => setHeaderUrl(e.target.value)} placeholder="https://..." className={`input ${fieldError('header_url') ? 'border-rose-400' : ''}`} />
         </label>
-
         <fieldset className="space-y-2 rounded-lg border border-slate-200 p-3">
-          <legend className="px-2 text-sm font-semibold text-slate-700">Métodos de pagamento aceitos</legend>
+          <legend className="px-2 text-sm font-semibold text-slate-700">{t('admin.acceptedPayments')}</legend>
           <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={acceptsPix}
-              onChange={(e) => setAcceptsPix(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
+            <input type="checkbox" checked={acceptsPix} onChange={(e) => setAcceptsPix(e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
             PIX
           </label>
           <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={acceptsCard}
-              onChange={(e) => setAcceptsCard(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Cartão
+            <input type="checkbox" checked={acceptsCard} onChange={(e) => setAcceptsCard(e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
+            {t('admin.card')}
           </label>
-          {fieldError('accepts_pix') && <p className="text-xs text-rose-600">{fieldError('accepts_pix')}</p>}
         </fieldset>
-
         <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            checked={isFeatured}
-            onChange={(e) => setIsFeatured(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
-          />
-          Evento em destaque
+          <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
+          {t('admin.featuredEvent')}
         </label>
-
         <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
-          />
-          Evento ativo (visível na landing)
+          <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
+          {t('admin.activeEvent')}
         </label>
-
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="btn btn-secondary">
-            Cancelar
-          </button>
-          <button type="submit" disabled={loading} className="btn btn-primary">
-            {loading ? 'Salvando...' : 'Salvar'}
-          </button>
+          <button type="button" onClick={onClose} className="btn btn-secondary">{t('common.cancel')}</button>
+          <button type="submit" disabled={loading} className="btn btn-primary">{loading ? t('common.saving') : t('common.save')}</button>
         </div>
       </form>
     </Modal>
@@ -429,9 +296,5 @@ function EditEventModal({ event, onClose, onSaved }: EditEventModalProps) {
 }
 
 function Th({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
-  return (
-    <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>
-      {children}
-    </th>
-  );
+  return <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>{children}</th>;
 }

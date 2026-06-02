@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@hooks/useAuth';
 import { useToast } from '@components/Toast';
 import { Icons } from '@components/Icon';
 import type { ApiError } from '@services/api';
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -22,11 +24,11 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      toast.success('Bem-vindo!');
+      toast.success(t('auth.welcome'));
       navigate(redirectTo, { replace: true });
     } catch (err) {
       const apiErr = err as ApiError;
-      toast.error(apiErr.message ?? 'Falha ao entrar.');
+      toast.error(apiErr.message ?? t('auth.loginFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -48,11 +50,11 @@ export function LoginPage() {
         </Link>
 
         <form onSubmit={handleSubmit} className="glass-card p-8">
-          <h1 className="text-2xl font-semibold text-slate-900">Entre na sua conta</h1>
-          <p className="mb-6 mt-1 text-sm text-slate-500">Acesse seu painel ou seus ingressos.</p>
+          <h1 className="text-2xl font-semibold text-slate-900">{t('auth.enterAccount')}</h1>
+          <p className="mb-6 mt-1 text-sm text-slate-500">{t('auth.accessPanel')}</p>
 
           <label className="mb-4 block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">E-mail</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('auth.email')}</span>
             <input
               type="email"
               required
@@ -64,7 +66,7 @@ export function LoginPage() {
           </label>
 
           <label className="mb-6 block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">Senha</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('auth.password')}</span>
             <input
               type="password"
               required
@@ -76,18 +78,18 @@ export function LoginPage() {
           </label>
 
           <button type="submit" disabled={submitting} className="btn btn-primary w-full">
-            {submitting ? 'Entrando...' : 'Entrar'}
+            {submitting ? t('auth.signingIn') : t('auth.signIn')}
             <Icons.sparkles className="h-4 w-4" />
           </button>
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            Novo por aqui?{' '}
+            {t('auth.newHere')}{' '}
             <Link
               to="/cadastro"
               state={fromState ? { from: fromState } : undefined}
               className="font-medium text-brand-600 hover:text-brand-700"
             >
-              Criar conta
+              {t('auth.createAccount')}
             </Link>
           </p>
         </form>

@@ -24,6 +24,7 @@ export interface PlatformFees {
   pix_fixed: number;
   card_percent: number;
   card_fixed: number;
+  active_gateway: 'abacate_pay' | 'stripe';
 }
 
 export interface EventModel {

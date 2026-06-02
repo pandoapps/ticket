@@ -1,10 +1,20 @@
+import i18n from '../i18n';
+
+function dateLocale(): string {
+  return i18n.language === 'en' ? 'en-US' : 'pt-BR';
+}
+
 export function formatBRL(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
+export function formatUSD(value: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+}
+
 export function formatDateTime(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('pt-BR', {
+  return new Date(iso).toLocaleString(dateLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -15,7 +25,11 @@ export function formatDateTime(iso: string | null): string {
 
 export function formatDate(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR');
+  return new Date(iso).toLocaleDateString(dateLocale(), {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 
 export function formatCPF(value: string): string {

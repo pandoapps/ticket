@@ -29,6 +29,7 @@ class CreateOrderRequest extends FormRequest
             'items.*.ticket_lot_id' => ['required', 'integer', 'exists:ticket_lots,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:20'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
+            'sale_origin' => ['nullable', 'string', 'in:website,widget,api,admin,pos'],
             'phone' => array_merge($phoneRule, ['string', 'regex:/^\D*(\d\D*){10,11}$/']),
             'cpf' => array_merge($cpfRule, ['string', $this->cpfChecksumRule()]),
         ];

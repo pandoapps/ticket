@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
 import { Empty } from '@components/Empty';
@@ -9,6 +10,7 @@ import { formatDateTime } from '@utils/format';
 import type { ApiError } from '@services/api';
 
 export function AuditPage() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [filter, setFilter] = useState('');
   const toast = useToast();
@@ -24,22 +26,22 @@ export function AuditPage() {
   }, [filter, toast]);
 
   return (
-    <AppLayout title="Admin" nav={adminNav}>
+    <AppLayout title={t('admin.panel')} nav={adminNav}>
       <PageHeader
-        title="Logs de auditoria"
-        description="Rastreia ações sensíveis executadas por usuários autenticados."
+        title={t('admin.auditPage')}
+        description={t('admin.auditDesc')}
         action={
           <input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filtrar por ação..."
+            placeholder={t('admin.filterByAction')}
             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
           />
         }
       />
 
       {logs.length === 0 ? (
-        <Empty title="Nenhum log encontrado." />
+        <Empty title={t('admin.noLogs')} />
       ) : (
         <div className="space-y-2">
           {logs.map((log) => (
@@ -48,7 +50,7 @@ export function AuditPage() {
                 <div>
                   <p className="font-mono text-xs text-brand-600">{log.action}</p>
                   <p className="mt-1 text-sm text-slate-900">
-                    {log.user ? `${log.user.name} (${log.user.email})` : 'Sistema'}
+                    {log.user ? `${log.user.name} (${log.user.email})` : t('admin.system')}
                   </p>
                   {log.subject_type && (
                     <p className="mt-1 text-xs text-slate-500">

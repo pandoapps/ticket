@@ -440,22 +440,6 @@ export const slidesData: Record<number, Slide[]> = {
       ],
     },
     {
-      type: 'presenter',
-      name: 'Jéfte Pavam',
-      role: 'Empresário · Fundador da NECSObr e IT Telecom',
-      color: '#d97757',
-      photoUrl: '/images/jefte.jpeg',
-      bullets: [
-        'Cristão, joseense de 41 anos, pai do Felipe (8) e do Salomão (2)',
-        'Técnico de Telecomunicações e Bacharel em Direito',
-        'Diretor de Crescimento do BNI Leste Paulista; mais de 20 anos empreendendo em SJCampos',
-        'Já foi candidato a vereador em 2020 e é aluno da Glider Brasil para piloto de paraglider',
-      ],
-      socials: [
-        { label: '@jeftepavam', url: 'https://www.instagram.com/jeftepavam/' },
-      ],
-    },
-    {
       type: 'story',
       title: 'Minha História',
       color: '#d97757',

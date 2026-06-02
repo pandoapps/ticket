@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import type { Coupon, CouponPayload } from '@services/couponService';
 import type { ApiError } from '@services/api';
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submitting }: Props) {
+  const { t } = useTranslation();
   const [eventId, setEventId] = useState<number | ''>('');
   const [code, setCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState('');
@@ -54,12 +56,10 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
   async function handleSubmit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault();
     setErrors({});
-
     if (eventId === '') {
-      setErrors({ event_id: ['Selecione um evento.'] });
+      setErrors({ event_id: [t('coupon_modal.selectEventRequired')] });
       return;
     }
-
     const payload: CouponPayload = {
       event_id: Number(eventId),
       code: code.trim().toUpperCase(),
@@ -69,7 +69,6 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
       ends_at: endsAt ? new Date(endsAt).toISOString() : null,
       is_active: isActive,
     };
-
     try {
       await onSubmit(payload);
     } catch (err) {
@@ -79,9 +78,9 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar cupom' : 'Novo cupom'}>
+    <Modal open={open} onClose={onClose} title={isEdit ? t('coupon_modal.editTitle') : t('coupon_modal.newTitle')}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Evento" error={errors.event_id?.[0]}>
+        <Field label={t('coupon_modal.event')} error={errors.event_id?.[0]}>
           <select
             value={eventId}
             onChange={(e) => setEventId(e.target.value === '' ? '' : Number(e.target.value))}
@@ -89,20 +88,18 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
             required
             className="input"
           >
-            {!isEdit && events.length === 0 && <option value="">Nenhum evento disponível</option>}
-            {!isEdit && events.length > 0 && <option value="">Selecione...</option>}
+            {!isEdit && events.length === 0 && <option value="">{t('coupon_modal.noEvents')}</option>}
+            {!isEdit && events.length > 0 && <option value="">{t('coupon_modal.selectEvent')}</option>}
             {events.map((ev) => (
-              <option key={ev.id} value={ev.id}>
-                {ev.name}
-              </option>
+              <option key={ev.id} value={ev.id}>{ev.name}</option>
             ))}
           </select>
           {isEdit && (
-            <p className="mt-1 text-[11px] text-slate-500">O evento de um cupom não pode ser alterado.</p>
+            <p className="mt-1 text-[11px] text-slate-500">{t('coupon_modal.eventLocked')}</p>
           )}
         </Field>
 
-        <Field label="Código" error={errors.code?.[0]}>
+        <Field label={t('coupon_modal.code')} error={errors.code?.[0]}>
           <input
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
@@ -111,10 +108,10 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
             required
             className="input uppercase tracking-wider"
           />
-          <p className="mt-1 text-[11px] text-slate-500">Letras maiúsculas, números, hífen e sublinhado.</p>
+          <p className="mt-1 text-[11px] text-slate-500">{t('coupon_modal.codeHint')}</p>
         </Field>
 
-        <Field label="Desconto (%)" error={errors.discount_percent?.[0]}>
+        <Field label={t('coupon_modal.discountPercent')} error={errors.discount_percent?.[0]}>
           <input
             type="number"
             min={0.01}
@@ -128,7 +125,7 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
           />
         </Field>
 
-        <Field label="Limite de uso" error={errors.max_uses?.[0]}>
+        <Field label={t('coupon_modal.maxUses')} error={errors.max_uses?.[0]}>
           <input
             type="number"
             min={1}
@@ -136,27 +133,17 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
             value={maxUses}
             onChange={(e) => setMaxUses(e.target.value)}
             className="input"
-            placeholder="Ilimitado"
+            placeholder={t('coupon_modal.unlimited')}
           />
-          <p className="mt-1 text-[11px] text-slate-500">Deixe em branco para uso ilimitado.</p>
+          <p className="mt-1 text-[11px] text-slate-500">{t('coupon_modal.maxUsesHint')}</p>
         </Field>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Início (opcional)" error={errors.starts_at?.[0]}>
-            <input
-              type="datetime-local"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
-              className="input"
-            />
+          <Field label={t('coupon_modal.startOptional')} error={errors.starts_at?.[0]}>
+            <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} className="input" />
           </Field>
-          <Field label="Término (opcional)" error={errors.ends_at?.[0]}>
-            <input
-              type="datetime-local"
-              value={endsAt}
-              onChange={(e) => setEndsAt(e.target.value)}
-              className="input"
-            />
+          <Field label={t('coupon_modal.endOptional')} error={errors.ends_at?.[0]}>
+            <input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} className="input" />
           </Field>
         </div>
 
@@ -167,15 +154,15 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
             onChange={(e) => setIsActive(e.target.checked)}
             className="h-4 w-4 rounded border-slate-300"
           />
-          Cupom ativo
+          {t('coupon_modal.activeCoupon')}
         </label>
 
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="btn btn-ghost" disabled={submitting}>
-            Cancelar
+            {t('common.cancel')}
           </button>
           <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? 'Salvando...' : isEdit ? 'Salvar alterações' : 'Criar cupom'}
+            {submitting ? t('coupon_modal.saving') : isEdit ? t('coupon_modal.saveChanges') : t('coupon_modal.createCoupon')}
           </button>
         </div>
       </form>
@@ -183,15 +170,7 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
   );
 }
 
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>

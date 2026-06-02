@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\ProducerStatus;
+use App\Enums\UserRole;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,6 +13,12 @@ class EnsureApprovedProducer
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+
+        // Admins bypass producer ownership checks; PosController resolves producer from event.
+        if ($user?->role === UserRole::Admin) {
+            return $next($request);
+        }
+
         $producer = $user?->producer()->with('credentials')->first();
 
         if ($producer === null) {

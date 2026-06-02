@@ -34,6 +34,13 @@ class EventController extends Controller
         ]);
     }
 
+    public function show(Event $event): JsonResponse
+    {
+        $event->load(['producer.user', 'lots']);
+
+        return response()->json(['data' => new EventResource($event)]);
+    }
+
     public function update(UpdateEventRequest $request, Event $event): JsonResponse
     {
         $data = $request->validated();

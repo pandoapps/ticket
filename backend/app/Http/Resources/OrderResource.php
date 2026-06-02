@@ -23,6 +23,7 @@ class OrderResource extends JsonResource
             'platform_fee' => (float) $this->platform_fee,
             'total' => (float) $this->total,
             'payment_method' => $this->payment_method?->value,
+            'sale_origin' => $this->sale_origin?->value,
             'status' => $this->status?->value,
             'checkout_url' => $this->abacate_checkout_url,
             'pix_code' => $this->pix_code,

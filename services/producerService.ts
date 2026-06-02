@@ -99,4 +99,19 @@ export const producerService = {
       };
     }>(`/producer/reports${tail}`);
   },
+  listEmailLogs: (params: { status?: string; q?: string; page?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.status) qs.set('status', params.status);
+    if (params.q) qs.set('q', params.q);
+    if (params.page && params.page > 1) qs.set('page', String(params.page));
+    const tail = qs.toString() ? `?${qs}` : '';
+    return api.get<{
+      data: Array<{
+        id: number; to_email: string; to_name: string | null; subject: string;
+        type: string; status: 'sent' | 'failed'; error: string | null;
+        order_id: number | null; created_at: string;
+      }>;
+      meta: { total: number; page: number; last_page: number };
+    }>(`/producer/email-logs${tail}`);
+  },
 };

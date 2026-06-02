@@ -5,6 +5,7 @@ import { LoginPage } from '@pages/LoginPage';
 import { RegisterPage } from '@pages/RegisterPage';
 import { ProducerSignupPage } from '@pages/ProducerSignupPage';
 import { NotFoundPage } from '@pages/NotFoundPage';
+import { PaymentPage } from '@pages/PaymentPage';
 import { ThiagoPage } from '@pages/ThiagoPage';
 
 import { BrowsePage } from '@pages/customer/BrowsePage';
@@ -25,14 +26,18 @@ import { CustomersPage as ProducerCustomersPage } from '@pages/producer/Customer
 import { TicketScannerPage } from '@pages/producer/TicketScannerPage';
 import { ProducerTicketsPage } from '@pages/producer/TicketsPage';
 import { CouponsPage as ProducerCouponsPage } from '@pages/producer/CouponsPage';
+import { PosPage } from '@pages/producer/PosPage';
+import { ProducerEmailLogsPage } from '@pages/producer/EmailLogsPage';
 
 import { AdminDashboardPage } from '@pages/admin/AdminDashboardPage';
 import { ProducersPage } from '@pages/admin/ProducersPage';
 import { UsersPage } from '@pages/admin/UsersPage';
 import { EventsPage as AdminEventsPage } from '@pages/admin/EventsPage';
+import { AdminEventDetailPage } from '@pages/admin/AdminEventDetailPage';
 import { OrdersPage as AdminOrdersPage } from '@pages/admin/OrdersPage';
 import { SettingsPage } from '@pages/admin/SettingsPage';
 import { AuditPage } from '@pages/admin/AuditPage';
+import { AdminEmailLogsPage } from '@pages/admin/EmailLogsPage';
 import { CouponsPage as AdminCouponsPage } from '@pages/admin/CouponsPage';
 
 import { CourseHomePage } from '@pages/claudecode/CourseHomePage';
@@ -190,6 +195,22 @@ export default function App() {
           </RoleRoute>
         }
       />
+      <Route
+        path="/produtor/emails"
+        element={
+          <RoleRoute roles={['producer', 'admin']}>
+            <ProducerEmailLogsPage />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path="/produtor/bilheteria"
+        element={
+          <RoleRoute roles={['producer', 'admin']}>
+            <PosPage />
+          </RoleRoute>
+        }
+      />
 
       <Route
         path="/admin"
@@ -220,6 +241,14 @@ export default function App() {
         element={
           <RoleRoute roles={['admin']}>
             <AdminEventsPage />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path="/admin/eventos/:id"
+        element={
+          <RoleRoute roles={['admin']}>
+            <AdminEventDetailPage />
           </RoleRoute>
         }
       />
@@ -255,6 +284,24 @@ export default function App() {
           </RoleRoute>
         }
       />
+      <Route
+        path="/admin/emails"
+        element={
+          <RoleRoute roles={['admin']}>
+            <AdminEmailLogsPage />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path="/admin/bilheteria"
+        element={
+          <RoleRoute roles={['admin']}>
+            <PosPage />
+          </RoleRoute>
+        }
+      />
+
+      <Route path="/pagar/:token" element={<PaymentPage />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

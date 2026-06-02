@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { PublicLayout } from '@components/PublicLayout';
 import { Modal } from '@components/Modal';
 import { useToast } from '@components/Toast';
@@ -7,13 +8,14 @@ import { Icons } from '@components/Icon';
 import { publicEventService, type EventModel, type PlatformFees, type TicketLot } from '@services/eventService';
 import { orderService, type PaymentMethod } from '@services/orderService';
 import { customerCouponService } from '@services/couponService';
-import { formatBRL, formatCPF, formatDateTime, formatPhone } from '@utils/format';
+import { formatBRL, formatUSD, formatCPF, formatDateTime, formatPhone } from '@utils/format';
 import { useAuth } from '@hooks/useAuth';
 import type { ApiError } from '@services/api';
 
 const cartKey = (slug: string) => `ticketeira:pendingCart:${slug}`;
 
 export function PublicEventPage() {
+  const { t } = useTranslation();
   const { slug } = useParams();
   const [event, setEvent] = useState<EventModel | null>(null);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
@@ -38,44 +40,35 @@ export function PublicEventPage() {
         setEvent(r.data);
         const initial: Record<number, number> = {};
         r.data.lots?.forEach((lot) => (initial[lot.id] = 0));
-
         const saved = sessionStorage.getItem(cartKey(slug));
         if (saved) {
           try {
             const parsed = JSON.parse(saved) as Record<number, number>;
             r.data.lots?.forEach((lot) => {
               const qty = Number(parsed[lot.id]);
-              if (Number.isFinite(qty) && qty > 0) {
-                initial[lot.id] = Math.min(qty, lot.available);
-              }
+              if (Number.isFinite(qty) && qty > 0) initial[lot.id] = Math.min(qty, lot.available);
             });
-          } catch {
-            // ignore corrupted cart
-          }
+          } catch { /* ignore */ }
         }
-
         setQuantities(initial);
       })
       .catch((err: ApiError) => toast.error(err.message));
   }, [slug, toast]);
 
+  const isStripe = event?.platform_fees?.active_gateway === 'stripe';
+  const formatPrice = isStripe ? formatUSD : formatBRL;
+
   useEffect(() => {
     if (!event) return;
-    if (!event.accepts_pix && event.accepts_card) {
-      setPaymentMethod('card');
-    } else if (event.accepts_pix && !event.accepts_card) {
-      setPaymentMethod('pix');
-    }
-  }, [event]);
+    if (isStripe || (!event.accepts_pix && event.accepts_card)) setPaymentMethod('card');
+    else if (event.accepts_pix && !event.accepts_card) setPaymentMethod('pix');
+  }, [event, isStripe]);
 
   useEffect(() => {
     if (!slug || !event) return;
     const hasItems = Object.values(quantities).some((q) => q > 0);
-    if (hasItems) {
-      sessionStorage.setItem(cartKey(slug), JSON.stringify(quantities));
-    } else {
-      sessionStorage.removeItem(cartKey(slug));
-    }
+    if (hasItems) sessionStorage.setItem(cartKey(slug), JSON.stringify(quantities));
+    else sessionStorage.removeItem(cartKey(slug));
   }, [slug, event, quantities]);
 
   function setQty(lotId: number, qty: number) {
@@ -94,17 +87,14 @@ export function PublicEventPage() {
   async function applyCoupon() {
     if (!event) return;
     const code = couponInput.trim().toUpperCase();
-    if (!code) {
-      setCouponError('Informe um código.');
-      return;
-    }
+    if (!code) { setCouponError(t('event.enterCoupon')); return; }
     setCouponLoading(true);
     setCouponError(null);
     try {
       const res = await customerCouponService.validate({ event_id: event.id, code });
       setCouponCode(res.data.code);
       setCouponPercent(res.data.discount_percent);
-      toast.success(`Cupom ${res.data.code} aplicado.`);
+      toast.success(t('event.couponApplied', { code: res.data.code }));
     } catch (err) {
       const msg = (err as ApiError).message;
       setCouponError(msg);
@@ -127,23 +117,14 @@ export function PublicEventPage() {
     const items = Object.entries(quantities)
       .filter(([, qty]) => qty > 0)
       .map(([id, qty]) => ({ ticket_lot_id: Number(id), quantity: qty }));
-
     setFormErrors({});
     setLoading(true);
     try {
-      const res = await orderService.create({
-        event_id: event.id,
-        payment_method: paymentMethod,
-        items,
-        coupon_code: couponCode,
-        ...extra,
-      });
-      if (user && extra?.phone && extra?.cpf) {
-        setUser({ ...user, phone: extra.phone, cpf: extra.cpf });
-      }
+      const res = await orderService.create({ event_id: event.id, payment_method: paymentMethod, items, coupon_code: couponCode, ...extra });
+      if (user && extra?.phone && extra?.cpf) setUser({ ...user, phone: extra.phone, cpf: extra.cpf });
       sessionStorage.removeItem(cartKey(event.slug));
       setContactOpen(false);
-      toast.success('Pedido criado.');
+      toast.success(t('contact_modal.orderCreated'));
       navigate(`/meus-pedidos/${res.data.id}`);
     } catch (err) {
       const apiErr = err as ApiError;
@@ -159,25 +140,16 @@ export function PublicEventPage() {
   }
 
   function handleCheckout() {
-    if (!event || totalTickets === 0) {
-      toast.error('Selecione ao menos um ingresso.');
-      return;
-    }
-    if (!user) {
-      navigate('/cadastro', { state: { from: { pathname: `/eventos/${event.slug}` } } });
-      return;
-    }
-    if (!user.phone || !user.cpf) {
-      setContactOpen(true);
-      return;
-    }
+    if (!event || totalTickets === 0) { toast.error(t('event.selectAtLeastOne')); return; }
+    if (!user) { navigate('/cadastro', { state: { from: { pathname: `/eventos/${event.slug}` } } }); return; }
+    if (!user.phone || !user.cpf) { setContactOpen(true); return; }
     void createOrder();
   }
 
   if (!event) {
     return (
       <PublicLayout>
-        <p className="text-slate-500">Carregando...</p>
+        <p className="text-slate-500">{t('event.loading')}</p>
       </PublicLayout>
     );
   }
@@ -201,7 +173,7 @@ export function PublicEventPage() {
               </span>
               <span className="chip border border-white/30 bg-white/15 text-white backdrop-blur">
                 <Icons.mapPin className="mr-1 h-3 w-3" />
-                {event.venue_type === 'online' ? 'Online' : event.venue_name ?? '—'}
+                {event.venue_type === 'online' ? t('browse.online') : event.venue_name ?? '—'}
               </span>
             </div>
           </div>
@@ -215,38 +187,23 @@ export function PublicEventPage() {
               {event.description}
             </div>
           )}
-
           <div className="glass-card p-6 animate-fade-up">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Detalhes</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">{t('event.details')}</h3>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Detail icon={<Icons.calendar className="h-4 w-4" />} label="Data" value={formatDateTime(event.starts_at)} />
-              <Detail
-                icon={<Icons.mapPin className="h-4 w-4" />}
-                label="Local"
-                value={event.venue_type === 'online' ? 'Online' : event.venue_name ?? '—'}
-              />
-              {event.venue_address && (
-                <Detail icon={<Icons.mapPin className="h-4 w-4" />} label="Endereço" value={event.venue_address} />
-              )}
-              {event.online_url && (
-                <Detail icon={<Icons.sparkles className="h-4 w-4" />} label="Acesso" value={event.online_url} />
-              )}
+              <Detail icon={<Icons.calendar className="h-4 w-4" />} label={t('event.date')} value={formatDateTime(event.starts_at)} />
+              <Detail icon={<Icons.mapPin className="h-4 w-4" />} label={t('event.venue')} value={event.venue_type === 'online' ? t('browse.online') : event.venue_name ?? '—'} />
+              {event.venue_address && <Detail icon={<Icons.mapPin className="h-4 w-4" />} label={t('event.address')} value={event.venue_address} />}
+              {event.online_url && <Detail icon={<Icons.sparkles className="h-4 w-4" />} label={t('event.access')} value={event.online_url} />}
             </div>
           </div>
         </div>
 
         <aside className="md:col-span-1">
           <div className="glass-card sticky top-24 p-6 animate-fade-up">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Ingressos</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">{t('event.tickets')}</h3>
             <div className="mt-4 space-y-3">
               {event.lots?.map((lot) => (
-                <LotRow
-                  key={lot.id}
-                  lot={lot}
-                  quantity={quantities[lot.id] ?? 0}
-                  feePercent={feePercent}
-                  onChange={(qty) => setQty(lot.id, qty)}
-                />
+                <LotRow key={lot.id} lot={lot} quantity={quantities[lot.id] ?? 0} feePercent={feePercent} formatPrice={formatPrice} onChange={(qty) => setQty(lot.id, qty)} />
               ))}
             </div>
 
@@ -254,41 +211,37 @@ export function PublicEventPage() {
               <div className="mt-5 border-t border-white/60 pt-4">
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between text-slate-600">
-                    <span>Subtotal</span>
-                    <span>{formatBRL(subtotal)}</span>
+                    <span>{t('event.subtotal')}</span>
+                    <span>{formatPrice(subtotal)}</span>
                   </div>
                   {couponCode && (
                     <div className="flex justify-between text-emerald-600">
-                      <span>Desconto ({couponPercent}% · {couponCode})</span>
-                      <span>− {formatBRL(discountAmount)}</span>
+                      <span>{t('event.discount', { percent: couponPercent, code: couponCode })}</span>
+                      <span>− {formatPrice(discountAmount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-slate-500">
-                    <span>Taxa ({feePercent}%{feeFixed > 0 ? ` + ${formatBRL(feeFixed)}` : ''})</span>
-                    <span>{formatBRL(platformFee)}</span>
+                    <span>{t('event.fee', { percent: feePercent, fixed: feeFixed > 0 ? ` + ${formatPrice(feeFixed)}` : '' })}</span>
+                    <span>{formatPrice(platformFee)}</span>
                   </div>
                 </div>
                 <div className="mt-3 flex items-end justify-between">
                   <div>
-                    <p className="text-xs text-slate-500">{totalTickets} ingresso(s)</p>
-                    <p className="text-2xl font-semibold text-slate-900">{formatBRL(total)}</p>
+                    <p className="text-xs text-slate-500">{t('event.ticketCount', { count: totalTickets })}</p>
+                    <p className="text-2xl font-semibold text-slate-900">{formatPrice(total)}</p>
                   </div>
                 </div>
 
                 <div className="mt-4">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Cupom</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">{t('event.coupon')}</p>
                   {couponCode ? (
                     <div className="flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2">
                       <div>
                         <p className="font-mono text-sm font-semibold text-emerald-800">{couponCode}</p>
-                        <p className="text-[11px] text-emerald-700">Desconto de {couponPercent}% aplicado.</p>
+                        <p className="text-[11px] text-emerald-700">{t('event.discountApplied', { percent: couponPercent })}</p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={removeCoupon}
-                        className="text-xs text-emerald-700 underline hover:text-emerald-900"
-                      >
-                        Remover
+                      <button type="button" onClick={removeCoupon} className="text-xs text-emerald-700 underline hover:text-emerald-900">
+                        {t('event.remove')}
                       </button>
                     </div>
                   ) : (
@@ -296,27 +249,14 @@ export function PublicEventPage() {
                       <div className="flex gap-2">
                         <input
                           value={couponInput}
-                          onChange={(e) => {
-                            setCouponInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''));
-                            setCouponError(null);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              void applyCoupon();
-                            }
-                          }}
-                          placeholder="Digite o código"
+                          onChange={(e) => { setCouponInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '')); setCouponError(null); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void applyCoupon(); } }}
+                          placeholder={t('event.enterCode')}
                           maxLength={50}
                           className={`input uppercase tracking-wider ${couponError ? 'border-rose-400' : ''}`}
                         />
-                        <button
-                          type="button"
-                          onClick={() => void applyCoupon()}
-                          disabled={couponLoading || !couponInput.trim()}
-                          className="btn btn-ghost shrink-0"
-                        >
-                          {couponLoading ? '...' : 'Aplicar'}
+                        <button type="button" onClick={() => void applyCoupon()} disabled={couponLoading || !couponInput.trim()} className="btn btn-ghost shrink-0">
+                          {couponLoading ? '...' : t('event.apply')}
                         </button>
                       </div>
                       {couponError && <p className="mt-1 text-xs text-rose-600">{couponError}</p>}
@@ -325,38 +265,24 @@ export function PublicEventPage() {
                 </div>
 
                 <div className="mt-4">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Forma de pagamento</p>
-                  <div className={`grid gap-2 ${event.accepts_pix && event.accepts_card ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    {event.accepts_pix && (
-                      <PaymentMethodOption
-                        active={paymentMethod === 'pix'}
-                        label="PIX"
-                        hint="Aprovação imediata"
-                        onClick={() => setPaymentMethod('pix')}
-                      />
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">{t('event.paymentMethod')}</p>
+                  <div className={`grid gap-2 ${!isStripe && event.accepts_pix && event.accepts_card ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {!isStripe && event.accepts_pix && (
+                      <PaymentMethodOption active={paymentMethod === 'pix'} label="PIX" hint={t('event.pixImmediate')} onClick={() => setPaymentMethod('pix')} />
                     )}
                     {event.accepts_card && (
-                      <PaymentMethodOption
-                        active={paymentMethod === 'card'}
-                        label="Cartão"
-                        hint="Em até 4x*"
-                        onClick={() => setPaymentMethod('card')}
-                      />
+                      <PaymentMethodOption active={paymentMethod === 'card'} label={t('admin.card')} hint={t('event.cardInstallments')} onClick={() => setPaymentMethod('card')} />
                     )}
                   </div>
                   {paymentMethod === 'card' && event.accepts_card && (
-                    <p className="mt-2 text-[10px] text-slate-500">
-                      *Parcelamento com juros definidos pela operadora do cartão, aplicados no checkout.
-                    </p>
+                    <p className="mt-2 text-[10px] text-slate-500">{t('event.cardNote')}</p>
                   )}
                 </div>
 
                 <button onClick={handleCheckout} disabled={loading} className="btn btn-primary mt-4 w-full">
-                  {loading ? 'Processando...' : 'Comprar ingressos'}
+                  {loading ? t('common.processing') : t('event.buyTickets')}
                 </button>
-                <p className="mt-2 text-center text-[10px] text-slate-400">
-                  Pagamento via Abacate Pay
-                </p>
+                <p className="mt-2 text-center text-[10px] text-slate-400">{isStripe ? t('event.payViaStripe') : t('event.payViaAbacatePay')}</p>
               </div>
             )}
           </div>
@@ -365,10 +291,7 @@ export function PublicEventPage() {
 
       <ContactModal
         open={contactOpen}
-        onClose={() => {
-          setContactOpen(false);
-          setFormErrors({});
-        }}
+        onClose={() => { setContactOpen(false); setFormErrors({}); }}
         onSubmit={(phone, cpf) => createOrder({ phone, cpf })}
         loading={loading}
         errors={formErrors}
@@ -377,28 +300,12 @@ export function PublicEventPage() {
   );
 }
 
-function ContactModal({
-  open,
-  onClose,
-  onSubmit,
-  loading,
-  errors,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (phone: string, cpf: string) => void;
-  loading: boolean;
-  errors: Record<string, string[]>;
-}) {
+function ContactModal({ open, onClose, onSubmit, loading, errors }: { open: boolean; onClose: () => void; onSubmit: (phone: string, cpf: string) => void; loading: boolean; errors: Record<string, string[]> }) {
+  const { t } = useTranslation();
   const [phone, setPhone] = useState('');
   const [cpf, setCpf] = useState('');
 
-  useEffect(() => {
-    if (!open) {
-      setPhone('');
-      setCpf('');
-    }
-  }, [open]);
+  useEffect(() => { if (!open) { setPhone(''); setCpf(''); } }, [open]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -407,30 +314,22 @@ function ContactModal({
 
   const phoneError = errors.phone?.[0];
   const cpfError = errors.cpf?.[0];
-  const generalErrors = Object.entries(errors)
-    .filter(([key]) => key !== 'phone' && key !== 'cpf')
-    .flatMap(([, messages]) => messages);
+  const generalErrors = Object.entries(errors).filter(([key]) => key !== 'phone' && key !== 'cpf').flatMap(([, messages]) => messages);
 
   return (
-    <Modal open={open} onClose={onClose} title="Dados para o pagamento">
+    <Modal open={open} onClose={onClose} title={t('contact_modal.title')}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <p className="text-sm text-slate-600">
-          O Abacate Pay exige telefone e CPF para processar o pagamento. Eles ficam salvos no seu perfil para as próximas compras.
-        </p>
-
+        <p className="text-sm text-slate-600">{t('contact_modal.subtitle')}</p>
         {generalErrors.length > 0 && (
           <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-            <p className="font-medium">Não foi possível concluir a compra:</p>
+            <p className="font-medium">{t('contact_modal.purchaseFailed')}</p>
             <ul className="mt-1 list-disc pl-5 text-xs">
-              {generalErrors.map((msg) => (
-                <li key={msg}>{msg}</li>
-              ))}
+              {generalErrors.map((msg) => <li key={msg}>{msg}</li>)}
             </ul>
           </div>
         )}
-
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Telefone</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('contact_modal.phone')}</span>
           <input
             value={phone}
             onChange={(e) => setPhone(formatPhone(e.target.value))}
@@ -444,9 +343,8 @@ function ContactModal({
           />
           {phoneError && <p className="mt-1 text-xs text-rose-600">{phoneError}</p>}
         </label>
-
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">CPF</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('contact_modal.cpf')}</span>
           <input
             value={cpf}
             onChange={(e) => setCpf(formatCPF(e.target.value))}
@@ -459,13 +357,12 @@ function ContactModal({
           />
           {cpfError && <p className="mt-1 text-xs text-rose-600">{cpfError}</p>}
         </label>
-
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="btn btn-ghost" disabled={loading}>
-            Cancelar
+            {t('contact_modal.cancel')}
           </button>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Processando...' : 'Confirmar e pagar'}
+            {loading ? t('contact_modal.processing') : t('contact_modal.confirmAndPay')}
           </button>
         </div>
       </form>
@@ -473,27 +370,13 @@ function ContactModal({
   );
 }
 
-function PaymentMethodOption({
-  active,
-  label,
-  hint,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  hint: string;
-  onClick: () => void;
-}) {
+function PaymentMethodOption({ active, label, hint, onClick }: { active: boolean; label: string; hint: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-xl border px-3 py-2 text-left transition ${
-        active
-          ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200'
-          : 'border-slate-200 bg-white/70 hover:border-brand-300'
-      }`}
+      className={`rounded-xl border px-3 py-2 text-left transition ${active ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-200' : 'border-slate-200 bg-white/70 hover:border-brand-300'}`}
     >
       <p className="text-sm font-semibold text-slate-900">{label}</p>
       <p className="text-[10px] text-slate-500">{hint}</p>
@@ -513,61 +396,34 @@ function Detail({ icon, label, value }: { icon: React.ReactNode; label: string; 
   );
 }
 
-function LotRow({
-  lot,
-  quantity,
-  feePercent,
-  onChange,
-}: {
-  lot: TicketLot;
-  quantity: number;
-  feePercent: number;
-  onChange: (qty: number) => void;
-}) {
+function LotRow({ lot, quantity, feePercent, formatPrice, onChange }: { lot: TicketLot; quantity: number; feePercent: number; formatPrice: (v: number) => string; onChange: (qty: number) => void }) {
+  const { t } = useTranslation();
   const unavailable = !lot.on_sale;
   const unitFee = round2(lot.price * (feePercent / 100));
   return (
-    <div
-      className={`flex items-center justify-between rounded-xl border p-4 ${
-        unavailable ? 'border-white/40 bg-white/30 opacity-60' : 'border-white/60 bg-white/70'
-      }`}
-    >
+    <div className={`flex items-center justify-between rounded-xl border p-4 ${unavailable ? 'border-white/40 bg-white/30 opacity-60' : 'border-white/60 bg-white/70'}`}>
       <div>
         <p className="flex items-center gap-2 font-medium text-slate-900">
           {lot.name}
-          {lot.is_half_price && <span className="chip bg-amber-100 text-amber-800">meia</span>}
+          {lot.is_half_price && <span className="chip bg-amber-100 text-amber-800">{t('event.half')}</span>}
         </p>
         <p className="flex items-baseline gap-1.5 font-semibold text-slate-900">
-          <span className="text-sm">{formatBRL(lot.price)}</span>
+          <span className="text-sm">{formatPrice(lot.price)}</span>
           {unitFee > 0 && (
             <span className="text-[11px] font-normal text-slate-500">
-              + {formatBRL(unitFee)} de taxa
+              {t('event.feeSuffix', { fee: formatPrice(unitFee) })}
             </span>
           )}
         </p>
-        <p className="text-[11px] text-slate-500">{lot.available} disponíveis</p>
+        <p className="text-[11px] text-slate-500">{lot.available} {t('event.available')}</p>
       </div>
       {unavailable ? (
-        <span className="text-xs text-slate-500">Esgotado</span>
+        <span className="text-xs text-slate-500">{t('event.soldOut')}</span>
       ) : (
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onChange(quantity - 1)}
-            disabled={quantity <= 0}
-            className="h-8 w-8 rounded-full border border-slate-300 bg-white/80 text-lg text-slate-600 transition hover:bg-white disabled:opacity-40"
-          >
-            −
-          </button>
+          <button type="button" onClick={() => onChange(quantity - 1)} disabled={quantity <= 0} className="h-8 w-8 rounded-full border border-slate-300 bg-white/80 text-lg text-slate-600 transition hover:bg-white disabled:opacity-40">−</button>
           <span className="w-6 text-center text-sm font-semibold">{quantity}</span>
-          <button
-            type="button"
-            onClick={() => onChange(quantity + 1)}
-            disabled={quantity >= lot.available}
-            className="h-8 w-8 rounded-full border border-slate-300 bg-white/80 text-lg text-slate-600 transition hover:bg-white disabled:opacity-40"
-          >
-            +
-          </button>
+          <button type="button" onClick={() => onChange(quantity + 1)} disabled={quantity >= lot.available} className="h-8 w-8 rounded-full border border-slate-300 bg-white/80 text-lg text-slate-600 transition hover:bg-white disabled:opacity-40">+</button>
         </div>
       )}
     </div>

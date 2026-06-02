@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
 import { Empty } from '@components/Empty';
@@ -12,20 +13,21 @@ import { adminService, type AdminOrder } from '@services/adminService';
 import { formatBRL, formatDateTime } from '@utils/format';
 import type { ApiError } from '@services/api';
 
-const STATUS: Record<string, { label: string; color: string }> = {
-  paid: { label: 'Paga', color: 'bg-emerald-100 text-emerald-700' },
-  pending: { label: 'Pendente', color: 'bg-amber-100 text-amber-700' },
-  cancelled: { label: 'Cancelada', color: 'bg-rose-100 text-rose-700' },
-  expired: { label: 'Expirada', color: 'bg-slate-100 text-slate-700' },
-};
-
 export function OrdersPage() {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<AdminOrder | null>(null);
   const toast = useToast();
   const confirm = useConfirm();
+
+  const STATUS: Record<string, { label: string; color: string }> = {
+    paid: { label: t('orders.paid'), color: 'bg-emerald-100 text-emerald-700' },
+    pending: { label: t('orders.pending'), color: 'bg-amber-100 text-amber-700' },
+    cancelled: { label: t('orders.cancelled'), color: 'bg-rose-100 text-rose-700' },
+    expired: { label: t('orders.expired'), color: 'bg-slate-100 text-slate-700' },
+  };
 
   async function load() {
     try {
@@ -44,15 +46,15 @@ export function OrdersPage() {
 
   async function handleDelete(order: AdminOrder) {
     const ok = await confirm({
-      title: `Excluir venda #${order.id}?`,
-      description: 'Esta ação é irreversível e remove a venda do histórico.',
-      confirmText: 'Excluir',
+      title: t('admin.deleteSaleTitle', { id: order.id }),
+      description: t('admin.deleteSaleDesc'),
+      confirmText: t('admin.deleteSaleBtn'),
       variant: 'danger',
     });
     if (!ok) return;
     try {
       await adminService.deleteOrder(order.id);
-      toast.success('Venda excluída.');
+      toast.success(t('admin.saleDeleted'));
       load();
     } catch (err) {
       toast.error((err as ApiError).message);
@@ -60,43 +62,38 @@ export function OrdersPage() {
   }
 
   return (
-    <AppLayout title="Admin" nav={adminNav}>
+    <AppLayout title={t('admin.panel')} nav={adminNav}>
       <PageHeader
-        title="Vendas globais"
+        title={t('admin.globalSales')}
         action={
           <div className="flex gap-2">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar..."
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-            />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.search')} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
             <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
-              <option value="">Todos</option>
-              <option value="paid">Pagas</option>
-              <option value="pending">Pendentes</option>
-              <option value="cancelled">Canceladas</option>
-              <option value="expired">Expiradas</option>
+              <option value="">{t('admin.allStatuses')}</option>
+              <option value="paid">{t('admin.paidFilter')}</option>
+              <option value="pending">{t('orders.pending')}</option>
+              <option value="cancelled">{t('admin.cancelledFilter')}</option>
+              <option value="expired">{t('admin.expiredFilter')}</option>
             </select>
           </div>
         }
       />
 
       {orders.length === 0 ? (
-        <Empty title="Nenhuma venda encontrada." />
+        <Empty title={t('admin.noSales')} />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
                 <Th>#</Th>
-                <Th>Cliente</Th>
-                <Th>Evento</Th>
-                <Th>Total</Th>
-                <Th>Taxa</Th>
-                <Th>Status</Th>
-                <Th>Data</Th>
-                <Th className="text-right">Ações</Th>
+                <Th>{t('admin.customerCol')}</Th>
+                <Th>{t('admin.eventCol')}</Th>
+                <Th>{t('admin.totalCol')}</Th>
+                <Th>{t('admin.feeCol')}</Th>
+                <Th>{t('admin.status')}</Th>
+                <Th>{t('admin.dateCol')}</Th>
+                <Th className="text-right">{t('admin.actions')}</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -118,18 +115,8 @@ export function OrdersPage() {
                     <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(order.paid_at ?? order.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
-                        <ActionIconButton
-                          onClick={() => setEditing(order)}
-                          tone="brand"
-                          label="Editar"
-                          icon={<Icons.pencil className="h-4 w-4" />}
-                        />
-                        <ActionIconButton
-                          onClick={() => handleDelete(order)}
-                          tone="danger"
-                          label="Excluir"
-                          icon={<Icons.trash className="h-4 w-4" />}
-                        />
+                        <ActionIconButton onClick={() => setEditing(order)} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
+                        <ActionIconButton onClick={() => handleDelete(order)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
                       </div>
                     </td>
                   </tr>
@@ -140,25 +127,13 @@ export function OrdersPage() {
         </div>
       )}
 
-      <EditOrderModal
-        order={editing}
-        onClose={() => setEditing(null)}
-        onSaved={() => {
-          setEditing(null);
-          load();
-        }}
-      />
+      <EditOrderModal order={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />
     </AppLayout>
   );
 }
 
-interface EditOrderModalProps {
-  order: AdminOrder | null;
-  onClose: () => void;
-  onSaved: () => void;
-}
-
-function EditOrderModal({ order, onClose, onSaved }: EditOrderModalProps) {
+function EditOrderModal({ order, onClose, onSaved }: { order: AdminOrder | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const [orderStatus, setOrderStatus] = useState<AdminOrder['status']>('pending');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -177,7 +152,7 @@ function EditOrderModal({ order, onClose, onSaved }: EditOrderModalProps) {
     setLoading(true);
     try {
       await adminService.updateOrder(order.id, { status: orderStatus });
-      toast.success('Venda atualizada.');
+      toast.success(t('admin.saleUpdated'));
       onSaved();
     } catch (err) {
       const apiErr = err as ApiError;
@@ -192,38 +167,28 @@ function EditOrderModal({ order, onClose, onSaved }: EditOrderModalProps) {
   const fieldError = (key: string) => errors[key]?.[0];
 
   return (
-    <Modal open={order !== null} onClose={onClose} title={order ? `Venda #${order.id}` : 'Venda'}>
+    <Modal open={order !== null} onClose={onClose} title={order ? t('admin.saleTitle', { id: order.id }) : ''}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {order && (
           <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm">
-            <p><span className="text-slate-500">Cliente:</span> <span className="font-medium">{order.customer?.name}</span></p>
-            <p><span className="text-slate-500">Evento:</span> <span className="font-medium">{order.event?.name}</span></p>
-            <p><span className="text-slate-500">Total:</span> <span className="font-medium">{formatBRL(order.total)}</span></p>
+            <p><span className="text-slate-500">{t('admin.clientLabel')}</span> <span className="font-medium">{order.customer?.name}</span></p>
+            <p><span className="text-slate-500">{t('admin.eventLabel')}</span> <span className="font-medium">{order.event?.name}</span></p>
+            <p><span className="text-slate-500">{t('admin.totalLabel')}</span> <span className="font-medium">{formatBRL(order.total)}</span></p>
           </div>
         )}
-
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Status</span>
-          <select
-            value={orderStatus}
-            onChange={(e) => setOrderStatus(e.target.value as AdminOrder['status'])}
-            className={`input ${fieldError('status') ? 'border-rose-400' : ''}`}
-          >
-            <option value="pending">Pendente</option>
-            <option value="paid">Paga</option>
-            <option value="cancelled">Cancelada</option>
-            <option value="expired">Expirada</option>
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.status')}</span>
+          <select value={orderStatus} onChange={(e) => setOrderStatus(e.target.value as AdminOrder['status'])} className={`input ${fieldError('status') ? 'border-rose-400' : ''}`}>
+            <option value="pending">{t('orders.pending')}</option>
+            <option value="paid">{t('orders.paid')}</option>
+            <option value="cancelled">{t('orders.cancelled')}</option>
+            <option value="expired">{t('orders.expired')}</option>
           </select>
           {fieldError('status') && <p className="mt-1 text-xs text-rose-600">{fieldError('status')}</p>}
         </label>
-
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="btn btn-secondary">
-            Cancelar
-          </button>
-          <button type="submit" disabled={loading} className="btn btn-primary">
-            {loading ? 'Salvando...' : 'Salvar'}
-          </button>
+          <button type="button" onClick={onClose} className="btn btn-secondary">{t('common.cancel')}</button>
+          <button type="submit" disabled={loading} className="btn btn-primary">{loading ? t('common.saving') : t('common.save')}</button>
         </div>
       </form>
     </Modal>
@@ -231,9 +196,5 @@ function EditOrderModal({ order, onClose, onSaved }: EditOrderModalProps) {
 }
 
 function Th({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
-  return (
-    <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>
-      {children}
-    </th>
-  );
+  return <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>{children}</th>;
 }

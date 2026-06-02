@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@hooks/useAuth';
 import { useToast } from '@components/Toast';
 import { authService } from '@services/authService';
@@ -7,12 +8,8 @@ import { setToken } from '@utils/token';
 import type { ApiError } from '@services/api';
 
 export function RegisterPage() {
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-  });
+  const { t } = useTranslation();
+  const [form, setForm] = useState({ name: '', email: '', password: '', password_confirmation: '' });
   const [loading, setLoading] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
@@ -29,7 +26,7 @@ export function RegisterPage() {
       const res = await authService.register({ ...form, role: 'customer' });
       setToken(res.data.token);
       setUser(res.data.user);
-      toast.success('Cadastro realizado!');
+      toast.success(t('auth.registrationDone'));
       navigate(redirectTo, { replace: true });
     } catch (err) {
       toast.error((err as ApiError).message);
@@ -54,16 +51,16 @@ export function RegisterPage() {
         </Link>
 
         <form onSubmit={handleSubmit} className="glass-card p-8">
-          <h1 className="text-2xl font-semibold text-slate-900">Criar conta de cliente</h1>
-          <p className="mb-6 mt-1 text-sm text-slate-500">Compre ingressos e acompanhe seus pedidos.</p>
+          <h1 className="text-2xl font-semibold text-slate-900">{t('auth.createCustomerAccount')}</h1>
+          <p className="mb-6 mt-1 text-sm text-slate-500">{t('auth.buyTicketsSubtitle')}</p>
 
           <label className="mb-3 block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">Nome</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('auth.name')}</span>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="input" />
           </label>
 
           <label className="mb-3 block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">E-mail</span>
+            <span className="mb-1 block text-sm font-medium text-slate-700">{t('auth.email')}</span>
             <input
               type="email"
               value={form.email}
@@ -75,7 +72,7 @@ export function RegisterPage() {
 
           <div className="mb-5 grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Senha</span>
+              <span className="mb-1 block text-sm font-medium text-slate-700">{t('auth.password')}</span>
               <input
                 type="password"
                 minLength={8}
@@ -86,7 +83,7 @@ export function RegisterPage() {
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Confirmar</span>
+              <span className="mb-1 block text-sm font-medium text-slate-700">{t('auth.confirm')}</span>
               <input
                 type="password"
                 minLength={8}
@@ -99,19 +96,19 @@ export function RegisterPage() {
           </div>
 
           <button type="submit" disabled={loading} className="btn btn-primary w-full">
-            {loading ? 'Criando...' : 'Criar conta'}
+            {loading ? t('auth.creating') : t('auth.createAccount')}
           </button>
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            Já tem conta?{' '}
+            {t('auth.alreadyHaveAccount')}{' '}
             <Link to="/login" state={fromState ? { from: fromState } : undefined} className="font-medium text-brand-600 hover:text-brand-700">
-              Entrar
+              {t('auth.signIn')}
             </Link>
           </p>
           <p className="mt-2 text-center text-sm text-slate-500">
-            Quer vender ingressos?{' '}
+            {t('auth.wantToSell')}{' '}
             <Link to="/cadastro/produtor" className="font-medium text-brand-600 hover:text-brand-700">
-              Cadastre-se como produtor
+              {t('auth.registerAsProducer')}
             </Link>
           </p>
         </form>

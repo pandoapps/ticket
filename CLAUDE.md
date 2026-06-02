@@ -9,7 +9,7 @@ Guia obrigatório para uso do Claude no projeto **Ticketeira** (plataforma de ve
 - **Nunca faça commit automático.** Commits só via `make send`, executado manualmente pelo Thiago após revisão.
 - **Nunca use `php artisan` diretamente.** Toda interação com o Laravel passa pelo Makefile (`make migrate`, `make seed`, `make thinker` etc.).
 - **Acentuação portuguesa correta** em todo conteúdo em português (código, UI, mensagens, comentários). Sem "nao", "voce", "acao" — use **não**, **você**, **ação**.
-- **Escolha um padrão de idioma por projeto e mantenha.** Neste projeto: UI e mensagens ao usuário final em **português**; código, nomes de variáveis, commits e documentação técnica em **inglês**.
+- **Idiomas:** código, variáveis, commits e documentação técnica em **inglês**. A UI usa i18n (`react-i18next`) com dois locales (`locales/en.json` e `locales/pt-BR.json`). O painel admin renderiza em **inglês** por padrão; a área do cliente/produtor em **português**. Toda string visível ao usuário deve usar `t()` — **nunca** hardcode de texto em componentes. Ao adicionar qualquer string nova, adicionar a chave em **ambos** os arquivos de tradução.
 
 ---
 

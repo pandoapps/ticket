@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@components/AppLayout';
 import { useToast } from '@components/Toast';
 import { customerNav } from './nav';
@@ -8,6 +9,7 @@ import { formatDateTime } from '@utils/format';
 import type { ApiError } from '@services/api';
 
 export function TicketDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const toast = useToast();
@@ -23,7 +25,7 @@ export function TicketDetailPage() {
   if (!ticket) {
     return (
       <AppLayout title="Ticketeira" nav={customerNav}>
-        <p className="text-slate-500">Carregando...</p>
+        <p className="text-slate-500">{t('common.loading')}</p>
       </AppLayout>
     );
   }
@@ -43,7 +45,9 @@ export function TicketDetailPage() {
 
         <p className="text-center font-mono text-xs text-slate-600">{ticket.code}</p>
         {ticket.used_at && (
-          <p className="mt-2 text-center text-xs text-rose-600">Ingresso já utilizado em {formatDateTime(ticket.used_at)}</p>
+          <p className="mt-2 text-center text-xs text-rose-600">
+            {t('my_tickets.alreadyUsedOn', { date: formatDateTime(ticket.used_at) })}
+          </p>
         )}
       </div>
     </AppLayout>

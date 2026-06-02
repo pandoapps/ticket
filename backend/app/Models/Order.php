@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\SaleOrigin;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,6 +27,7 @@ class Order extends Model
         'platform_fee',
         'total',
         'payment_method',
+        'sale_origin',
         'status',
         'abacate_charge_id',
         'abacate_checkout_url',
@@ -34,6 +36,7 @@ class Order extends Model
         'paid_at',
         'cancelled_at',
         'expires_at',
+        'payment_token',
     ];
 
     protected function casts(): array
@@ -45,6 +48,7 @@ class Order extends Model
             'platform_fee' => 'decimal:2',
             'total' => 'decimal:2',
             'payment_method' => PaymentMethod::class,
+            'sale_origin' => SaleOrigin::class,
             'status' => OrderStatus::class,
             'paid_at' => 'datetime',
             'cancelled_at' => 'datetime',

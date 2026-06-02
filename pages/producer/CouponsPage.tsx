@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
 import { Empty } from '@components/Empty';
@@ -8,16 +9,13 @@ import { ActionIconButton } from '@components/ActionIconButton';
 import { Icons } from '@components/Icon';
 import { CouponFormModal } from '@components/CouponFormModal';
 import { producerNav } from './nav';
-import {
-  producerCouponService,
-  type Coupon,
-  type CouponPayload,
-} from '@services/couponService';
+import { producerCouponService, type Coupon, type CouponPayload } from '@services/couponService';
 import { producerEventService, type EventModel } from '@services/eventService';
 import { formatDateTime } from '@utils/format';
 import type { ApiError } from '@services/api';
 
 export function CouponsPage() {
+  const { t } = useTranslation();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [events, setEvents] = useState<EventModel[]>([]);
   const [filterEventId, setFilterEventId] = useState<number | ''>('');
@@ -29,9 +27,7 @@ export function CouponsPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await producerCouponService.list(
-        filterEventId === '' ? undefined : { event_id: filterEventId },
-      );
+      const res = await producerCouponService.list(filterEventId === '' ? undefined : { event_id: filterEventId });
       setCoupons(res.data);
     } catch (err) {
       toast.error((err as ApiError).message);
@@ -39,35 +35,20 @@ export function CouponsPage() {
   }, [filterEventId, toast]);
 
   useEffect(() => {
-    producerEventService
-      .list()
-      .then((r) => setEvents(r.data))
-      .catch((err: ApiError) => toast.error(err.message));
+    producerEventService.list().then((r) => setEvents(r.data)).catch((err: ApiError) => toast.error(err.message));
   }, [toast]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  function openCreate() {
-    setEditing(null);
-    setModalOpen(true);
-  }
-
-  function openEdit(coupon: Coupon) {
-    setEditing(coupon);
-    setModalOpen(true);
-  }
+  useEffect(() => { load(); }, [load]);
 
   async function handleSubmit(payload: CouponPayload) {
     setSubmitting(true);
     try {
       if (editing) {
         await producerCouponService.update(editing.id, payload);
-        toast.success('Cupom atualizado.');
+        toast.success(t('producer.couponUpdated'));
       } else {
         await producerCouponService.create(payload);
-        toast.success('Cupom criado.');
+        toast.success(t('producer.couponCreated'));
       }
       setModalOpen(false);
       load();
@@ -78,15 +59,15 @@ export function CouponsPage() {
 
   async function handleDelete(coupon: Coupon) {
     const ok = await confirm({
-      title: `Excluir cupom ${coupon.code}?`,
-      description: 'Pedidos já realizados com este cupom continuam válidos.',
-      confirmText: 'Excluir',
+      title: t('producer.deleteCouponTitle', { code: coupon.code }),
+      description: t('producer.deleteCouponDesc'),
+      confirmText: t('common.delete'),
       variant: 'danger',
     });
     if (!ok) return;
     try {
       await producerCouponService.destroy(coupon.id);
-      toast.success('Cupom excluído.');
+      toast.success(t('producer.couponDeleted'));
       load();
     } catch (err) {
       toast.error((err as ApiError).message);
@@ -94,56 +75,44 @@ export function CouponsPage() {
   }
 
   return (
-    <AppLayout title="Produtor" nav={producerNav}>
+    <AppLayout title={t('producer.panel')} nav={producerNav}>
       <PageHeader
-        title="Cupons"
-        description="Crie cupons de desconto em porcentagem aplicados antes da taxa de pagamento."
+        title={t('producer.couponsPage')}
+        description={t('producer.couponsDesc2')}
         action={
-          <button onClick={openCreate} className="btn btn-primary" disabled={events.length === 0}>
-            Novo cupom
+          <button onClick={() => { setEditing(null); setModalOpen(true); }} className="btn btn-primary" disabled={events.length === 0}>
+            {t('producer.newCoupon')}
           </button>
         }
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <label className="block text-sm text-slate-600">
-          <span className="mr-2">Evento</span>
-          <select
-            value={filterEventId}
-            onChange={(e) => setFilterEventId(e.target.value === '' ? '' : Number(e.target.value))}
-            className="input w-auto"
-          >
-            <option value="">Todos</option>
-            {events.map((ev) => (
-              <option key={ev.id} value={ev.id}>
-                {ev.name}
-              </option>
-            ))}
+          <span className="mr-2">{t('coupon_modal.event')}</span>
+          <select value={filterEventId} onChange={(e) => setFilterEventId(e.target.value === '' ? '' : Number(e.target.value))} className="input w-auto">
+            <option value="">{t('common.all')}</option>
+            {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
           </select>
         </label>
       </div>
 
       {coupons.length === 0 ? (
         <Empty
-          title="Nenhum cupom ainda."
-          description={
-            events.length === 0
-              ? 'Crie um evento antes de cadastrar cupons.'
-              : 'Clique em "Novo cupom" para criar o primeiro.'
-          }
+          title={t('producer.noCoupons')}
+          description={events.length === 0 ? t('producer.noCouponsNoEvent') : t('producer.noCouponsCreate')}
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-white/50 bg-white/60 shadow-glass backdrop-blur-xl">
           <table className="min-w-full divide-y divide-white/60 text-sm">
             <thead className="bg-white/40">
               <tr>
-                <Th>Código</Th>
-                <Th>Evento</Th>
-                <Th>Desconto</Th>
-                <Th>Uso</Th>
-                <Th>Validade</Th>
-                <Th>Status</Th>
-                <Th className="text-right">Ações</Th>
+                <Th>{t('producer.codeCol')}</Th>
+                <Th>{t('coupon_modal.event')}</Th>
+                <Th>{t('producer.discountCol')}</Th>
+                <Th>{t('producer.usageCol')}</Th>
+                <Th>{t('producer.couponValidity')}</Th>
+                <Th>{t('admin.statusCol')}</Th>
+                <Th className="text-right">{t('producer.actions')}</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/60">
@@ -152,31 +121,16 @@ export function CouponsPage() {
                   <td className="px-4 py-3 font-mono font-semibold text-slate-900">{c.code}</td>
                   <td className="px-4 py-3 text-slate-600">{c.event?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-600">{c.discount_percent}%</td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {c.used_count}
-                    {c.max_uses !== null ? ` / ${c.max_uses}` : ' (ilimitado)'}
-                  </td>
+                  <td className="px-4 py-3 text-slate-600">{c.used_count}{c.max_uses !== null ? ` / ${c.max_uses}` : ` ${t('producer.unlimited')}`}</td>
                   <td className="px-4 py-3 text-xs text-slate-500">
-                    <div>{c.starts_at ? `De: ${formatDateTime(c.starts_at)}` : 'Sem início'}</div>
-                    <div>{c.ends_at ? `Até: ${formatDateTime(c.ends_at)}` : 'Sem término'}</div>
+                    <div>{c.starts_at ? `${t('producer.fromDate')} ${formatDateTime(c.starts_at)}` : t('producer.noStart')}</div>
+                    <div>{c.ends_at ? `${t('producer.untilDate')} ${formatDateTime(c.ends_at)}` : t('producer.noEnd')}</div>
                   </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge coupon={c} />
-                  </td>
+                  <td className="px-4 py-3"><StatusBadge coupon={c} /></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <ActionIconButton
-                        onClick={() => openEdit(c)}
-                        tone="brand"
-                        label="Editar"
-                        icon={<Icons.pencil className="h-4 w-4" />}
-                      />
-                      <ActionIconButton
-                        onClick={() => handleDelete(c)}
-                        tone="danger"
-                        label="Excluir"
-                        icon={<Icons.trash className="h-4 w-4" />}
-                      />
+                      <ActionIconButton onClick={() => { setEditing(c); setModalOpen(true); }} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
+                      <ActionIconButton onClick={() => handleDelete(c)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
                     </div>
                   </td>
                 </tr>
@@ -186,32 +140,18 @@ export function CouponsPage() {
         </div>
       )}
 
-      <CouponFormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleSubmit}
-        coupon={editing}
-        events={events.map((ev) => ({ id: ev.id, name: ev.name }))}
-        submitting={submitting}
-      />
+      <CouponFormModal open={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleSubmit} coupon={editing} events={events.map((ev) => ({ id: ev.id, name: ev.name }))} submitting={submitting} />
     </AppLayout>
   );
 }
 
 function StatusBadge({ coupon }: { coupon: Coupon }) {
-  const label = coupon.is_usable ? 'Disponível' : coupon.is_active ? 'Indisponível' : 'Inativo';
-  const cls = coupon.is_usable
-    ? 'bg-emerald-100 text-emerald-700'
-    : coupon.is_active
-      ? 'bg-amber-100 text-amber-700'
-      : 'bg-slate-100 text-slate-600';
+  const { t } = useTranslation();
+  const label = coupon.is_usable ? t('producer.couponAvailable') : coupon.is_active ? t('producer.couponUnavailable') : t('producer.couponInactive');
+  const cls = coupon.is_usable ? 'bg-emerald-100 text-emerald-700' : coupon.is_active ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600';
   return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{label}</span>;
 }
 
 function Th({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
-  return (
-    <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>
-      {children}
-    </th>
-  );
+  return <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>{children}</th>;
 }

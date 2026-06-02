@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from '@hooks/useAuth';
 import { ToastProvider } from '@components/Toast';
 import { DialogProvider } from '@components/ConfirmDialog';
+import './i18n';
 import './index.css';
 
 const rootElement = document.getElementById('root');

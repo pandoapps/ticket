@@ -41,6 +41,7 @@ class EventResource extends JsonResource
                 'pix_fixed' => (float) $settings->pix_fixed_fee_cents,
                 'card_percent' => (float) $settings->card_commission_percent,
                 'card_fixed' => (float) $settings->card_fixed_fee_cents,
+                'active_gateway' => $settings->active_gateway ?? 'abacate_pay',
             ],
             'producer' => new ProducerResource($this->whenLoaded('producer')),
             'lots' => TicketLotResource::collection($this->whenLoaded('lots')),

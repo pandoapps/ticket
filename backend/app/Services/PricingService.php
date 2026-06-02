@@ -17,6 +17,7 @@ class PricingService
         [$percent, $fixed] = match ($method) {
             PaymentMethod::Pix => [(float) $settings->pix_commission_percent, (float) $settings->pix_fixed_fee_cents],
             PaymentMethod::Card => [(float) $settings->card_commission_percent, (float) $settings->card_fixed_fee_cents],
+            PaymentMethod::Manual => [0.0, 0.0],
         };
 
         $discountAmount = 0.0;

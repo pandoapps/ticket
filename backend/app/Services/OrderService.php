@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\SaleOrigin;
 use App\Models\Coupon;
 use App\Models\Event;
 use App\Models\Order;
@@ -12,6 +13,7 @@ use App\Models\TicketLot;
 use App\Models\User;
 use App\Services\AbacatePay\AbacatePayService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class OrderService
 {
@@ -29,8 +31,9 @@ class OrderService
         array $items,
         PaymentMethod $method = PaymentMethod::Pix,
         ?string $couponCode = null,
+        ?SaleOrigin $origin = null,
     ): Order {
-        return DB::transaction(function () use ($customer, $event, $items, $method, $couponCode) {
+        return DB::transaction(function () use ($customer, $event, $items, $method, $couponCode, $origin) {
             $subtotal = 0.0;
             $validated = [];
 
@@ -70,6 +73,7 @@ class OrderService
                 'platform_fee' => $breakdown['platform_fee'],
                 'total' => $breakdown['total'],
                 'payment_method' => $method,
+                'sale_origin' => $origin,
                 'status' => OrderStatus::Pending,
                 'expires_at' => now()->addMinutes(30),
             ]);
@@ -119,6 +123,152 @@ class OrderService
             ]);
 
             return $order;
+        });
+    }
+
+    /**
+     * POS link order: pending, no gateway charge yet.
+     * The customer completes payment through the public payment page.
+     *
+     * @param  array<int, array{ticket_lot_id: int, quantity: int}>  $items
+     */
+    public function createPosLinkOrder(
+        User $customer,
+        Event $event,
+        array $items,
+        ?string $couponCode = null,
+    ): Order {
+        return DB::transaction(function () use ($customer, $event, $items, $couponCode) {
+            $subtotal = 0.0;
+            $validated = [];
+
+            foreach ($items as $item) {
+                $lot = TicketLot::lockForUpdate()->findOrFail($item['ticket_lot_id']);
+                abort_if($lot->event_id !== $event->id, 422, 'Ingresso não pertence ao evento.');
+                abort_if(! $lot->is_active, 422, "Ingresso '{$lot->name}' está desativado.");
+                abort_if(! $lot->isOnSale(), 422, "Ingresso '{$lot->name}' não está disponível.");
+                abort_if($lot->available() < $item['quantity'], 422, "Quantidade indisponível para o ingresso '{$lot->name}'.");
+
+                $unit = (float) $lot->price;
+                $sub = $unit * $item['quantity'];
+                $subtotal += $sub;
+
+                $validated[] = [
+                    'lot' => $lot,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $unit,
+                    'subtotal' => $sub,
+                ];
+            }
+
+            $coupon = $this->resolveCoupon($couponCode, $event->id);
+            $discountPercent = $coupon !== null ? (float) $coupon->discount_percent : null;
+
+            // Price using PIX rates as estimate; method will be updated when customer pays.
+            $breakdown = $this->pricing->breakdown($subtotal, PaymentMethod::Pix, $discountPercent);
+
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'producer_id' => $event->producer_id,
+                'event_id' => $event->id,
+                'coupon_id' => $coupon?->id,
+                'coupon_code' => $coupon?->code,
+                'discount_percent' => $coupon?->discount_percent,
+                'discount_amount' => $breakdown['discount_amount'],
+                'subtotal' => $breakdown['subtotal'],
+                'platform_fee' => $breakdown['platform_fee'],
+                'total' => $breakdown['total'],
+                'payment_method' => PaymentMethod::Pix,
+                'sale_origin' => SaleOrigin::Pos,
+                'status' => OrderStatus::Pending,
+                'expires_at' => now()->addHours(24),
+                'payment_token' => (string) Str::uuid(),
+            ]);
+
+            foreach ($validated as $v) {
+                $order->items()->create([
+                    'ticket_lot_id' => $v['lot']->id,
+                    'quantity' => $v['quantity'],
+                    'unit_price' => $v['unit_price'],
+                    'subtotal' => $v['subtotal'],
+                ]);
+            }
+
+            return $order->load(['customer', 'event', 'items.lot']);
+        });
+    }
+
+    /**
+     * @param  array<int, array{ticket_lot_id: int, quantity: int}>  $items
+     */
+    public function createManualPosOrder(
+        User $customer,
+        Event $event,
+        array $items,
+        ?string $couponCode = null,
+    ): Order {
+        return DB::transaction(function () use ($customer, $event, $items, $couponCode) {
+            $subtotal = 0.0;
+            $validated = [];
+
+            foreach ($items as $item) {
+                $lot = TicketLot::lockForUpdate()->findOrFail($item['ticket_lot_id']);
+                abort_if($lot->event_id !== $event->id, 422, 'Ingresso não pertence ao evento.');
+                abort_if(! $lot->is_active, 422, "Ingresso '{$lot->name}' está desativado.");
+                abort_if(! $lot->isOnSale(), 422, "Ingresso '{$lot->name}' não está disponível.");
+                abort_if($lot->available() < $item['quantity'], 422, "Quantidade indisponível para o ingresso '{$lot->name}'.");
+
+                $unit = (float) $lot->price;
+                $sub = $unit * $item['quantity'];
+                $subtotal += $sub;
+
+                $validated[] = [
+                    'lot' => $lot,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $unit,
+                    'subtotal' => $sub,
+                ];
+            }
+
+            $coupon = $this->resolveCoupon($couponCode, $event->id);
+            $discountPercent = $coupon !== null ? (float) $coupon->discount_percent : null;
+
+            $breakdown = $this->pricing->breakdown($subtotal, PaymentMethod::Manual, $discountPercent);
+
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'producer_id' => $event->producer_id,
+                'event_id' => $event->id,
+                'coupon_id' => $coupon?->id,
+                'coupon_code' => $coupon?->code,
+                'discount_percent' => $coupon?->discount_percent,
+                'discount_amount' => $breakdown['discount_amount'],
+                'subtotal' => $breakdown['subtotal'],
+                'platform_fee' => $breakdown['platform_fee'],
+                'total' => $breakdown['total'],
+                'payment_method' => PaymentMethod::Manual,
+                'sale_origin' => SaleOrigin::Pos,
+                'status' => OrderStatus::Pending,
+                'expires_at' => now()->addMinutes(30),
+            ]);
+
+            foreach ($validated as $v) {
+                $order->items()->create([
+                    'ticket_lot_id' => $v['lot']->id,
+                    'quantity' => $v['quantity'],
+                    'unit_price' => $v['unit_price'],
+                    'subtotal' => $v['subtotal'],
+                ]);
+            }
+
+            $order->payments()->create([
+                'gateway' => 'manual',
+                'gateway_charge_id' => null,
+                'amount' => $order->total,
+                'payload' => null,
+            ]);
+
+            return $this->markOrderPaid($order);
         });
     }
 

@@ -69,6 +69,22 @@ class ReportController extends Controller
             ->orderBy('bucket')
             ->get();
 
+        $byOrigin = (clone $paid)
+            ->selectRaw('COALESCE(sale_origin, \'unknown\') as origin')
+            ->selectRaw('COUNT(*) as orders')
+            ->selectRaw('SUM(total) as revenue')
+            ->selectRaw('SUM(platform_fee) as platform_fee')
+            ->groupBy('origin')
+            ->orderByDesc('revenue')
+            ->get()
+            ->map(fn ($row) => [
+                'origin' => $row->origin,
+                'orders' => (int) $row->orders,
+                'revenue' => (float) $row->revenue,
+                'platform_fee' => (float) $row->platform_fee,
+                'net' => round((float) $row->revenue - (float) $row->platform_fee, 2),
+            ]);
+
         return response()->json([
             'data' => [
                 'from' => $from->toIso8601String(),
@@ -85,6 +101,7 @@ class ReportController extends Controller
                     'conversion_percent' => $conversion,
                     'tickets_issued' => $ticketsIssued,
                     'tickets_redeemed' => $ticketsRedeemed,
+                    'by_origin' => $byOrigin,
                 ],
                 'series' => $series,
             ],

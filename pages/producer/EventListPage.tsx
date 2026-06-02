@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
 import { Empty } from '@components/Empty';
@@ -12,12 +13,6 @@ import { producerEventService, type EventModel } from '@services/eventService';
 import { formatDateTime } from '@utils/format';
 import type { ApiError } from '@services/api';
 
-const STATUS_LABEL: Record<string, string> = {
-  draft: 'Rascunho',
-  published: 'Publicado',
-  cancelled: 'Cancelado',
-};
-
 const STATUS_COLOR: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-700',
   published: 'bg-emerald-100 text-emerald-700',
@@ -25,10 +20,17 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export function EventListPage() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<EventModel[]>([]);
   const toast = useToast();
   const confirm = useConfirm();
   const navigate = useNavigate();
+
+  const STATUS_LABEL: Record<string, string> = {
+    draft: t('admin.draft'),
+    published: t('admin.published'),
+    cancelled: t('admin.cancelled'),
+  };
 
   const load = useCallback(async () => {
     try {
@@ -39,14 +41,12 @@ export function EventListPage() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   async function handlePublish(event: EventModel) {
     try {
       await producerEventService.publish(event.id);
-      toast.success('Evento publicado.');
+      toast.success(t('producer.eventPublished'));
       load();
     } catch (err) {
       toast.error((err as ApiError).message);
@@ -56,7 +56,7 @@ export function EventListPage() {
   async function handleUnpublish(event: EventModel) {
     try {
       await producerEventService.unpublish(event.id);
-      toast.info('Evento despublicado.');
+      toast.info(t('producer.eventUnpublished'));
       load();
     } catch (err) {
       toast.error((err as ApiError).message);
@@ -65,15 +65,15 @@ export function EventListPage() {
 
   async function handleDelete(event: EventModel) {
     const ok = await confirm({
-      title: `Excluir ${event.name}?`,
-      description: 'Esta ação remove o evento e os ingressos vinculados. Vendas já realizadas não serão desfeitas.',
-      confirmText: 'Excluir',
+      title: t('producer.deleteEventTitle', { name: event.name }),
+      description: t('producer.deleteEventDesc'),
+      confirmText: t('common.delete'),
       variant: 'danger',
     });
     if (!ok) return;
     try {
       await producerEventService.destroy(event.id);
-      toast.success('Evento excluído.');
+      toast.success(t('producer.eventDeleted'));
       load();
     } catch (err) {
       toast.error((err as ApiError).message);
@@ -81,29 +81,29 @@ export function EventListPage() {
   }
 
   return (
-    <AppLayout title="Produtor" nav={producerNav}>
+    <AppLayout title={t('producer.panel')} nav={producerNav}>
       <PageHeader
-        title="Meus eventos"
-        description="Crie, edite e publique seus eventos."
+        title={t('producer.eventsPage')}
+        description={t('producer.eventsDesc')}
         action={
           <button onClick={() => navigate('/produtor/eventos/novo')} className="btn btn-primary">
-            Novo evento
+            {t('producer.newEvent')}
           </button>
         }
       />
 
       {events.length === 0 ? (
-        <Empty title="Você ainda não criou eventos." description="Clique em 'Novo evento' para começar." />
+        <Empty title={t('producer.noEvents')} description={t('producer.noEventsDesc')} />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-white/50 bg-white/60 shadow-glass backdrop-blur-xl">
           <table className="min-w-full divide-y divide-white/60 text-sm">
             <thead className="bg-white/40">
               <tr>
-                <Th>Evento</Th>
-                <Th>Início</Th>
-                <Th>Status</Th>
-                <Th>Ingressos</Th>
-                <Th className="text-right">Ações</Th>
+                <Th>{t('producer.event')}</Th>
+                <Th>{t('producer.start')}</Th>
+                <Th>{t('producer.status')}</Th>
+                <Th>{t('producer.ticketsCol')}</Th>
+                <Th className="text-right">{t('producer.actions')}</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/60">
@@ -111,14 +111,10 @@ export function EventListPage() {
                 <tr key={event.id} className="transition hover:bg-white/50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Link to={`/produtor/eventos/${event.id}`} className="font-medium text-slate-900 hover:text-brand-700">
-                        {event.name}
-                      </Link>
-                      {event.is_featured && (
-                        <span className="chip bg-gradient-to-r from-brand-600 to-accent-600 text-white">⭐ Destaque</span>
-                      )}
+                      <Link to={`/produtor/eventos/${event.id}`} className="font-medium text-slate-900 hover:text-brand-700">{event.name}</Link>
+                      {event.is_featured && <span className="chip bg-gradient-to-r from-brand-600 to-accent-600 text-white">{t('producer.featuredChip')}</span>}
                     </div>
-                    <p className="text-xs text-slate-500">{event.venue_name ?? 'Online'}</p>
+                    <p className="text-xs text-slate-500">{event.venue_name ?? t('browse.online')}</p>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{formatDateTime(event.starts_at)}</td>
                   <td className="px-4 py-3">
@@ -130,26 +126,12 @@ export function EventListPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
                       {event.status === 'published' ? (
-                        <button onClick={() => handleUnpublish(event)} className="text-sm text-slate-600 hover:text-rose-600">
-                          Despublicar
-                        </button>
+                        <button onClick={() => handleUnpublish(event)} className="text-sm text-slate-600 hover:text-rose-600">{t('producer.unpublish')}</button>
                       ) : (
-                        <button onClick={() => handlePublish(event)} className="text-sm text-brand-600 hover:text-brand-700">
-                          Publicar
-                        </button>
+                        <button onClick={() => handlePublish(event)} className="text-sm text-brand-600 hover:text-brand-700">{t('producer.publish')}</button>
                       )}
-                      <ActionIconButton
-                        onClick={() => navigate(`/produtor/eventos/${event.id}/editar`)}
-                        tone="brand"
-                        label="Editar"
-                        icon={<Icons.pencil className="h-4 w-4" />}
-                      />
-                      <ActionIconButton
-                        onClick={() => handleDelete(event)}
-                        tone="danger"
-                        label="Excluir"
-                        icon={<Icons.trash className="h-4 w-4" />}
-                      />
+                      <ActionIconButton onClick={() => navigate(`/produtor/eventos/${event.id}/editar`)} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
+                      <ActionIconButton onClick={() => handleDelete(event)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
                     </div>
                   </td>
                 </tr>
@@ -163,9 +145,5 @@ export function EventListPage() {
 }
 
 function Th({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
-  return (
-    <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>
-      {children}
-    </th>
-  );
+  return <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${className}`}>{children}</th>;
 }

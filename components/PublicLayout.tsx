@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ProfileMenu } from './ProfileMenu';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface PublicLayoutProps {
   children: ReactNode;
@@ -8,6 +10,8 @@ interface PublicLayoutProps {
 }
 
 export function PublicLayout({ children, wide = false }: PublicLayoutProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="relative min-h-screen">
       <header className="sticky top-0 z-30 border-b border-white/40 bg-white/60 backdrop-blur-xl">
@@ -23,7 +27,10 @@ export function PublicLayout({ children, wide = false }: PublicLayoutProps) {
               <p className="text-sm font-semibold text-slate-900">Let's make it happen</p>
             </div>
           </Link>
-          <ProfileMenu />
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <ProfileMenu />
+          </div>
         </div>
       </header>
 
@@ -32,7 +39,8 @@ export function PublicLayout({ children, wide = false }: PublicLayoutProps) {
       <footer className="mt-16 border-t border-white/40 bg-white/30 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-4 py-8 text-xs text-slate-500 md:px-8">
           <p>
-            © {new Date().getFullYear()} Ticketeira. Pagamentos processados via <span className="font-semibold">Abacate Pay</span>.
+            © {new Date().getFullYear()} Ticketeira. {t('layout.footer')}{' '}
+            <span className="font-semibold">Abacate Pay</span>.
           </p>
         </div>
       </footer>
