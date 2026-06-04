@@ -715,6 +715,16 @@ Quero que crie um card abaixo do formulário de login com atalhos para preencher
       ],
     },
     {
+      type: 'list',
+      badge: 'Parte 04',
+      title: 'Vamos Testar',
+      color: '#d97757',
+      items: [
+        'Prompt 1: Oi',
+        'Prompt 2: Faça um sistema web para cadastro de clientes da minha empresa. Quero saber nome, email e telefone',
+      ],
+    },
+    {
       type: 'highlight',
       badge: 'Parte 05',
       title: 'Construção do Projeto',
