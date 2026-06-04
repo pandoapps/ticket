@@ -38,12 +38,10 @@ export function SlidesPage() {
   const [index, setIndex] = useState(0);
   const [step, setStep] = useState(0);
   const [gamePhase, setGamePhase] = useState<GamePhase>('setup');
-  const gameFocusedRef = useRef(false);
 
   useEffect(() => {
     setStep(0);
     setGamePhase('setup');
-    gameFocusedRef.current = false;
   }, [index]);
 
   useEffect(() => {
@@ -82,7 +80,7 @@ export function SlidesPage() {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
         return;
       }
-      if (cur?.type === 'game' && gamePhase !== 'setup' && gameFocusedRef.current) return;
+      if (cur?.type === 'game' && gamePhase !== 'setup') return;
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         advance();
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
@@ -170,7 +168,7 @@ export function SlidesPage() {
       <main className="flex flex-1 items-stretch justify-center overflow-hidden px-3 py-3 md:px-6 md:py-4">
         {current && (
           <div key={index} className="flex w-full animate-slide-fade items-stretch justify-center">
-            <SlideRenderer slide={current} step={step} onGamePhaseChange={setGamePhase} onGameFocusChange={(f) => { gameFocusedRef.current = f; }} />
+            <SlideRenderer slide={current} step={step} onGamePhaseChange={setGamePhase} />
           </div>
         )}
       </main>
@@ -240,12 +238,10 @@ export function SlideRenderer({
   slide,
   step,
   onGamePhaseChange,
-  onGameFocusChange,
 }: {
   slide: Slide;
   step: number;
   onGamePhaseChange?: (phase: GamePhase) => void;
-  onGameFocusChange?: (focused: boolean) => void;
 }) {
   switch (slide.type) {
     case 'cover':
@@ -551,7 +547,7 @@ export function SlideRenderer({
       return <PartsSlideView slide={slide} step={step} />;
 
     case 'game':
-      return <GameSlideView slide={slide} onPhaseChange={onGamePhaseChange} onFocusChange={onGameFocusChange} />;
+      return <GameSlideView slide={slide} onPhaseChange={onGamePhaseChange} />;
 
     case 'image':
       return <ImageSlideView slide={slide} />;
@@ -1478,11 +1474,9 @@ interface GameRefState {
 function GameSlideView({
   slide,
   onPhaseChange,
-  onFocusChange,
 }: {
   slide: GameSlide;
   onPhaseChange?: (phase: GamePhase) => void;
-  onFocusChange?: (focused: boolean) => void;
 }) {
   const [phase, setPhase] = useState<GamePhase>('setup');
   const [characterId, setCharacterId] = useState<string>(slide.characters[0].id);
@@ -1494,8 +1488,6 @@ function GameSlideView({
   const ballRef = useRef<HTMLDivElement>(null);
   const playerPaddleRef = useRef<HTMLDivElement>(null);
   const aiPaddleRef = useRef<HTMLDivElement>(null);
-  const gameAreaRef = useRef<HTMLDivElement>(null);
-  const gameFocusedRef = useRef(false);
 
   const gameStateRef = useRef<GameRefState>({
     ball: { x: 50, y: 50, vx: 1, vy: 0 },
@@ -1513,21 +1505,6 @@ function GameSlideView({
   }, [phase, onPhaseChange]);
 
   useEffect(() => {
-    function handleMouseDown(e: MouseEvent) {
-      if (phase !== 'playing') return;
-      const focused = !!gameAreaRef.current?.contains(e.target as Node);
-      gameFocusedRef.current = focused;
-      onFocusChange?.(focused);
-    }
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => {
-      document.removeEventListener('mousedown', handleMouseDown);
-      gameFocusedRef.current = false;
-      onFocusChange?.(false);
-    };
-  }, [phase, onFocusChange]);
-
-  useEffect(() => {
     if (!slide.backgroundAudio) return;
     const audio = new Audio(slide.backgroundAudio);
     audio.loop = true;
@@ -1541,7 +1518,6 @@ function GameSlideView({
 
   useEffect(() => {
     function down(e: KeyboardEvent) {
-      if (!gameFocusedRef.current) return;
       const k = e.key;
       if (k === 'ArrowUp' || k === 'w' || k === 'W') {
         gameStateRef.current.keys.up = true;
@@ -1817,7 +1793,7 @@ function GameSlideView({
               </span>
             </div>
 
-            <div ref={gameAreaRef} className="relative mt-4 w-full max-w-5xl overflow-hidden rounded-3xl border-4 border-emerald-700 bg-gradient-to-b from-emerald-500 to-emerald-700 shadow-2xl" style={{ aspectRatio: '16 / 9' }}>
+            <div className="relative mt-4 w-full max-w-5xl overflow-hidden rounded-3xl border-4 border-emerald-700 bg-gradient-to-b from-emerald-500 to-emerald-700 shadow-2xl" style={{ aspectRatio: '16 / 9' }}>
               <div className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 bg-white/40" />
               <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/40 md:h-32 md:w-32" />
 

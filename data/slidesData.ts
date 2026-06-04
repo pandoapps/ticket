@@ -450,7 +450,7 @@ export const slidesData: Record<number, Slide[]> = {
       title: 'Quebra Gelo',
       color: '#d97757',
       hint: 'Para que serve a IA?',
-      delayedImages: ['/images/thiago-timao.png', '/images/jefte-pumba.png'],
+      delayedImages: ['/images/thiago-timao.png', '/images/jefte-pumba-v2.png'],
       delayedAudio: '/audio/burper.mp3',
     },
     {
@@ -493,7 +493,7 @@ export const slidesData: Record<number, Slide[]> = {
       backgroundAudio: '/audio/duello.mp3',
       characters: [
         { id: 'timao', label: 'Timão', imageUrl: '/images/thiago-timao.png' },
-        { id: 'pumba', label: 'Pumba', imageUrl: '/images/jefte-pumba.png' },
+        { id: 'pumba', label: 'Pumba', imageUrl: '/images/jefte-pumba-v2.png' },
       ],
     },
     {
