@@ -86,7 +86,7 @@ export function CustomerOrderDetailPage() {
         setNeedsPixForm(true);
       }
     }
-  }, [order?.id, orderId]);
+  }, [order, orderId]);
 
   useEffect(() => {
     if (!orderId || order?.status !== 'pending') return;
