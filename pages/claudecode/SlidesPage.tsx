@@ -2150,7 +2150,7 @@ function buildCertificateHTML(name: string, course: string, hours: number, instr
       <div class="cert-desc">
         CONCLUIU COM ÊXITO O ${course.toUpperCase()}<br>
         COM CARGA HORÁRIA DE ${hours} HORAS, MINISTRADO POR ${instructor.toUpperCase()} — ${company.toUpperCase()}<br>
-        AO LONGO DO MÊS DE MAIO DE 2026.
+        AO LONGO DO MÊS DE JUNHO DE 2026.
       </div>
       <div class="sig-area">
         <div class="sig-line"></div>
@@ -2256,7 +2256,7 @@ function CertificateSlideView({ slide }: { slide: CertificateSlide }) {
           <p className="mt-[1cqw] text-[0.65cqw] uppercase tracking-[0.1em] leading-relaxed" style={{ fontFamily: 'Arial, sans-serif', color: '#162454' }}>
             CONCLUIU COM ÊXITO O {slide.course.toUpperCase()}<br />
             COM CARGA HORÁRIA DE {slide.hours} HORAS, MINISTRADO POR {slide.instructor.toUpperCase()} — {slide.company.toUpperCase()}<br />
-            AO LONGO DO MÊS DE MAIO DE 2026.
+            AO LONGO DO MÊS DE JUNHO DE 2026.
           </p>
           <div className="mt-[5cqw] flex flex-col items-center gap-[0.3cqw]">
             <div style={{ width: '20cqw', borderTop: '1px solid #162454' }} />
