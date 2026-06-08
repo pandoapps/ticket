@@ -21,6 +21,7 @@ class Order extends Model
         'event_id',
         'coupon_id',
         'coupon_code',
+        'discount_type',
         'discount_percent',
         'discount_amount',
         'subtotal',

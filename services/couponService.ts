@@ -5,7 +5,9 @@ export interface Coupon {
   event_id: number;
   producer_id: number;
   code: string;
-  discount_percent: number;
+  discount_type: 'percent' | 'fixed';
+  discount_percent: number | null;
+  discount_fixed: number | null;
   max_uses: number | null;
   used_count: number;
   remaining_uses: number | null;
@@ -25,7 +27,9 @@ export interface Coupon {
 export interface CouponPayload {
   event_id: number;
   code: string;
-  discount_percent: number;
+  discount_type: 'percent' | 'fixed';
+  discount_percent?: number | null;
+  discount_fixed?: number | null;
   max_uses?: number | null;
   starts_at?: string | null;
   ends_at?: string | null;
@@ -67,8 +71,12 @@ export const adminCouponService = {
 
 export const customerCouponService = {
   validate: (payload: { event_id: number; code: string }) =>
-    api.post<{ data: { code: string; discount_percent: number } }>(
-      '/customer/coupons/validate',
-      payload,
-    ),
+    api.post<{
+      data: {
+        code: string;
+        discount_type: 'percent' | 'fixed';
+        discount_percent: number | null;
+        discount_fixed: number | null;
+      };
+    }>('/customer/coupons/validate', payload),
 };

@@ -33,7 +33,9 @@ class CouponController extends Controller
         return response()->json([
             'data' => [
                 'code' => $coupon->code,
-                'discount_percent' => (float) $coupon->discount_percent,
+                'discount_type' => $coupon->discount_type,
+                'discount_percent' => $coupon->discount_percent !== null ? (float) $coupon->discount_percent : null,
+                'discount_fixed' => $coupon->discount_fixed !== null ? (float) $coupon->discount_fixed : null,
             ],
         ]);
     }

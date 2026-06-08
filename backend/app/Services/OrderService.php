@@ -57,9 +57,9 @@ class OrderService
             }
 
             $coupon = $this->resolveCoupon($couponCode, $event->id);
-            $discountPercent = $coupon !== null ? (float) $coupon->discount_percent : null;
+            [$discountType, $discountValue] = $this->couponDiscountParams($coupon);
 
-            $breakdown = $this->pricing->breakdown($subtotal, $method, $discountPercent);
+            $breakdown = $this->pricing->breakdown($subtotal, $method, $discountType, $discountValue);
 
             $order = Order::create([
                 'customer_id' => $customer->id,
@@ -67,7 +67,8 @@ class OrderService
                 'event_id' => $event->id,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
-                'discount_percent' => $coupon?->discount_percent,
+                'discount_type' => $coupon?->discount_type,
+                'discount_percent' => $coupon?->discount_type === 'percent' ? $coupon?->discount_percent : null,
                 'discount_amount' => $breakdown['discount_amount'],
                 'subtotal' => $breakdown['subtotal'],
                 'platform_fee' => $breakdown['platform_fee'],
@@ -162,10 +163,10 @@ class OrderService
             }
 
             $coupon = $this->resolveCoupon($couponCode, $event->id);
-            $discountPercent = $coupon !== null ? (float) $coupon->discount_percent : null;
+            [$discountType, $discountValue] = $this->couponDiscountParams($coupon);
 
             // Price using PIX rates as estimate; method will be updated when customer pays.
-            $breakdown = $this->pricing->breakdown($subtotal, PaymentMethod::Pix, $discountPercent);
+            $breakdown = $this->pricing->breakdown($subtotal, PaymentMethod::Pix, $discountType, $discountValue);
 
             $order = Order::create([
                 'customer_id' => $customer->id,
@@ -173,7 +174,8 @@ class OrderService
                 'event_id' => $event->id,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
-                'discount_percent' => $coupon?->discount_percent,
+                'discount_type' => $coupon?->discount_type,
+                'discount_percent' => $coupon?->discount_type === 'percent' ? $coupon?->discount_percent : null,
                 'discount_amount' => $breakdown['discount_amount'],
                 'subtotal' => $breakdown['subtotal'],
                 'platform_fee' => $breakdown['platform_fee'],
@@ -231,9 +233,9 @@ class OrderService
             }
 
             $coupon = $this->resolveCoupon($couponCode, $event->id);
-            $discountPercent = $coupon !== null ? (float) $coupon->discount_percent : null;
+            [$discountType, $discountValue] = $this->couponDiscountParams($coupon);
 
-            $breakdown = $this->pricing->breakdown($subtotal, PaymentMethod::Manual, $discountPercent);
+            $breakdown = $this->pricing->breakdown($subtotal, PaymentMethod::Manual, $discountType, $discountValue);
 
             $order = Order::create([
                 'customer_id' => $customer->id,
@@ -241,7 +243,8 @@ class OrderService
                 'event_id' => $event->id,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
-                'discount_percent' => $coupon?->discount_percent,
+                'discount_type' => $coupon?->discount_type,
+                'discount_percent' => $coupon?->discount_type === 'percent' ? $coupon?->discount_percent : null,
                 'discount_amount' => $breakdown['discount_amount'],
                 'subtotal' => $breakdown['subtotal'],
                 'platform_fee' => $breakdown['platform_fee'],
@@ -319,6 +322,20 @@ class OrderService
 
             return $order->fresh();
         });
+    }
+
+    /** @return array{0: string|null, 1: float|null} */
+    private function couponDiscountParams(?Coupon $coupon): array
+    {
+        if ($coupon === null) {
+            return [null, null];
+        }
+
+        $value = $coupon->discount_type === 'fixed'
+            ? (float) $coupon->discount_fixed
+            : (float) $coupon->discount_percent;
+
+        return [$coupon->discount_type, $value];
     }
 
     private function resolveCoupon(?string $code, int $eventId): ?Coupon

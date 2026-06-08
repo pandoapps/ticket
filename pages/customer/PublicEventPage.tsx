@@ -25,7 +25,9 @@ export function PublicEventPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
   const [couponInput, setCouponInput] = useState('');
   const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [couponType, setCouponType] = useState<'percent' | 'fixed'>('percent');
   const [couponPercent, setCouponPercent] = useState<number>(0);
+  const [couponFixed, setCouponFixed] = useState<number>(0);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const toast = useToast();
@@ -79,7 +81,11 @@ export function PublicEventPage() {
   const totalTickets = Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
   const feePercent = feePercentFor(event?.platform_fees, paymentMethod);
   const feeFixed = feeFixedFor(event?.platform_fees, paymentMethod);
-  const discountAmount = couponPercent > 0 ? round2(subtotal * (couponPercent / 100)) : 0;
+  const discountAmount = couponCode
+    ? couponType === 'fixed'
+      ? Math.min(subtotal, couponFixed)
+      : round2(subtotal * (couponPercent / 100))
+    : 0;
   const discountedSubtotal = Math.max(0, round2(subtotal - discountAmount));
   const platformFee = subtotal > 0 ? round2(discountedSubtotal * (feePercent / 100)) + feeFixed : 0;
   const total = round2(discountedSubtotal + platformFee);
@@ -93,7 +99,9 @@ export function PublicEventPage() {
     try {
       const res = await customerCouponService.validate({ event_id: event.id, code });
       setCouponCode(res.data.code);
-      setCouponPercent(res.data.discount_percent);
+      setCouponType(res.data.discount_type);
+      setCouponPercent(res.data.discount_percent ?? 0);
+      setCouponFixed(res.data.discount_fixed ?? 0);
       toast.success(t('event.couponApplied', { code: res.data.code }));
     } catch (err) {
       const msg = (err as ApiError).message;
@@ -107,7 +115,9 @@ export function PublicEventPage() {
 
   function removeCoupon() {
     setCouponCode(null);
+    setCouponType('percent');
     setCouponPercent(0);
+    setCouponFixed(0);
     setCouponInput('');
     setCouponError(null);
   }
@@ -216,7 +226,7 @@ export function PublicEventPage() {
                   </div>
                   {couponCode && (
                     <div className="flex justify-between text-emerald-600">
-                      <span>{t('event.discount', { percent: couponPercent, code: couponCode })}</span>
+                      <span>{t('event.discount', { label: couponType === 'fixed' ? formatBRL(couponFixed) : `${couponPercent}%`, code: couponCode })}</span>
                       <span>− {formatPrice(discountAmount)}</span>
                     </div>
                   )}
@@ -238,7 +248,7 @@ export function PublicEventPage() {
                     <div className="flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2">
                       <div>
                         <p className="font-mono text-sm font-semibold text-emerald-800">{couponCode}</p>
-                        <p className="text-[11px] text-emerald-700">{t('event.discountApplied', { percent: couponPercent })}</p>
+                        <p className="text-[11px] text-emerald-700">{t('event.discountApplied', { label: couponType === 'fixed' ? formatBRL(couponFixed) : `${couponPercent}%` })}</p>
                       </div>
                       <button type="button" onClick={removeCoupon} className="text-xs text-emerald-700 underline hover:text-emerald-900">
                         {t('event.remove')}

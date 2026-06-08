@@ -10,7 +10,7 @@ class PricingService
     /**
      * @return array{subtotal: float, discount_amount: float, platform_fee: float, total: float}
      */
-    public function breakdown(float $subtotal, PaymentMethod $method, ?float $discountPercent = null): array
+    public function breakdown(float $subtotal, PaymentMethod $method, ?string $discountType = null, ?float $discountValue = null): array
     {
         $settings = PlatformSetting::current();
 
@@ -21,8 +21,10 @@ class PricingService
         };
 
         $discountAmount = 0.0;
-        if ($discountPercent !== null && $discountPercent > 0) {
-            $discountAmount = round($subtotal * ($discountPercent / 100), 2);
+        if ($discountType !== null && $discountValue !== null && $discountValue > 0) {
+            $discountAmount = $discountType === 'fixed'
+                ? min($subtotal, round($discountValue, 2))
+                : round($subtotal * ($discountValue / 100), 2);
         }
 
         $discountedSubtotal = max(0.0, round($subtotal - $discountAmount, 2));

@@ -37,7 +37,9 @@ class StoreCouponRequest extends FormRequest
                     ->where(fn ($q) => $q->where('event_id', $this->input('event_id'))->whereNull('deleted_at'))
                     ->ignore($couponId),
             ],
-            'discount_percent' => ['required', 'numeric', 'min:0.01', 'max:100'],
+            'discount_type' => ['required', 'in:percent,fixed'],
+            'discount_percent' => ['required_if:discount_type,percent', 'nullable', 'numeric', 'min:0.01', 'max:100'],
+            'discount_fixed' => ['required_if:discount_type,fixed', 'nullable', 'numeric', 'min:0.01'],
             'max_uses' => ['nullable', 'integer', 'min:1'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after:starts_at'],
@@ -53,8 +55,12 @@ class StoreCouponRequest extends FormRequest
         return [
             'code.regex' => 'O código deve conter apenas letras, números, hífen e sublinhado.',
             'code.unique' => 'Já existe um cupom com este código para este evento.',
+            'discount_type.in' => 'Tipo de desconto inválido.',
+            'discount_percent.required_if' => 'Informe o percentual de desconto.',
             'discount_percent.min' => 'O desconto deve ser maior que zero.',
             'discount_percent.max' => 'O desconto não pode ultrapassar 100%.',
+            'discount_fixed.required_if' => 'Informe o valor fixo de desconto.',
+            'discount_fixed.min' => 'O valor do desconto deve ser maior que zero.',
             'ends_at.after' => 'A data de término deve ser posterior à data de início.',
         ];
     }

@@ -18,7 +18,9 @@ class Coupon extends Model
         'event_id',
         'producer_id',
         'code',
+        'discount_type',
         'discount_percent',
+        'discount_fixed',
         'max_uses',
         'used_count',
         'starts_at',
@@ -30,6 +32,7 @@ class Coupon extends Model
     {
         return [
             'discount_percent' => 'decimal:2',
+            'discount_fixed' => 'decimal:2',
             'max_uses' => 'integer',
             'used_count' => 'integer',
             'starts_at' => 'datetime',

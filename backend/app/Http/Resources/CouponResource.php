@@ -18,7 +18,9 @@ class CouponResource extends JsonResource
             'event' => new EventResource($this->whenLoaded('event')),
             'producer_id' => $this->producer_id,
             'code' => $this->code,
-            'discount_percent' => (float) $this->discount_percent,
+            'discount_type' => $this->discount_type,
+            'discount_percent' => $this->discount_percent !== null ? (float) $this->discount_percent : null,
+            'discount_fixed' => $this->discount_fixed !== null ? (float) $this->discount_fixed : null,
             'max_uses' => $this->max_uses,
             'used_count' => (int) $this->used_count,
             'remaining_uses' => $this->max_uses !== null

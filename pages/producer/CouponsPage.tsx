@@ -11,7 +11,7 @@ import { CouponFormModal } from '@components/CouponFormModal';
 import { producerNav } from './nav';
 import { producerCouponService, type Coupon, type CouponPayload } from '@services/couponService';
 import { producerEventService, type EventModel } from '@services/eventService';
-import { formatDateTime } from '@utils/format';
+import { formatDateTime, formatBRL } from '@utils/format';
 import type { ApiError } from '@services/api';
 
 export function CouponsPage() {
@@ -120,7 +120,7 @@ export function CouponsPage() {
                 <tr key={c.id} className="transition hover:bg-white/50">
                   <td className="px-4 py-3 font-mono font-semibold text-slate-900">{c.code}</td>
                   <td className="px-4 py-3 text-slate-600">{c.event?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">{c.discount_percent}%</td>
+                  <td className="px-4 py-3 text-slate-600">{c.discount_type === 'fixed' ? formatBRL(c.discount_fixed ?? 0) : `${c.discount_percent}%`}</td>
                   <td className="px-4 py-3 text-slate-600">{c.used_count}{c.max_uses !== null ? ` / ${c.max_uses}` : ` ${t('producer.unlimited')}`}</td>
                   <td className="px-4 py-3 text-xs text-slate-500">
                     <div>{c.starts_at ? `${t('producer.fromDate')} ${formatDateTime(c.starts_at)}` : t('producer.noStart')}</div>

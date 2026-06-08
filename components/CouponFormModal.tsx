@@ -22,7 +22,9 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
   const { t } = useTranslation();
   const [eventId, setEventId] = useState<number | ''>('');
   const [code, setCode] = useState('');
+  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
   const [discountPercent, setDiscountPercent] = useState('');
+  const [discountFixed, setDiscountFixed] = useState('');
   const [maxUses, setMaxUses] = useState('');
   const [startsAt, setStartsAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
@@ -36,7 +38,9 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
     if (coupon) {
       setEventId(coupon.event_id);
       setCode(coupon.code);
-      setDiscountPercent(String(coupon.discount_percent));
+      setDiscountType(coupon.discount_type ?? 'percent');
+      setDiscountPercent(coupon.discount_percent !== null ? String(coupon.discount_percent) : '');
+      setDiscountFixed(coupon.discount_fixed !== null ? String(coupon.discount_fixed) : '');
       setMaxUses(coupon.max_uses !== null ? String(coupon.max_uses) : '');
       setStartsAt(toInputDateTime(coupon.starts_at));
       setEndsAt(toInputDateTime(coupon.ends_at));
@@ -44,7 +48,9 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
     } else {
       setEventId(events[0]?.id ?? '');
       setCode('');
+      setDiscountType('percent');
       setDiscountPercent('');
+      setDiscountFixed('');
       setMaxUses('');
       setStartsAt('');
       setEndsAt('');
@@ -63,7 +69,9 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
     const payload: CouponPayload = {
       event_id: Number(eventId),
       code: code.trim().toUpperCase(),
-      discount_percent: Number(discountPercent),
+      discount_type: discountType,
+      discount_percent: discountType === 'percent' ? Number(discountPercent) : null,
+      discount_fixed: discountType === 'fixed' ? Number(discountFixed) : null,
       max_uses: maxUses.trim() === '' ? null : Number(maxUses),
       starts_at: startsAt ? new Date(startsAt).toISOString() : null,
       ends_at: endsAt ? new Date(endsAt).toISOString() : null,
@@ -111,19 +119,47 @@ export function CouponFormModal({ open, onClose, onSubmit, coupon, events, submi
           <p className="mt-1 text-[11px] text-slate-500">{t('coupon_modal.codeHint')}</p>
         </Field>
 
-        <Field label={t('coupon_modal.discountPercent')} error={errors.discount_percent?.[0]}>
-          <input
-            type="number"
-            min={0.01}
-            max={100}
-            step={0.01}
-            value={discountPercent}
-            onChange={(e) => setDiscountPercent(e.target.value)}
-            required
-            className="input"
-            placeholder="15"
-          />
+        <Field label={t('coupon_modal.discountType')} error={errors.discount_type?.[0]}>
+          <div className="flex gap-3">
+            <label className="flex cursor-pointer items-center gap-1.5 text-sm text-slate-700">
+              <input type="radio" name="discountType" value="percent" checked={discountType === 'percent'} onChange={() => setDiscountType('percent')} className="h-4 w-4" />
+              {t('coupon_modal.typePercent')}
+            </label>
+            <label className="flex cursor-pointer items-center gap-1.5 text-sm text-slate-700">
+              <input type="radio" name="discountType" value="fixed" checked={discountType === 'fixed'} onChange={() => setDiscountType('fixed')} className="h-4 w-4" />
+              {t('coupon_modal.typeFixed')}
+            </label>
+          </div>
         </Field>
+
+        {discountType === 'percent' ? (
+          <Field label={t('coupon_modal.discountPercent')} error={errors.discount_percent?.[0]}>
+            <input
+              type="number"
+              min={0.01}
+              max={100}
+              step={0.01}
+              value={discountPercent}
+              onChange={(e) => setDiscountPercent(e.target.value)}
+              required
+              className="input"
+              placeholder="15"
+            />
+          </Field>
+        ) : (
+          <Field label={t('coupon_modal.discountFixed')} error={errors.discount_fixed?.[0]}>
+            <input
+              type="number"
+              min={0.01}
+              step={0.01}
+              value={discountFixed}
+              onChange={(e) => setDiscountFixed(e.target.value)}
+              required
+              className="input"
+              placeholder="20.00"
+            />
+          </Field>
+        )}
 
         <Field label={t('coupon_modal.maxUses')} error={errors.max_uses?.[0]}>
           <input
