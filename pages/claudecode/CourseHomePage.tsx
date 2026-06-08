@@ -67,7 +67,7 @@ function ModuleCard({ module }: { module: CourseModule }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: module.color }}>
-            Aula {String(module.id).padStart(2, '0')} · {module.date}
+            Aula {String(module.id).padStart(2, '0')}
           </p>
           <h3 className="mt-1 text-xl font-semibold text-slate-900">{module.title}</h3>
           <p className="mt-1 text-sm text-slate-600">{module.subtitle}</p>

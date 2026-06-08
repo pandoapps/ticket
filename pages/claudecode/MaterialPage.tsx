@@ -155,7 +155,7 @@ export function MaterialPage() {
             ← Voltar ao curso
           </Link>
           <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/80">
-            Aula {String(module.id).padStart(2, '0')} · {module.date}
+            Aula {String(module.id).padStart(2, '0')}
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white md:text-4xl">{module.title}</h1>
           <p className="mt-2 text-base text-white/85 md:text-lg">{module.subtitle}</p>

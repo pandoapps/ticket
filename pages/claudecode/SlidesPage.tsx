@@ -248,7 +248,7 @@ export function SlideRenderer({
       return (
         <SlideCard color={slide.color} backgroundColor={slide.backgroundColor}>
           <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
-            {slide.aula} · {slide.date}
+            {slide.aula}
           </p>
           <h1 className="mt-6 text-5xl font-bold leading-tight text-slate-900 md:text-8xl">{slide.title}</h1>
           <p className="mt-6 text-2xl text-slate-600 md:text-4xl">{slide.subtitle}</p>
@@ -488,7 +488,7 @@ export function SlideRenderer({
       return (
         <SlideCard color={slide.color}>
           <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
-            {slide.title} · {slide.date}
+            {slide.title}
           </p>
           <h2 className="mt-4 text-4xl font-bold text-slate-900 md:text-8xl">{slide.next}</h2>
           <p className="mt-6 text-xl text-slate-600 md:text-3xl">{slide.nextDesc}</p>
