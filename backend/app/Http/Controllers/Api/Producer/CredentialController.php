@@ -26,7 +26,6 @@ class CredentialController extends Controller
         return response()->json([
             'data' => [
                 'has_secret' => $credentials !== null,
-                'has_webhook_secret' => $credentials !== null && ! empty($credentials->webhook_secret),
                 'environment' => $credentials?->environment?->value ?? AbacateEnvironment::Sandbox->value,
                 'validated_at' => $credentials?->validated_at?->toIso8601String(),
                 'validation_error' => $credentials?->validation_error,
@@ -41,7 +40,6 @@ class CredentialController extends Controller
         $existing = $producer->credentials;
 
         $newSecretKey = isset($data['secret_key']) && $data['secret_key'] !== '' ? $data['secret_key'] : null;
-        $newWebhookSecret = isset($data['webhook_secret']) && $data['webhook_secret'] !== '' ? $data['webhook_secret'] : null;
 
         $effectiveSecretKey = $newSecretKey ?? $existing?->secret_key;
         if ($effectiveSecretKey === null) {
@@ -70,10 +68,6 @@ class CredentialController extends Controller
             $result = ['valid' => $existing->validated_at !== null, 'status' => 'unchanged', 'error' => $existing->validation_error];
         }
 
-        if ($newWebhookSecret !== null) {
-            $attributes['webhook_secret'] = $newWebhookSecret;
-        }
-
         $credentials = $producer->credentials()->updateOrCreate([], $attributes);
 
         $this->audit->log('producer.credentials_updated', $producer, [
@@ -81,14 +75,11 @@ class CredentialController extends Controller
             'status' => $result['status'],
             'environment' => $data['environment'],
             'secret_key_changed' => $newSecretKey !== null,
-            'webhook_secret_changed' => $newWebhookSecret !== null,
-            'webhook_secret_set' => ! empty($credentials->webhook_secret),
         ]);
 
         return response()->json([
             'data' => [
                 'has_secret' => true,
-                'has_webhook_secret' => ! empty($credentials->webhook_secret),
                 'environment' => $credentials->environment?->value,
                 'validated_at' => $credentials->validated_at?->toIso8601String(),
                 'validation_error' => $credentials->validation_error,

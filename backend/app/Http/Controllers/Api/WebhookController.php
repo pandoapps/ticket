@@ -63,7 +63,7 @@ class WebhookController extends Controller
             return response()->json(['message' => 'Missing charge id.'], 400);
         }
 
-        if (! $this->verifySignature($request, $payload, $order->producer?->credentials?->webhook_secret)) {
+        if (! $this->verifySignature($request, $order->producer?->credentials?->webhook_secret)) {
             Log::warning('AbacatePay webhook signature rejected', ['charge_id' => $chargeId, 'order_id' => $order->id]);
 
             return response()->json(['message' => 'Invalid webhook signature.'], 401);
@@ -116,32 +116,29 @@ class WebhookController extends Controller
         return response()->json(['message' => 'ok']);
     }
 
-    private function verifySignature(Request $request, array $payload, ?string $secret): bool
+    private function verifySignature(Request $request, ?string $producerSecret): bool
     {
-        if ($secret === null || $secret === '') {
-            return false;
-        }
-
-        $headerSecret = (string) $request->header('X-Webhook-Secret', '');
-        if ($headerSecret !== '' && hash_equals($secret, $headerSecret)) {
-            return true;
-        }
-
-        $querySecret = (string) $request->query('webhookSecret', '');
-        if ($querySecret !== '' && hash_equals($secret, $querySecret)) {
-            return true;
-        }
-
-        $bodySecret = $payload['webhookSecret'] ?? null;
-        if (is_string($bodySecret) && $bodySecret !== '' && hash_equals($secret, $bodySecret)) {
-            return true;
-        }
-
         $signatureHeader = (string) $request->header('X-Webhook-Signature', '');
+
         if ($signatureHeader !== '') {
-            $expected = base64_encode(hash_hmac('sha256', $request->getContent(), $secret, true));
+            $publicKey = (string) config('services.abacate_pay.webhook_public_key');
+            $expected = base64_encode(hash_hmac('sha256', $request->getContent(), $publicKey, true));
             if (hash_equals($expected, $signatureHeader)) {
                 return true;
+            }
+        }
+
+        if ($producerSecret !== null && $producerSecret !== '') {
+            $querySecret = (string) $request->query('webhookSecret', '');
+            if ($querySecret !== '' && hash_equals($producerSecret, $querySecret)) {
+                return true;
+            }
+
+            if ($signatureHeader !== '') {
+                $expected = base64_encode(hash_hmac('sha256', $request->getContent(), $producerSecret, true));
+                if (hash_equals($expected, $signatureHeader)) {
+                    return true;
+                }
             }
         }
 
@@ -166,16 +163,16 @@ class WebhookController extends Controller
             return 'failed';
         }
 
-        if (in_array($normalizedEvent, ['checkout.completed', 'billing.paid', 'transparent.paid', 'payment.paid'], true)) {
+        if (in_array($normalizedEvent, ['checkout.completed', 'transparent.completed', 'billing.paid', 'transparent.paid', 'payment.paid'], true)) {
             return 'paid';
         }
         if (in_array($normalizedEvent, ['billing.expired', 'checkout.expired', 'transparent.expired', 'payment.expired'], true)) {
             return 'expired';
         }
-        if (in_array($normalizedEvent, ['checkout.cancelled', 'checkout.canceled', 'billing.cancelled', 'billing.canceled'], true)) {
+        if (in_array($normalizedEvent, ['checkout.refunded', 'transparent.refunded', 'checkout.cancelled', 'checkout.canceled', 'billing.cancelled', 'billing.canceled'], true)) {
             return 'cancelled';
         }
-        if (in_array($normalizedEvent, ['checkout.failed', 'billing.failed', 'payment.failed'], true)) {
+        if (in_array($normalizedEvent, ['checkout.disputed', 'transparent.disputed', 'checkout.failed', 'billing.failed', 'payment.failed'], true)) {
             return 'failed';
         }
 

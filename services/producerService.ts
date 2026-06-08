@@ -18,7 +18,6 @@ export type AbacateEnvironment = 'sandbox' | 'production';
 
 export interface Credentials {
   has_secret: boolean;
-  has_webhook_secret: boolean;
   environment: AbacateEnvironment;
   validated_at: string | null;
   validation_error: string | null;
@@ -52,7 +51,6 @@ export const producerService = {
   credentials: () => api.get<{ data: Credentials }>('/producer/credentials'),
   saveCredentials: (payload: {
     secret_key?: string;
-    webhook_secret?: string;
     environment: AbacateEnvironment;
   }) => api.put<{ data: Credentials }>('/producer/credentials', payload),
   sales: (status?: string) =>

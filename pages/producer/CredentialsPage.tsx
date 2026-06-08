@@ -13,7 +13,6 @@ export function CredentialsPage() {
   const toast = useToast();
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [secretKey, setSecretKey] = useState('');
-  const [webhookSecret, setWebhookSecret] = useState('');
   const [environment, setEnvironment] = useState<AbacateEnvironment>('sandbox');
   const [loading, setLoading] = useState(false);
 
@@ -28,14 +27,11 @@ export function CredentialsPage() {
     setLoading(true);
     try {
       const trimmedSecret = secretKey.trim();
-      const trimmedWebhook = webhookSecret.trim();
       const payload: Parameters<typeof producerService.saveCredentials>[0] = { environment };
       if (trimmedSecret !== '') payload.secret_key = trimmedSecret;
-      if (trimmedWebhook !== '') payload.webhook_secret = trimmedWebhook;
       const res = await producerService.saveCredentials(payload);
       setCredentials(res.data);
       setSecretKey('');
-      setWebhookSecret('');
       if (res.data.validated_at) toast.success(t('producer.credentialsSaved'));
       else if (res.data.validation_error) toast.error(res.data.validation_error);
       else toast.success(t('producer.credentialsSavedSimple'));
@@ -118,32 +114,13 @@ export function CredentialsPage() {
           </p>
         </label>
 
-        <label className="block">
-          <span className="mb-1 flex items-center gap-2 text-sm font-medium text-slate-700">
-            {t('producer.webhookSecret')}
-            {credentials?.has_webhook_secret && <span className="chip bg-emerald-100 text-emerald-700">{t('producer.webhookConfigured')}</span>}
-          </span>
-          <input
-            type="password"
-            value={webhookSecret}
-            onChange={(e) => setWebhookSecret(e.target.value)}
-            placeholder={credentials?.has_webhook_secret ? t('producer.leaveBlankKeep') : 'Cole aqui o secret gerado no painel'}
-            className="input font-mono"
-            autoComplete="off"
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            {t('producer.webhookDesc')}
-            {credentials?.has_webhook_secret && t('producer.webhookDescKeep')}
-          </p>
-        </label>
-
         <button type="submit" disabled={loading} className="btn btn-primary">
           {loading ? t('producer.validating') : t('producer.saveAndValidate')}
         </button>
       </form>
 
       <ApiKeyInstructions environment={environment} />
-      <WebhookInstructions environment={environment} />
+      <WebhookInstructions />
     </AppLayout>
   );
 }
@@ -181,8 +158,7 @@ function ApiKeyInstructions({ environment }: { environment: AbacateEnvironment }
   );
 }
 
-function WebhookInstructions({ environment }: { environment: AbacateEnvironment }) {
-  const { t } = useTranslation();
+function WebhookInstructions() {
   const webhookUrl = useMemo(() => `${window.location.origin}/api/webhooks/abacate-pay`, []);
   const [copied, setCopied] = useState(false);
   const toast = useToast();
@@ -217,12 +193,11 @@ function WebhookInstructions({ environment }: { environment: AbacateEnvironment 
           </div>
         </div>
         <ol className="space-y-3 text-sm text-slate-700">
-          <Step n={1}>Acesse <a href="https://app.abacatepay.com" target="_blank" rel="noreferrer" className="font-medium text-brand-600 underline hover:text-brand-700">app.abacatepay.com</a> na conta {environment === 'sandbox' ? 'de sandbox' : 'de produção'}.</Step>
+          <Step n={1}>Acesse <a href="https://app.abacatepay.com" target="_blank" rel="noreferrer" className="font-medium text-brand-600 underline hover:text-brand-700">app.abacatepay.com</a> e faça login.</Step>
           <Step n={2}>No menu lateral vá em <span className="font-medium">Desenvolvedores</span> → <span className="font-medium">Webhooks</span>. Selecione <span className="chip bg-brand-100 text-brand-700">API V2</span>.</Step>
           <Step n={3}>Clique em <span className="font-medium">Novo webhook</span> e cole a URL acima.</Step>
-          <Step n={4}>No campo <span className="font-medium">Secret</span>, gere um valor e copie-o para o campo <span className="font-medium">{t('producer.webhookSecret')}</span> acima.</Step>
-          <Step n={5}>Selecione os eventos <code className="chip bg-slate-100 text-slate-700">billing.paid</code>, <code className="chip bg-slate-100 text-slate-700">billing.cancelled</code> e <code className="chip bg-slate-100 text-slate-700">billing.expired</code>.</Step>
-          <Step n={6}>Salve o webhook e volte aqui para salvar as credenciais com o secret preenchido.</Step>
+          <Step n={4}>Selecione os eventos <code className="chip bg-slate-100 text-slate-700">transparent.completed</code>, <code className="chip bg-slate-100 text-slate-700">checkout.completed</code> e <code className="chip bg-slate-100 text-slate-700">transparent.refunded</code>.</Step>
+          <Step n={5}>Salve o webhook. A autenticação é feita automaticamente via assinatura HMAC (API V2).</Step>
         </ol>
       </div>
     </section>
