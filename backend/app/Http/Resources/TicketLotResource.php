@@ -2,11 +2,17 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class TicketLotResource extends JsonResource
 {
+    private static function utcIso(?string $raw): ?string
+    {
+        return $raw ? Carbon::createFromFormat('Y-m-d H:i:s', $raw, 'UTC')->toIso8601String() : null;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -20,8 +26,8 @@ class TicketLotResource extends JsonResource
             'quantity' => (int) $this->quantity,
             'sold' => (int) $this->sold,
             'available' => $this->available(),
-            'sales_start_at' => $this->sales_start_at?->toIso8601String(),
-            'sales_end_at' => $this->sales_end_at?->toIso8601String(),
+            'sales_start_at' => self::utcIso($this->getRawOriginal('sales_start_at')),
+            'sales_end_at' => self::utcIso($this->getRawOriginal('sales_end_at')),
             'is_half_price' => (bool) $this->is_half_price,
             'is_active' => (bool) $this->is_active,
             'on_sale' => $this->isOnSale(),

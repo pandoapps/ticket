@@ -2,11 +2,17 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProducerResource extends JsonResource
 {
+    private static function utcIso(?string $raw): ?string
+    {
+        return $raw ? Carbon::createFromFormat('Y-m-d H:i:s', $raw, 'UTC')->toIso8601String() : null;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -19,12 +25,12 @@ class ProducerResource extends JsonResource
             'document' => $this->document,
             'phone' => $this->phone,
             'status' => $this->status?->value,
-            'approved_at' => $this->approved_at?->toIso8601String(),
-            'blocked_at' => $this->blocked_at?->toIso8601String(),
+            'approved_at' => self::utcIso($this->getRawOriginal('approved_at')),
+            'blocked_at' => self::utcIso($this->getRawOriginal('blocked_at')),
             'blocked_reason' => $this->blocked_reason,
             'has_valid_credentials' => $this->hasValidCredentials(),
             'user' => new UserResource($this->whenLoaded('user')),
-            'created_at' => $this->created_at?->toIso8601String(),
+            'created_at' => self::utcIso($this->getRawOriginal('created_at')),
         ];
     }
 }

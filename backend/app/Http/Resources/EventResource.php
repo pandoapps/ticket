@@ -3,11 +3,17 @@
 namespace App\Http\Resources;
 
 use App\Models\PlatformSetting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class EventResource extends JsonResource
 {
+    private static function utcIso(?string $raw): ?string
+    {
+        return $raw ? Carbon::createFromFormat('Y-m-d H:i:s', $raw, 'UTC')->toIso8601String() : null;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -22,8 +28,8 @@ class EventResource extends JsonResource
             'name' => $this->name,
             'short_description' => $this->short_description,
             'description' => $this->description,
-            'starts_at' => $this->starts_at?->toIso8601String(),
-            'ends_at' => $this->ends_at?->toIso8601String(),
+            'starts_at' => self::utcIso($this->getRawOriginal('starts_at')),
+            'ends_at' => self::utcIso($this->getRawOriginal('ends_at')),
             'venue_type' => $this->venue_type?->value,
             'venue_name' => $this->venue_name,
             'venue_address' => $this->venue_address,
@@ -31,7 +37,7 @@ class EventResource extends JsonResource
             'banner_url' => $this->banner_url,
             'header_url' => $this->header_url,
             'status' => $this->status?->value,
-            'published_at' => $this->published_at?->toIso8601String(),
+            'published_at' => self::utcIso($this->getRawOriginal('published_at')),
             'is_featured' => (bool) $this->is_featured,
             'is_active' => (bool) $this->is_active,
             'accepts_pix' => (bool) $this->accepts_pix,

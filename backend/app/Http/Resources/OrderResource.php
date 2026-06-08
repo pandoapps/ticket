@@ -2,11 +2,17 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrderResource extends JsonResource
 {
+    private static function utcIso(?string $raw): ?string
+    {
+        return $raw ? Carbon::createFromFormat('Y-m-d H:i:s', $raw, 'UTC')->toIso8601String() : null;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -31,10 +37,10 @@ class OrderResource extends JsonResource
             'pix_qr_code' => $this->pix_qr_code,
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
             'tickets' => TicketResource::collection($this->whenLoaded('tickets')),
-            'paid_at' => $this->paid_at?->toIso8601String(),
-            'cancelled_at' => $this->cancelled_at?->toIso8601String(),
-            'expires_at' => $this->expires_at?->toIso8601String(),
-            'created_at' => $this->created_at?->toIso8601String(),
+            'paid_at' => self::utcIso($this->getRawOriginal('paid_at')),
+            'cancelled_at' => self::utcIso($this->getRawOriginal('cancelled_at')),
+            'expires_at' => self::utcIso($this->getRawOriginal('expires_at')),
+            'created_at' => self::utcIso($this->getRawOriginal('created_at')),
         ];
     }
 }

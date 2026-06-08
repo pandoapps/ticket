@@ -2,11 +2,17 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class CouponResource extends JsonResource
 {
+    private static function utcIso(?string $raw): ?string
+    {
+        return $raw ? Carbon::createFromFormat('Y-m-d H:i:s', $raw, 'UTC')->toIso8601String() : null;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -26,11 +32,11 @@ class CouponResource extends JsonResource
             'remaining_uses' => $this->max_uses !== null
                 ? max(0, (int) $this->max_uses - (int) $this->used_count)
                 : null,
-            'starts_at' => $this->starts_at?->toIso8601String(),
-            'ends_at' => $this->ends_at?->toIso8601String(),
+            'starts_at' => self::utcIso($this->getRawOriginal('starts_at')),
+            'ends_at' => self::utcIso($this->getRawOriginal('ends_at')),
             'is_active' => (bool) $this->is_active,
             'is_usable' => $this->isUsable(),
-            'created_at' => $this->created_at?->toIso8601String(),
+            'created_at' => self::utcIso($this->getRawOriginal('created_at')),
         ];
     }
 }

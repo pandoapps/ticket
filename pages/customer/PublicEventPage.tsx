@@ -206,7 +206,7 @@ export function PublicEventPage() {
   return (
     <PublicLayout wide>
       <section className="relative w-full overflow-hidden">
-        <div className="relative aspect-[21/9] w-full">
+        <div className="relative aspect-[21/6] w-full">
           {event.header_url || event.banner_url ? (
             <img src={event.header_url ?? event.banner_url ?? ''} alt={event.name} className="absolute inset-0 h-full w-full object-cover" />
           ) : (
