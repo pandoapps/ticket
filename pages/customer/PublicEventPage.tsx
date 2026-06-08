@@ -57,6 +57,45 @@ export function PublicEventPage() {
       .catch((err: ApiError) => toast.error(err.message));
   }, [slug, toast]);
 
+  useEffect(() => {
+    if (!event) return;
+    const prevTitle = document.title;
+    const description = event.short_description ?? event.description?.slice(0, 160) ?? '';
+    const image = event.banner_url ?? event.header_url ?? '';
+    const url = window.location.href;
+    const siteName = 'Ticketeira';
+
+    document.title = `${event.name} | ${event.producer?.company_name ?? siteName}`;
+
+    function setMeta(property: string, content: string, attr: 'property' | 'name' = 'property') {
+      let el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${property}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, property);
+        el.setAttribute('data-dynamic', 'true');
+        document.head.appendChild(el);
+      }
+      el.content = content;
+    }
+
+    setMeta('og:title', event.name);
+    setMeta('og:description', description);
+    setMeta('og:url', url);
+    setMeta('og:type', 'website');
+    setMeta('og:site_name', siteName);
+    if (image) setMeta('og:image', image);
+    setMeta('description', description, 'name');
+    setMeta('twitter:card', image ? 'summary_large_image' : 'summary', 'name');
+    setMeta('twitter:title', event.name, 'name');
+    setMeta('twitter:description', description, 'name');
+    if (image) setMeta('twitter:image', image, 'name');
+
+    return () => {
+      document.title = prevTitle;
+      document.querySelectorAll('meta[data-dynamic="true"]').forEach((el) => el.remove());
+    };
+  }, [event]);
+
   const isStripe = event?.platform_fees?.active_gateway === 'stripe';
   const formatPrice = isStripe ? formatUSD : formatBRL;
 
@@ -193,8 +232,8 @@ export function PublicEventPage() {
       <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-3 md:px-8">
         <div className="md:col-span-2">
           {event.description && (
-            <div className="glass-card mb-6 p-6 text-sm leading-relaxed text-slate-700 animate-fade-up">
-              {event.description}
+            <div className="glass-card mb-6 p-6 animate-fade-up">
+              <EventDescription text={event.description} />
             </div>
           )}
           <div className="glass-card p-6 animate-fade-up">
@@ -307,6 +346,24 @@ export function PublicEventPage() {
         errors={formErrors}
       />
     </PublicLayout>
+  );
+}
+
+function EventDescription({ text }: { text: string }) {
+  const paragraphs = text.split(/\n{2,}/);
+  return (
+    <div className="space-y-4 text-sm leading-relaxed text-slate-700">
+      {paragraphs.map((para, i) => (
+        <p key={i}>
+          {para.split('\n').map((line, j, arr) => (
+            <span key={j}>
+              {line}
+              {j < arr.length - 1 && <br />}
+            </span>
+          ))}
+        </p>
+      ))}
+    </div>
   );
 }
 
