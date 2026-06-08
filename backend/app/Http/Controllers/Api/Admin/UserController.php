@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Enums\ProducerStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Resources\ProducerResource;
 use App\Http\Resources\UserResource;
+use App\Models\Producer;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
@@ -61,5 +65,30 @@ class UserController extends Controller
         $this->audit->log('admin.user.deleted', $user);
 
         return response()->json(null, 204);
+    }
+
+    public function convertToProducer(Request $request, User $user): JsonResponse
+    {
+        abort_if($user->role !== UserRole::Customer->value, 422, 'Apenas clientes podem ser convertidos em produtores.');
+        abort_if($user->producer()->exists(), 422, 'Este usuário já possui um perfil de produtor.');
+
+        $data = $request->validate([
+            'company_name' => ['required', 'string', 'max:255'],
+            'document' => ['required', 'string', 'max:30', 'unique:producers,document'],
+            'phone' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $producer = Producer::create([
+            ...$data,
+            'user_id' => $user->id,
+            'status' => ProducerStatus::Approved,
+            'approved_at' => now(),
+        ]);
+
+        $user->update(['role' => UserRole::Producer->value]);
+
+        $this->audit->log('admin.user.converted_to_producer', $producer);
+
+        return response()->json(['data' => new ProducerResource($producer->load('user'))], 201);
     }
 }

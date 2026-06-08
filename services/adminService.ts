@@ -103,6 +103,12 @@ export interface UpdateUserPayload {
   password?: string;
 }
 
+export interface ConvertToProducerPayload {
+  company_name: string;
+  document: string;
+  phone?: string | null;
+}
+
 export interface UpdateProducerPayload {
   company_name: string;
   document: string;
@@ -145,6 +151,8 @@ export const adminService = {
   updateUser: (id: number, payload: UpdateUserPayload) =>
     api.put<{ data: User }>(`/admin/users/${id}`, payload),
   deleteUser: (id: number) => api.delete<void>(`/admin/users/${id}`),
+  convertToProducer: (id: number, payload: ConvertToProducerPayload) =>
+    api.post<{ data: Producer }>(`/admin/users/${id}/convert-to-producer`, payload),
   listProducers: (params: { status?: string; q?: string } = {}) => {
     const qs = new URLSearchParams();
     if (params.status) qs.set('status', params.status);

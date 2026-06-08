@@ -10,6 +10,7 @@ import { ActionIconButton } from '@components/ActionIconButton';
 import { Icons } from '@components/Icon';
 import { adminNav } from './nav';
 import { adminService } from '@services/adminService';
+import type { ConvertToProducerPayload } from '@services/adminService';
 import type { User, UserRole } from '@services/authService';
 import { formatDateTime, formatCPF, formatPhone } from '@utils/format';
 import type { ApiError } from '@services/api';
@@ -20,6 +21,7 @@ export function UsersPage() {
   const [role, setRole] = useState('');
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<User | null>(null);
+  const [converting, setConverting] = useState<User | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const toast = useToast();
   const confirm = useConfirm();
@@ -151,6 +153,9 @@ export function UsersPage() {
                     <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(u.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
+                        {u.role === 'customer' && (
+                          <ActionIconButton onClick={() => setConverting(u)} tone="brand" label={t('admin.convertToProducer')} icon={<Icons.sparkles className="h-4 w-4" />} />
+                        )}
                         <ActionIconButton onClick={() => setEditing(u)} tone="brand" label={t('common.edit')} icon={<Icons.pencil className="h-4 w-4" />} />
                         <ActionIconButton onClick={() => handleDelete(u)} tone="danger" label={t('common.delete')} icon={<Icons.trash className="h-4 w-4" />} />
                       </div>
@@ -164,6 +169,7 @@ export function UsersPage() {
       )}
 
       <EditUserModal user={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />
+      <ConvertToProducerModal user={converting} onClose={() => setConverting(null)} onSaved={() => { setConverting(null); load(); }} />
     </AppLayout>
   );
 }
@@ -241,9 +247,12 @@ function EditUserModal({ user, onClose, onSaved }: { user: User | null; onClose:
           <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.role')}</span>
           <select value={role} onChange={(e) => setRole(e.target.value as UserRole)} className={`input ${fieldError('role') ? 'border-rose-400' : ''}`}>
             <option value="admin">{t('roles.admin')}</option>
-            <option value="producer">{t('roles.producer')}</option>
             <option value="customer">{t('roles.customer')}</option>
+            {role === 'producer' && <option value="producer">{t('roles.producer')}</option>}
           </select>
+          {role === 'producer' && (
+            <p className="mt-1 text-xs text-amber-600">{t('admin.producerRoleReadOnly')}</p>
+          )}
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.newPassword')}</span>
@@ -253,6 +262,68 @@ function EditUserModal({ user, onClose, onSaved }: { user: User | null; onClose:
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="btn btn-secondary">{t('common.cancel')}</button>
           <button type="submit" disabled={loading} className="btn btn-primary">{loading ? t('common.saving') : t('common.save')}</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function ConvertToProducerModal({ user, onClose, onSaved }: { user: User | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
+  const [form, setForm] = useState<ConvertToProducerPayload>({ company_name: '', document: '', phone: '' });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const toast = useToast();
+
+  useEffect(() => {
+    if (!user) return;
+    setForm({ company_name: '', document: '', phone: '' });
+    setErrors({});
+  }, [user]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user) return;
+    setErrors({});
+    setLoading(true);
+    try {
+      await adminService.convertToProducer(user.id, { ...form, phone: form.phone || null });
+      toast.success(t('admin.userConvertedToProducer', { name: user.name }));
+      onSaved();
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setErrors(apiErr.errors ?? {});
+      const first = Object.values(apiErr.errors ?? {}).flat()[0];
+      toast.error(first ?? apiErr.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const fieldError = (key: string) => errors[key]?.[0];
+
+  return (
+    <Modal open={user !== null} onClose={onClose} title={t('admin.convertToProducer')}>
+      <p className="mb-4 text-sm text-slate-600">{t('admin.convertToProducerDesc')}</p>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('producer.companyName')}</span>
+          <input value={form.company_name} onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))} required className={`input ${fieldError('company_name') ? 'border-rose-400' : ''}`} />
+          {fieldError('company_name') && <p className="mt-1 text-xs text-rose-600">{fieldError('company_name')}</p>}
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('producer.documentField')}</span>
+          <input value={form.document} onChange={(e) => setForm((f) => ({ ...f, document: e.target.value }))} required className={`input ${fieldError('document') ? 'border-rose-400' : ''}`} />
+          {fieldError('document') && <p className="mt-1 text-xs text-rose-600">{fieldError('document')}</p>}
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-slate-700">{t('admin.phone')}</span>
+          <input value={form.phone ?? ''} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="(11) 99999-9999" inputMode="numeric" className={`input ${fieldError('phone') ? 'border-rose-400' : ''}`} />
+          {fieldError('phone') && <p className="mt-1 text-xs text-rose-600">{fieldError('phone')}</p>}
+        </label>
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" onClick={onClose} className="btn btn-secondary">{t('common.cancel')}</button>
+          <button type="submit" disabled={loading} className="btn btn-primary">{loading ? t('common.saving') : t('admin.convertToProducer')}</button>
         </div>
       </form>
     </Modal>

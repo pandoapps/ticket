@@ -123,6 +123,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('users', [AdminUserController::class, 'index']);
         Route::put('users/{user}', [AdminUserController::class, 'update']);
         Route::delete('users/{user}', [AdminUserController::class, 'destroy']);
+        Route::post('users/{user}/convert-to-producer', [AdminUserController::class, 'convertToProducer']);
 
         Route::get('producers', [AdminProducerController::class, 'index']);
         Route::get('producers/{producer}', [AdminProducerController::class, 'show']);
