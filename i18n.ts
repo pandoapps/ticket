@@ -14,11 +14,11 @@ i18n
     },
     supportedLngs: ['en', 'pt-BR'],
     nonExplicitSupportedLngs: true,
-    fallbackLng: 'en',
+    fallbackLng: 'pt-BR',
     defaultNS: 'translation',
     interpolation: { escapeValue: false },
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       caches: [],
       lookupLocalStorage: 'ticketeira_lang',
     },
