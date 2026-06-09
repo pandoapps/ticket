@@ -195,6 +195,7 @@ class AbacatePayService
             'externalId' => (string) $order->id,
             'returnUrl' => $orderUrl,
             'completionUrl' => $orderUrl,
+            'maxInstallments' => 6,
         ];
 
         try {

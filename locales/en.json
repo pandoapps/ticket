@@ -130,7 +130,7 @@
     "remove": "Remove",
     "paymentMethod": "Payment method",
     "pixImmediate": "Immediate approval",
-    "cardInstallments": "Up to 4x*",
+    "cardInstallments": "Up to 6x*",
     "cardNote": "*Installments with interest defined by the card operator, applied at checkout.",
     "buyTickets": "Buy tickets",
     "payViaAbacatePay": "Payment via Abacate Pay",
