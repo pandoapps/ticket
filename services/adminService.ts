@@ -135,6 +135,23 @@ export interface UpdateEventPayload {
   accepts_card?: boolean;
 }
 
+export interface AdminTicket {
+  id: number;
+  code: string;
+  used_at: string | null;
+  created_at: string;
+  customer: { id: number; name: string; email: string } | null;
+  lot: { id: number; name: string; price: number } | null;
+  event: { id: number; name: string } | null;
+}
+
+export interface AdminTicketMeta {
+  total: number;
+  page: number;
+  last_page: number;
+  stats: { total: number; used: number; unused: number };
+}
+
 export interface UpdateOrderPayload {
   status: AdminOrder['status'];
 }
@@ -215,4 +232,15 @@ export const adminService = {
     return api.get<{ data: EmailLogEntry[]; meta: { total: number; page: number; last_page: number } }>(`/admin/email-logs${tail}`);
   },
   resendEmailLog: (id: number) => api.post<{ message: string }>(`/admin/email-logs/${id}/resend`, {}),
+  listTickets: (params: { status?: string; event_id?: number; q?: string; page?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.status) qs.set('status', params.status);
+    if (params.event_id) qs.set('event_id', String(params.event_id));
+    if (params.q) qs.set('q', params.q);
+    if (params.page && params.page > 1) qs.set('page', String(params.page));
+    const tail = qs.toString() ? `?${qs}` : '';
+    return api.get<{ data: AdminTicket[]; meta: AdminTicketMeta }>(`/admin/tickets${tail}`);
+  },
+  toggleTicketUsed: (id: number) =>
+    api.post<{ data: Pick<AdminTicket, 'id' | 'used_at'> }>(`/admin/tickets/${id}/toggle-used`, {}),
 };

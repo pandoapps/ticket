@@ -39,6 +39,7 @@ import { SettingsPage } from '@pages/admin/SettingsPage';
 import { AuditPage } from '@pages/admin/AuditPage';
 import { AdminEmailLogsPage } from '@pages/admin/EmailLogsPage';
 import { CouponsPage as AdminCouponsPage } from '@pages/admin/CouponsPage';
+import { AdminTicketsPage } from '@pages/admin/TicketsPage';
 
 import { CourseHomePage } from '@pages/claudecode/CourseHomePage';
 import { SlidesPage as ClaudeCodeSlidesPage } from '@pages/claudecode/SlidesPage';
@@ -265,6 +266,14 @@ export default function App() {
         element={
           <RoleRoute roles={['admin']}>
             <AdminCouponsPage />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path="/admin/ingressos"
+        element={
+          <RoleRoute roles={['admin']}>
+            <AdminTicketsPage />
           </RoleRoute>
         }
       />

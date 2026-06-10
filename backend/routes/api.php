@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Api\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Api\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\EmailLogController as AdminEmailLogController;
@@ -155,6 +156,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('coupons/{coupon}', [AdminCouponController::class, 'show']);
         Route::put('coupons/{coupon}', [AdminCouponController::class, 'update']);
         Route::delete('coupons/{coupon}', [AdminCouponController::class, 'destroy']);
+
+        Route::get('tickets', [AdminTicketController::class, 'index']);
+        Route::post('tickets/{ticket}/toggle-used', [AdminTicketController::class, 'toggleUsed']);
 
         Route::get('audit-logs', [AdminAuditLogController::class, 'index']);
         Route::get('email-logs', [AdminEmailLogController::class, 'index']);

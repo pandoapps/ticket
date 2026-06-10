@@ -441,7 +441,21 @@
     "lotDeleted": "Lote excluído.",
     "deleteLotTitle": "Excluir lote \"{{name}}\"?",
     "deleteLotNoSalesDesc": "Esta ação não pode ser desfeita.",
-    "deleteLotHasSalesDesc": "Este lote possui vendas e não pode ser excluído."
+    "deleteLotHasSalesDesc": "Este lote possui vendas e não pode ser excluído.",
+    "ticketsPage": "Ingressos",
+    "ticketsDesc": "Todos os ingressos emitidos na plataforma, com status de uso.",
+    "noTicketsFound": "Nenhum ingresso encontrado.",
+    "lotCol": "Lote",
+    "issuedCol": "Emitido",
+    "unusedFilter": "Válidos",
+    "usedFilter": "Utilizados",
+    "unusedStatus": "✓ Válido",
+    "usedStatus": "● Utilizado",
+    "markUsed": "Marcar como utilizado",
+    "markUnused": "Marcar como não utilizado",
+    "ticketMarkedUsed": "Ingresso marcado como utilizado.",
+    "ticketMarkedUnused": "Ingresso marcado como não utilizado.",
+    "ticketsPageOf": "Página {{current}} de {{total}} — {{count}} ingressos"
   },
   "producer": {
     "panel": "Produtor",

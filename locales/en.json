@@ -441,7 +441,21 @@
     "lotDeleted": "Lot deleted.",
     "deleteLotTitle": "Delete lot \"{{name}}\"?",
     "deleteLotNoSalesDesc": "This action cannot be undone.",
-    "deleteLotHasSalesDesc": "This lot has sales and cannot be deleted."
+    "deleteLotHasSalesDesc": "This lot has sales and cannot be deleted.",
+    "ticketsPage": "Tickets",
+    "ticketsDesc": "All tickets issued on the platform, with usage status.",
+    "noTicketsFound": "No tickets found.",
+    "lotCol": "Batch",
+    "issuedCol": "Issued",
+    "unusedFilter": "Valid",
+    "usedFilter": "Used",
+    "unusedStatus": "✓ Valid",
+    "usedStatus": "● Used",
+    "markUsed": "Mark as used",
+    "markUnused": "Mark as unused",
+    "ticketMarkedUsed": "Ticket marked as used.",
+    "ticketMarkedUnused": "Ticket marked as unused.",
+    "ticketsPageOf": "Page {{current}} of {{total}} — {{count}} tickets"
   },
   "producer": {
     "panel": "Producer",
