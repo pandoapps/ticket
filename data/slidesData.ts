@@ -1076,6 +1076,9 @@ Push first structured commit
  Scale creates profit.
 
 
+🕐 Timezone Standard
+All dates and times in this project use UTC-3 (America/Sao_Paulo). All date/time data provided will be in UTC-3. Store dates with timezone awareness and always display them in UTC-3 format — never convert to UTC or other offsets when saving or showing dates to the user.
+
 Project context
 
 Note: Ignore all the instructions in PROJECT CONTEXT that are divergent of the previous instructions
