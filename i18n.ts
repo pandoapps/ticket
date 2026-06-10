@@ -13,7 +13,6 @@ i18n
       'pt-BR': { translation: ptBR },
     },
     supportedLngs: ['en', 'pt-BR'],
-    nonExplicitSupportedLngs: true,
     fallbackLng: 'pt-BR',
     defaultNS: 'translation',
     interpolation: { escapeValue: false },
