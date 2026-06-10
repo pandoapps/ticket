@@ -4,6 +4,7 @@ import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
 import { Empty } from '@components/Empty';
 import { useToast } from '@components/Toast';
+import { useConfirm } from '@components/ConfirmDialog';
 import { ActionIconButton } from '@components/ActionIconButton';
 import { Icons } from '@components/Icon';
 import { adminNav } from './nav';
@@ -21,7 +22,29 @@ export function AdminTicketsPage() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const toast = useToast();
+  const confirm = useConfirm();
+
+  const allSelected = tickets.length > 0 && tickets.every((t) => selectedIds.has(t.id));
+  const someSelected = selectedIds.size > 0;
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(tickets.map((t) => t.id)));
+    }
+  }
+
+  function toggleOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   async function load(p = page) {
     setLoading(true);
@@ -29,6 +52,7 @@ export function AdminTicketsPage() {
       const res = await adminService.listTickets({ status: status || undefined, q: q || undefined, page: p });
       setTickets(res.data);
       setMeta(res.meta);
+      setSelectedIds(new Set());
     } catch (err) {
       toast.error((err as ApiError).message);
     } finally {
@@ -59,12 +83,52 @@ export function AdminTicketsPage() {
     }
   }
 
+  async function handleDelete(ticket: AdminTicket) {
+    const ok = await confirm({
+      title: t('admin.deleteTicketTitle', { id: ticket.id }),
+      description: t('admin.deleteTicketDesc'),
+      confirmText: t('admin.deleteTicketBtn'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await adminService.deleteTicket(ticket.id);
+      toast.success(t('admin.ticketDeleted'));
+      load();
+    } catch (err) {
+      toast.error((err as ApiError).message);
+    }
+  }
+
+  async function handleBulkDelete() {
+    const count = selectedIds.size;
+    const ok = await confirm({
+      title: t('admin.deleteSelectedTicketsTitle', { count }),
+      description: t('admin.deleteSelectedTicketsDesc'),
+      confirmText: t('admin.deleteSelectedTicketsBtn'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await Promise.all([...selectedIds].map((id) => adminService.deleteTicket(id)));
+      toast.success(t('admin.ticketsDeleted', { count }));
+      load();
+    } catch (err) {
+      toast.error((err as ApiError).message);
+    }
+  }
+
   return (
     <AppLayout title={t('admin.panel')} nav={adminNav}>
       <PageHeader
         title={t('admin.ticketsPage')}
         action={
           <div className="flex gap-2">
+            {someSelected && (
+              <button onClick={handleBulkDelete} className="btn btn-danger text-sm">
+                {t('admin.deleteSelected', { count: selectedIds.size })}
+              </button>
+            )}
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -97,6 +161,14 @@ export function AdminTicketsPage() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  />
+                </th>
                 <Th>#</Th>
                 <Th>{t('admin.customerCol')}</Th>
                 <Th>{t('admin.eventCol')}</Th>
@@ -107,51 +179,59 @@ export function AdminTicketsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {tickets.map((ticket) => (
-                <tr key={ticket.id}>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">#{ticket.id}</td>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-slate-900">{ticket.customer?.name ?? '—'}</p>
-                    <p className="text-xs text-slate-500">{ticket.customer?.email ?? ''}</p>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{ticket.event?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">{ticket.lot?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(ticket.created_at)}</td>
-                  <td className="px-4 py-3">
-                    {ticket.used_at ? (
-                      <div>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                          {t('admin.usedStatus')}
-                        </span>
-                        <p className="mt-0.5 text-xs text-slate-400">{formatDateTime(ticket.used_at)}</p>
-                      </div>
-                    ) : (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                        {t('admin.unusedStatus')}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
+              {tickets.map((ticket) => {
+                const isSelected = selectedIds.has(ticket.id);
+                return (
+                  <tr key={ticket.id} className={isSelected ? 'bg-brand-50' : ''}>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleOne(ticket.id)}
+                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-500">#{ticket.id}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-900">{ticket.customer?.name ?? '—'}</p>
+                      <p className="text-xs text-slate-500">{ticket.customer?.email ?? ''}</p>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{ticket.event?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-600">{ticket.lot?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(ticket.created_at)}</td>
+                    <td className="px-4 py-3">
                       {ticket.used_at ? (
+                        <div>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                            {t('admin.usedStatus')}
+                          </span>
+                          <p className="mt-0.5 text-xs text-slate-400">{formatDateTime(ticket.used_at)}</p>
+                        </div>
+                      ) : (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                          {t('admin.unusedStatus')}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
                         <ActionIconButton
                           onClick={() => handleToggle(ticket)}
                           tone="brand"
-                          label={t('admin.markUnused')}
+                          label={ticket.used_at ? t('admin.markUnused') : t('admin.markUsed')}
                           icon={<Icons.check className="h-4 w-4" />}
                         />
-                      ) : (
                         <ActionIconButton
-                          onClick={() => handleToggle(ticket)}
+                          onClick={() => handleDelete(ticket)}
                           tone="danger"
-                          label={t('admin.markUsed')}
-                          icon={<Icons.check className="h-4 w-4" />}
+                          label={t('common.delete')}
+                          icon={<Icons.trash className="h-4 w-4" />}
                         />
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

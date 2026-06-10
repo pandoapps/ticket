@@ -455,7 +455,15 @@
     "markUnused": "Mark as unused",
     "ticketMarkedUsed": "Ticket marked as used.",
     "ticketMarkedUnused": "Ticket marked as unused.",
-    "ticketsPageOf": "Page {{current}} of {{total}} — {{count}} tickets"
+    "ticketsPageOf": "Page {{current}} of {{total}} — {{count}} tickets",
+    "deleteTicketTitle": "Delete ticket #{{id}}?",
+    "deleteTicketDesc": "This action is irreversible and removes the ticket from the history.",
+    "deleteTicketBtn": "Delete",
+    "deleteSelectedTicketsTitle": "Delete {{count}} ticket(s)?",
+    "deleteSelectedTicketsDesc": "This action is irreversible and removes the selected tickets.",
+    "deleteSelectedTicketsBtn": "Delete",
+    "ticketDeleted": "Ticket deleted.",
+    "ticketsDeleted": "{{count}} ticket(s) deleted."
   },
   "producer": {
     "panel": "Producer",

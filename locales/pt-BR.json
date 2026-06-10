@@ -455,7 +455,15 @@
     "markUnused": "Marcar como não utilizado",
     "ticketMarkedUsed": "Ingresso marcado como utilizado.",
     "ticketMarkedUnused": "Ingresso marcado como não utilizado.",
-    "ticketsPageOf": "Página {{current}} de {{total}} — {{count}} ingressos"
+    "ticketsPageOf": "Página {{current}} de {{total}} — {{count}} ingressos",
+    "deleteTicketTitle": "Excluir ingresso #{{id}}?",
+    "deleteTicketDesc": "Esta ação é irreversível e remove o ingresso do histórico.",
+    "deleteTicketBtn": "Excluir",
+    "deleteSelectedTicketsTitle": "Excluir {{count}} ingresso(s)?",
+    "deleteSelectedTicketsDesc": "Esta ação é irreversível e remove os ingressos selecionados.",
+    "deleteSelectedTicketsBtn": "Excluir",
+    "ticketDeleted": "Ingresso excluído.",
+    "ticketsDeleted": "{{count}} ingresso(s) excluído(s)."
   },
   "producer": {
     "panel": "Produtor",

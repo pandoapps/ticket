@@ -73,6 +73,14 @@ class TicketController extends Controller
         ]);
     }
 
+    public function destroy(Ticket $ticket): JsonResponse
+    {
+        $this->audit->log('admin.ticket.deleted', $ticket);
+        $ticket->delete();
+
+        return response()->json(null, 204);
+    }
+
     public function toggleUsed(Ticket $ticket): JsonResponse
     {
         if ($ticket->used_at) {

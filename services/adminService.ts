@@ -243,4 +243,5 @@ export const adminService = {
   },
   toggleTicketUsed: (id: number) =>
     api.post<{ data: Pick<AdminTicket, 'id' | 'used_at'> }>(`/admin/tickets/${id}/toggle-used`, {}),
+  deleteTicket: (id: number) => api.delete<void>(`/admin/tickets/${id}`),
 };
