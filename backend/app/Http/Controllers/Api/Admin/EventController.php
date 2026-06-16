@@ -26,7 +26,8 @@ class EventController extends Controller
             $query->where('name', 'like', "%{$q}%");
         }
 
-        $events = $query->paginate(20);
+        $perPage = min((int) $request->query('per_page', 20), 500);
+        $events = $query->paginate($perPage);
 
         return response()->json([
             'data' => EventResource::collection($events)->resolve(),

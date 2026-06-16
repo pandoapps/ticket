@@ -158,6 +158,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('coupons/{coupon}', [AdminCouponController::class, 'destroy']);
 
         Route::get('tickets', [AdminTicketController::class, 'index']);
+        Route::post('tickets', [AdminTicketController::class, 'store']);
+        Route::get('tickets/customer-lookup', [AdminTicketController::class, 'lookupCustomer']);
         Route::delete('tickets/{ticket}', [AdminTicketController::class, 'destroy']);
         Route::post('tickets/{ticket}/toggle-used', [AdminTicketController::class, 'toggleUsed']);
 

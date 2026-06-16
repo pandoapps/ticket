@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
+use App\Models\TicketLot;
+use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class TicketController extends Controller
 {
@@ -70,6 +74,66 @@ class TicketController extends Controller
                     'unused' => $totalCount - $usedCount,
                 ],
             ],
+        ]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ticket_lot_id' => ['required', 'integer', 'exists:ticket_lots,id'],
+            'customer_email' => ['required', 'email', 'max:255'],
+            'customer_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $lot = TicketLot::with('event')->findOrFail($validated['ticket_lot_id']);
+
+        $customer = User::firstOrNew(['email' => $validated['customer_email']]);
+        if (! $customer->exists) {
+            if (empty($validated['customer_name'])) {
+                return response()->json([
+                    'message' => 'Nome é obrigatório para novos participantes.',
+                    'errors' => ['customer_name' => ['O nome é obrigatório quando o e-mail não está cadastrado.']],
+                ], 422);
+            }
+            $customer->name = $validated['customer_name'];
+            $customer->password = Str::random(32);
+            $customer->role = UserRole::Customer;
+            $customer->save();
+        }
+
+        $ticket = Ticket::create([
+            'order_id' => null,
+            'ticket_lot_id' => $lot->id,
+            'customer_id' => $customer->id,
+        ]);
+
+        $lot->increment('sold');
+        $this->audit->log('admin.ticket.issued', $ticket, ['customer_email' => $customer->email]);
+
+        return response()->json([
+            'data' => [
+                'id' => $ticket->id,
+                'code' => $ticket->code,
+                'customer' => ['id' => $customer->id, 'name' => $customer->name, 'email' => $customer->email],
+                'lot' => ['id' => $lot->id, 'name' => $lot->name],
+                'event' => ['id' => $lot->event->id, 'name' => $lot->event->name],
+            ],
+        ], 201);
+    }
+
+    public function lookupCustomer(Request $request): JsonResponse
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->query('email'))->first(['id', 'name', 'email']);
+
+        if (! $user) {
+            return response()->json(['found' => false]);
+        }
+
+        return response()->json([
+            'found' => true,
+            'data' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
         ]);
     }
 

@@ -49,12 +49,20 @@ guard-not-prod:
 
 up: guard-not-prod
 	$(COMPOSE) up -d --build
+	@echo "▶ Starting Remotion Studio..."
+	@cd video && npm start > /tmp/remotion-studio.log 2>&1 & echo $$! > /tmp/remotion-studio.pid
+	@echo "  Remotion Studio → http://localhost:3000"
 
 up-prod:
 	$(COMPOSE_PROD) up -d --build
 
 down:
 	$(COMPOSE) down
+	@if [ -f /tmp/remotion-studio.pid ]; then \
+	  kill $$(cat /tmp/remotion-studio.pid) 2>/dev/null || true; \
+	  rm -f /tmp/remotion-studio.pid; \
+	  echo "▶ Remotion Studio stopped."; \
+	fi
 
 restart:
 	$(COMPOSE) restart

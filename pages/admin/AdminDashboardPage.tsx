@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
@@ -19,10 +19,14 @@ export function AdminDashboardPage() {
     adminService.dashboard().then((r) => setDashboard(r.data)).catch((err: ApiError) => toast.error(err.message));
   }, [toast]);
 
-  const chartData = useMemo(
-    () => dashboard?.gmv_series.map((row) => ({ bucket: row.bucket, revenue: parseFloat(row.revenue), platform_fee: parseFloat(row.platform_fee) })) ?? [],
-    [dashboard],
-  );
+  const chartData = useMemo(() => {
+    let cumulative = 0;
+    return dashboard?.gmv_series.map((row) => {
+      const revenue = parseFloat(row.revenue);
+      cumulative += revenue;
+      return { bucket: row.bucket, revenue, platform_fee: parseFloat(row.platform_fee), cumulative };
+    }) ?? [];
+  }, [dashboard]);
 
   return (
     <AppLayout title={t('admin.panel')} subtitle={t('admin.subtitle')} nav={adminNav}>
@@ -51,26 +55,26 @@ export function AdminDashboardPage() {
                 <h3 className="text-lg font-semibold text-slate-900">{t('admin.last30Days')}</h3>
               </div>
             </div>
+            <div className="mb-3 flex items-center gap-4 text-xs text-slate-500">
+              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-brand-500 opacity-80" />{t('admin.dailyRevenue')}</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-5 bg-fuchsia-500" />{t('admin.cumulative')}</span>
+            </div>
             <div className="h-72 w-full">
               <ResponsiveContainer>
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <ComposedChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="adminRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b61ff" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="#3b61ff" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="adminFee" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#d946ef" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#d946ef" stopOpacity={0} />
+                    <linearGradient id="adminBarFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b61ff" /><stop offset="100%" stopColor="#6366f1" />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="bucket" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${Math.round(v)}`} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="revenue" name={t('admin.revenue')} stroke="#2541f5" fill="url(#adminRevenue)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="platform_fee" name={t('admin.fee')} stroke="#c026d3" fill="url(#adminFee)" strokeWidth={2} />
-                </AreaChart>
+                  <YAxis yAxisId="left" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${Math.round(v)}`} />
+                  <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${Math.round(v)}`} />
+                  <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(59,97,255,0.06)' }} />
+                  <Bar yAxisId="left" dataKey="revenue" name={t('admin.dailyRevenue')} radius={[4, 4, 0, 0]} fill="url(#adminBarFill)" opacity={0.85} />
+                  <Line yAxisId="right" type="monotone" dataKey="cumulative" name={t('admin.cumulative')} stroke="#c026d3" strokeWidth={2} dot={false} />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
             {chartData.length === 0 && (

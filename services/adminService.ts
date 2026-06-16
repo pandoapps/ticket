@@ -145,6 +145,25 @@ export interface AdminTicket {
   event: { id: number; name: string } | null;
 }
 
+export interface IssueTicketPayload {
+  ticket_lot_id: number;
+  customer_email: string;
+  customer_name?: string;
+}
+
+export interface IssuedAdminTicket {
+  id: number;
+  code: string;
+  customer: { id: number; name: string; email: string };
+  lot: { id: number; name: string };
+  event: { id: number; name: string };
+}
+
+export interface CustomerLookupResult {
+  found: boolean;
+  data?: { id: number; name: string; email: string };
+}
+
 export interface AdminTicketMeta {
   total: number;
   page: number;
@@ -189,10 +208,11 @@ export const adminService = {
   updateLot: (lotId: number, payload: LotPayload) =>
     api.put<{ data: TicketLot }>(`/admin/lots/${lotId}`, payload),
   deleteLot: (lotId: number) => api.delete<void>(`/admin/lots/${lotId}`),
-  listEvents: (params: { status?: string; q?: string } = {}) => {
+  listEvents: (params: { status?: string; q?: string; per_page?: number } = {}) => {
     const qs = new URLSearchParams();
     if (params.status) qs.set('status', params.status);
     if (params.q) qs.set('q', params.q);
+    if (params.per_page) qs.set('per_page', String(params.per_page));
     const tail = qs.toString() ? `?${qs}` : '';
     return api.get<{ data: EventModel[]; meta: { total: number; page: number } }>(`/admin/events${tail}`);
   },
@@ -244,4 +264,8 @@ export const adminService = {
   toggleTicketUsed: (id: number) =>
     api.post<{ data: Pick<AdminTicket, 'id' | 'used_at'> }>(`/admin/tickets/${id}/toggle-used`, {}),
   deleteTicket: (id: number) => api.delete<void>(`/admin/tickets/${id}`),
+  issueTicket: (payload: IssueTicketPayload) =>
+    api.post<{ data: IssuedAdminTicket }>('/admin/tickets', payload),
+  lookupCustomer: (email: string) =>
+    api.get<CustomerLookupResult>(`/admin/tickets/customer-lookup?email=${encodeURIComponent(email)}`),
 };

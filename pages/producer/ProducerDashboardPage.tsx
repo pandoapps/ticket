@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { AppLayout } from '@components/AppLayout';
 import { PageHeader } from '@components/PageHeader';
@@ -39,10 +39,15 @@ export function ProducerDashboardPage() {
       .catch((err: ApiError) => toast.error(err.message));
   }, [granularity, eventId, toast]);
 
-  const chartData = useMemo(
-    () => report?.series.map((row) => ({ bucket: row.bucket, revenue: parseFloat(row.revenue), platform_fee: parseFloat(row.platform_fee), net: parseFloat(row.revenue) - parseFloat(row.platform_fee), orders: row.orders })) ?? [],
-    [report],
-  );
+  const chartData = useMemo(() => {
+    let cumulative = 0;
+    return report?.series.map((row) => {
+      const revenue = parseFloat(row.revenue);
+      const platform_fee = parseFloat(row.platform_fee);
+      cumulative += revenue;
+      return { bucket: row.bucket, revenue, platform_fee, net: revenue - platform_fee, orders: row.orders, cumulative };
+    }) ?? [];
+  }, [report]);
 
   const conversionData = useMemo(
     () => report ? [
@@ -95,24 +100,26 @@ export function ProducerDashboardPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">{t('producer.revenueOverTime')}</p>
                 <h3 className="text-lg font-semibold text-slate-900">{t('producer.salesByPeriod')}</h3>
               </div>
+              <div className="mb-3 flex items-center gap-4 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-brand-500 opacity-80" />{t('producer.grossRevenue')}</span>
+                <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-5 bg-fuchsia-500" />{t('producer.cumulativeRevenue')}</span>
+              </div>
               <div className="h-72 w-full">
                 <ResponsiveContainer>
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <ComposedChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b61ff" stopOpacity={0.5} /><stop offset="100%" stopColor="#3b61ff" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="fillFee" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#d946ef" stopOpacity={0.35} /><stop offset="100%" stopColor="#d946ef" stopOpacity={0} />
+                      <linearGradient id="producerBarFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b61ff" /><stop offset="100%" stopColor="#6366f1" />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                     <XAxis dataKey="bucket" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${Math.round(v)}`} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Area type="monotone" dataKey="revenue" name={t('producer.grossRevenue')} stroke="#2541f5" fill="url(#fillRevenue)" strokeWidth={2} />
-                    <Area type="monotone" dataKey="platform_fee" name={t('producer.platformFee')} stroke="#c026d3" fill="url(#fillFee)" strokeWidth={2} />
-                  </AreaChart>
+                    <YAxis yAxisId="left" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${Math.round(v)}`} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${Math.round(v)}`} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(59,97,255,0.06)' }} />
+                    <Bar yAxisId="left" dataKey="revenue" name={t('producer.grossRevenue')} radius={[4, 4, 0, 0]} fill="url(#producerBarFill)" opacity={0.85} />
+                    <Line yAxisId="right" type="monotone" dataKey="cumulative" name={t('producer.cumulativeRevenue')} stroke="#c026d3" strokeWidth={2} dot={false} />
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
