@@ -21,7 +21,17 @@ import {
   type WordCloudSlide,
   type FlowchartSlide,
 } from '@data/slidesData';
+import { slidesI18n, LOCALE_LABELS, type LocaleCode } from '@data/slidesI18n';
 import { FlowchartDiagram } from '@components/FlowchartDiagram';
+
+function applyLocale(slide: Slide, lesson: number, slideIndex: number, locale: LocaleCode): Slide {
+  if (locale === 'pt-BR') return slide;
+  const localeSlides = slidesI18n[lesson]?.[locale];
+  if (!localeSlides) return slide;
+  const override = localeSlides[slideIndex];
+  if (!override) return slide;
+  return { ...slide, ...override } as Slide;
+}
 
 export function SlidesPage() {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +48,7 @@ export function SlidesPage() {
   const [index, setIndex] = useState(0);
   const [step, setStep] = useState(0);
   const [gamePhase, setGamePhase] = useState<GamePhase>('setup');
+  const [locale, setLocale] = useState<LocaleCode>('pt-BR');
 
   useEffect(() => {
     setStep(0);
@@ -108,7 +119,9 @@ export function SlidesPage() {
     );
   }
 
-  const current = slides[index];
+  const current = slides[index]
+    ? applyLocale(slides[index], module.id, index, locale)
+    : slides[index];
   const total = slides.length;
   const partsTotal = current?.type === 'parts' ? current.items.length : 0;
   const archTotal = current?.type === 'architecture' ? current.stages.length : 0;
@@ -160,6 +173,20 @@ export function SlidesPage() {
             Aula {String(module.id).padStart(2, '0')} — {module.title}
           </span>
         </div>
+        {slidesI18n[module.id] && (
+          <div className="flex items-center gap-1">
+            {(['pt-BR', 'en', 'de', 'ja'] as LocaleCode[]).map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => setLocale(lang)}
+                className={`rounded-md px-2 py-1 text-xs font-semibold transition ${locale === lang ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80'}`}
+              >
+                {LOCALE_LABELS[lang]}
+              </button>
+            ))}
+          </div>
+        )}
         <span className="text-xs text-white/60">
           {index + 1} / {total}
         </span>
