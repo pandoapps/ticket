@@ -75,7 +75,17 @@ ps:
 
 install:
 	$(APP) composer install
-	$(NODE) npm install
+	@if docker compose ps --status running --services 2>/dev/null | grep -q '^node$$'; then \
+	  docker compose exec node npm install; \
+	else \
+	  echo "▶ Node container não está rodando (modo produção) — pulando npm install."; \
+	fi
+	@if ! grep -q '^APP_KEY=.\+' backend/.env 2>/dev/null; then \
+	  echo "▶ APP_KEY ausente — gerando..."; \
+	  $(APP_NOTTY) php artisan key:generate; \
+	else \
+	  echo "▶ APP_KEY já existe, pulando."; \
+	fi
 
 migrate:
 	$(APP) php artisan migrate
