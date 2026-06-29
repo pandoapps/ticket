@@ -13,29 +13,35 @@ APP_NOTTY      := $(COMPOSE) exec -T app
 NODE           := $(COMPOSE) exec node
 PROD_MARKER    := /etc/ticketeira-prod
 
-.PHONY: help up up-prod up-prod-local-db down restart logs ps install migrate seed fresh db thinker shell shell-node deploy send lint guard-not-prod
+.PHONY: help up up-prod up-prod-local-db down restart logs ps install build setup migrate seed fresh db thinker shell shell-node deploy send lint guard-not-prod
 
 help:
 	@echo ""
 	@echo "Ticketeira — Makefile"
 	@echo ""
-	@echo "  make up           Start dev environment (app + nginx + db + node)"
-	@echo "  make up-prod      Start production environment"
-	@echo "  make down         Stop all containers"
-	@echo "  make restart      Restart all containers"
-	@echo "  make logs         Tail logs"
-	@echo "  make ps           List containers"
-	@echo "  make install      Install backend + frontend dependencies"
-	@echo "  make migrate      Run Laravel migrations"
-	@echo "  make seed         Run Laravel seeders"
-	@echo "  make fresh        Drop database and re-run migrations + seeders"
-	@echo "  make db           Open MySQL shell"
-	@echo "  make thinker      Open Laravel Tinker"
-	@echo "  make shell        Open a bash shell inside the app container"
-	@echo "  make shell-node   Open a sh shell inside the node container"
-	@echo "  make deploy       Pull latest and deploy to production"
-	@echo "  make send         Lint, prompt for commit message, and commit"
-	@echo "  make lint         Run linters (backend + frontend)"
+	@echo "  make up                  Start dev environment (app + nginx + db + node)"
+	@echo "  make up-prod             Start production environment (external DB)"
+	@echo "  make up-prod-local-db    Start production environment (Docker MySQL)"
+	@echo "  make down                Stop all containers"
+	@echo "  make restart             Restart all containers"
+	@echo "  make logs                Tail logs"
+	@echo "  make ps                  List containers"
+	@echo ""
+	@echo "  make setup               First-time setup: install + build + fresh"
+	@echo "  make install             Install backend + frontend dependencies + APP_KEY"
+	@echo "  make build               Build frontend bundle (dist/)"
+	@echo "  make migrate             Run Laravel migrations"
+	@echo "  make seed                Run Laravel seeders"
+	@echo "  make fresh               Drop database and re-run migrations + seeders"
+	@echo ""
+	@echo "  make db                  Open MySQL shell"
+	@echo "  make thinker             Open Laravel Tinker"
+	@echo "  make shell               Open a bash shell inside the app container"
+	@echo "  make shell-node          Open a sh shell inside the node container"
+	@echo ""
+	@echo "  make deploy              Pull latest and deploy to production"
+	@echo "  make send                Lint, prompt for commit message, and commit"
+	@echo "  make lint                Run linters (backend + frontend)"
 	@echo ""
 
 guard-not-prod:
@@ -89,6 +95,11 @@ install:
 	else \
 	  echo "▶ APP_KEY já existe, pulando."; \
 	fi
+
+build:
+	docker run --rm -v "$$PWD:/app" -w /app node:20-alpine sh -c "npm ci && npm run build"
+
+setup: install build fresh
 
 migrate:
 	$(APP) php artisan migrate
