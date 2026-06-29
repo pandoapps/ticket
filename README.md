@@ -97,7 +97,7 @@ Edite **obrigatoriamente** em `backend/.env`:
 | `DB_USERNAME`  | Usuário do banco                            |
 | `DB_PASSWORD`  | Senha do banco                              |
 
-> O banco de dados em produção é externo — o container MySQL **não** sobe (`profiles: ["local-db"]`).
+> Por padrão o container MySQL **não** sobe em produção (`profiles: ["local-db"]`). Use um banco externo (opção A) ou suba o MySQL local com `make up-prod-local-db` (opção B, veja abaixo).
 
 ### 3. Marcar o host como produção
 
@@ -109,8 +109,20 @@ sudo touch /etc/ticketeira-prod
 
 ### 4. Subir os containers de produção
 
+**Opção A — banco de dados externo (recomendado)**
+
+Configure `DB_HOST`, `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD` no `.env` raiz apontando para o MySQL externo, então:
+
 ```bash
 make up-prod
+```
+
+**Opção B — MySQL rodando no próprio servidor via Docker**
+
+Deixe `DB_HOST=db` no `.env` raiz e suba incluindo o container MySQL:
+
+```bash
+make up-prod-local-db
 ```
 
 ### 5. Instalar dependências e gerar APP_KEY
@@ -156,8 +168,9 @@ O Nginx escuta nas portas **80** e **443** internamente. O acesso externo depend
 
 ```bash
 make help        # lista completa
-make up          # sobe ambiente de dev
-make up-prod     # sobe ambiente de produção
+make up                # sobe ambiente de dev
+make up-prod           # sobe produção (banco externo)
+make up-prod-local-db  # sobe produção + MySQL no Docker
 make down        # derruba containers
 make install     # instala dependências + gera APP_KEY se ausente
 make migrate     # roda migrations

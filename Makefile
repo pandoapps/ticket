@@ -13,7 +13,7 @@ APP_NOTTY      := $(COMPOSE) exec -T app
 NODE           := $(COMPOSE) exec node
 PROD_MARKER    := /etc/ticketeira-prod
 
-.PHONY: help up up-prod down restart logs ps install migrate seed fresh db thinker shell shell-node deploy send lint guard-not-prod
+.PHONY: help up up-prod up-prod-local-db down restart logs ps install migrate seed fresh db thinker shell shell-node deploy send lint guard-not-prod
 
 help:
 	@echo ""
@@ -55,6 +55,9 @@ up: guard-not-prod
 
 up-prod:
 	$(COMPOSE_PROD) up -d --build
+
+up-prod-local-db:
+	$(COMPOSE_PROD) --profile local-db up -d --build
 
 down:
 	$(COMPOSE) down
