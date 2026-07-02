@@ -153,12 +153,12 @@ O comando executa, na ordem: `git pull`, build do frontend, rebuild dos containe
 
 ### Acessos em produção
 
-O Nginx escuta nas portas **80** e **443** internamente. O acesso externo depende do mapeamento do seu host/proxy:
+O Nginx escuta e está exposto diretamente nas portas padrão do host:
 
-| Protocolo | Porta interna | Exemplo externo           |
-| --------- | ------------- | ------------------------- |
-| HTTP      | 80            | http://servidor:1180      |
-| HTTPS     | 443           | https://servidor:1443     |
+| Protocolo | Porta  | Exemplo                           |
+| --------- | ------ | --------------------------------- |
+| HTTP      | 80     | http://servidor (redireciona para HTTPS) |
+| HTTPS     | 443    | https://servidor                  |
 
 > A porta **5173** (Vite dev server) **não existe em produção** — o container `node` nunca sobe. O frontend é servido como bundle estático pelo Nginx a partir do diretório `./dist`.
 

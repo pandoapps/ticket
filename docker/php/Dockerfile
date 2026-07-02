@@ -14,6 +14,7 @@ RUN apk add --no-cache \
         build-base \
         linux-headers \
     && docker-php-ext-install pdo pdo_mysql mbstring intl bcmath zip opcache \
+    && pecl channel-update pecl.php.net \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apk del autoconf build-base linux-headers

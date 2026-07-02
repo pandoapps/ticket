@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PublicLayout } from '@components/PublicLayout';
 import { courseModules, type CourseModule } from '@data/courseData';
+import { generatorData } from '@data/generatorData';
 import { generateLessonZip } from '@utils/generateLessonZip';
 
 export function CourseHomePage() {
@@ -105,6 +106,11 @@ function ModuleCard({ module }: { module: CourseModule }) {
         <Link to={`/claudecode/aulas/${module.id}/material`} className="btn btn-secondary">
           📖 Material
         </Link>
+        {generatorData[module.id] && (
+          <Link to={`/claudecode/aulas/${module.id}/gerador`} className="btn btn-secondary">
+            ✨ Gerador
+          </Link>
+        )}
       </div>
 
       <div className="border-t border-slate-100 pt-4">

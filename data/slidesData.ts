@@ -188,6 +188,7 @@ export interface PromptBuilderInput {
   multiline?: boolean;
   rows?: number;
   hint?: string;
+  options?: Array<string | { label: string; value: string }>;
 }
 
 export interface PromptBuilderSlide {
@@ -199,6 +200,11 @@ export interface PromptBuilderSlide {
   inputs: PromptBuilderInput[];
   buttonLabel: string;
   promptTemplate: string;
+  responseLabel?: string;
+  instructions?: string[];
+  hiddenVars?: Record<string, string>;
+  autoGenerate?: boolean;
+  confirmGenerate?: boolean;
   nextStep?: {
     text: string;
     linkLabel?: string;
@@ -1085,7 +1091,17 @@ Note: Ignore all the instructions in PROJECT CONTEXT that are divergent of the p
 
 {REQUISITOS}
 
-Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda a estrutura desse repositório, use-o apenas para copiar a interface visual`,
+Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda a estrutura desse repositório, use-o apenas para copiar a interface visual
+
+⚖️ LGPD Compliance
+All features involving personal data (names, emails, CPF, phone numbers, addresses, payment info, etc.) must comply with Brazil's Lei Geral de Proteção de Dados (LGPD — Law 13,709/2018). This means:
+- Collect only the minimum data necessary for each feature (data minimization).
+- Never store sensitive data (passwords, payment credentials, tokens) in plain text — always hash or encrypt.
+- Provide clear user consent before collecting personal data.
+- Allow users to view, correct, and delete their own data upon request.
+- Do not share or expose personal data to third parties without explicit consent.
+- Log data access and mutations for audit purposes.
+- Apply these rules to every model, migration, API endpoint, and UI form that handles personal data.`,
     },
     {
       type: 'deliverables',

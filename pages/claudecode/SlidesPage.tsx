@@ -265,10 +265,12 @@ export function SlideRenderer({
   slide,
   step,
   onGamePhaseChange,
+  onReset,
 }: {
   slide: Slide;
   step: number;
   onGamePhaseChange?: (phase: GamePhase) => void;
+  onReset?: () => void;
 }) {
   switch (slide.type) {
     case 'cover':
@@ -601,7 +603,7 @@ export function SlideRenderer({
       return <FormStudySlideView slide={slide} />;
 
     case 'promptBuilder':
-      return <PromptBuilderSlideView slide={slide} />;
+      return <PromptBuilderSlideView slide={slide} onReset={onReset} />;
 
     case 'wordCloud':
       return <WordCloudSlideView slide={slide} />;
@@ -681,14 +683,21 @@ function WordCloudSlideView({ slide }: { slide: WordCloudSlide }) {
   );
 }
 
-function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
+function PromptBuilderSlideView({ slide, onReset }: { slide: PromptBuilderSlide; onReset?: () => void }) {
   const storageKey = `pb-${slide.title}|${slide.subtitle ?? ''}`;
   const [values, setValues] = useState<Record<string, string>>(() => {
+    const defaults: Record<string, string> = {};
+    for (const input of slide.inputs) {
+      if (input.options && input.options.length > 0) {
+        const first = input.options[0];
+        defaults[input.id] = typeof first === 'string' ? first : first.value;
+      }
+    }
     try {
       const raw = sessionStorage.getItem(`${storageKey}:values`);
-      return raw ? JSON.parse(raw) : {};
+      return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
     } catch {
-      return {};
+      return defaults;
     }
   });
   const [generated, setGenerated] = useState<string>(() => {
@@ -698,7 +707,45 @@ function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
       return '';
     }
   });
+  const [response, setResponse] = useState<string>(() => {
+    try {
+      return sessionStorage.getItem(`${storageKey}:response`) ?? '';
+    } catch {
+      return '';
+    }
+  });
   const [copied, setCopied] = useState(false);
+  const [fireworks, setFireworks] = useState(false);
+
+  function launchFireworks() {
+    setFireworks(true);
+    window.setTimeout(() => setFireworks(false), 4500);
+  }
+
+  useEffect(() => {
+    if (!slide.autoGenerate) return;
+    let prompt = slide.promptTemplate;
+    for (const input of slide.inputs) {
+      prompt = prompt.split(`{${input.id}}`).join(values[input.id] ?? '');
+    }
+    if (slide.hiddenVars) {
+      for (const [varId, sk] of Object.entries(slide.hiddenVars)) {
+        let value = '';
+        try { value = sessionStorage.getItem(sk) ?? ''; } catch { /* ignore */ }
+        prompt = prompt.split(`{${varId}}`).join(value);
+      }
+    }
+    setGenerated(prompt);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(`${storageKey}:response`, response);
+    } catch {
+      /* storage unavailable */
+    }
+  }, [storageKey, response]);
 
   useEffect(() => {
     try {
@@ -722,6 +769,13 @@ function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
       const value = values[input.id] ?? '';
       prompt = prompt.split(`{${input.id}}`).join(value);
     }
+    if (slide.hiddenVars) {
+      for (const [varId, storageKey] of Object.entries(slide.hiddenVars)) {
+        let value = '';
+        try { value = sessionStorage.getItem(storageKey) ?? ''; } catch { /* ignore */ }
+        prompt = prompt.split(`{${varId}}`).join(value);
+      }
+    }
     setGenerated(prompt);
     setCopied(false);
   }
@@ -741,8 +795,106 @@ function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
     'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-transparent focus:ring-2 md:text-base';
   const ringStyle = { ['--tw-ring-color' as never]: slide.color };
 
-  return (
-    <SlideCard color={slide.color}>
+  const formFields = (
+    <>
+      {slide.inputs.map((input) => {
+        const id = `pb-${input.id}`;
+        return (
+          <div key={input.id} className="flex flex-col gap-1">
+            <label htmlFor={id} className="flex items-center gap-2 text-sm font-semibold text-slate-800 md:text-base">
+              <span>{input.label}</span>
+              {input.hint && (
+                <span
+                  title={input.hint}
+                  aria-label={input.hint}
+                  className="inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-slate-400 text-xs font-bold text-slate-600 hover:border-slate-600 hover:text-slate-900"
+                >
+                  ?
+                </span>
+              )}
+            </label>
+            {input.options ? (
+              <select
+                id={id}
+                value={values[input.id] ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, [input.id]: e.target.value }))}
+                className={fieldClass}
+                style={ringStyle}
+              >
+                {input.options.map((opt, optIdx) => {
+                  const optLabel = typeof opt === 'string' ? opt : opt.label;
+                  const optValue = typeof opt === 'string' ? opt : opt.value;
+                  return (
+                    <option key={optIdx} value={optValue}>
+                      {optLabel}
+                    </option>
+                  );
+                })}
+              </select>
+            ) : input.multiline ? (
+              <textarea
+                id={id}
+                rows={input.rows ?? 2}
+                value={values[input.id] ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, [input.id]: e.target.value }))}
+                className={`${fieldClass} resize-none`}
+                style={ringStyle}
+              />
+            ) : (
+              <input
+                id={id}
+                type="text"
+                value={values[input.id] ?? ''}
+                onChange={(e) => setValues((v) => ({ ...v, [input.id]: e.target.value }))}
+                className={fieldClass}
+                style={ringStyle}
+              />
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+
+  const generateButton = (
+    <button
+      type="button"
+      onClick={generate}
+      className="mt-1 w-full rounded-2xl px-4 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-lg transition hover:-translate-y-0.5 md:text-base"
+      style={{ background: slide.color }}
+    >
+      {slide.buttonLabel}
+    </button>
+  );
+
+  const outputArea = (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <label htmlFor="pb-output" className="text-sm font-semibold text-slate-800 md:text-base">
+          Prompt gerado
+        </label>
+        <button
+          type="button"
+          onClick={copyToClipboard}
+          disabled={!generated}
+          className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 md:text-sm"
+        >
+          {copied ? 'Copiado!' : 'Copiar'}
+        </button>
+      </div>
+      <textarea
+        id="pb-output"
+        value={generated}
+        readOnly
+        placeholder="Preencha os campos e clique em Gerar prompt"
+        className="min-h-[18rem] w-full flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-800 outline-none focus:ring-2 md:text-sm"
+        style={ringStyle}
+      />
+    </div>
+  );
+
+  const header = (
+    <>
       {slide.badge && (
         <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
           {slide.badge}
@@ -750,64 +902,76 @@ function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
       )}
       <h2 className="mt-3 text-3xl font-bold text-slate-900 md:text-5xl">{slide.title}</h2>
       {slide.subtitle && <p className="mt-2 text-base text-slate-600 md:text-2xl">{slide.subtitle}</p>}
+    </>
+  );
 
-      <div className="mt-6 flex w-full flex-col items-stretch gap-4 text-left md:flex-row md:gap-5">
-        <div className="flex w-full flex-col gap-3 md:w-[36%]">
-          {slide.inputs.map((input) => {
-            const id = `pb-${input.id}`;
-            return (
-              <div key={input.id} className="flex flex-col gap-1">
-                <label htmlFor={id} className="flex items-center gap-2 text-sm font-semibold text-slate-800 md:text-base">
-                  <span>{input.label}</span>
-                  {input.hint && (
-                    <span
-                      title={input.hint}
-                      aria-label={input.hint}
-                      className="inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-slate-400 text-xs font-bold text-slate-600 hover:border-slate-600 hover:text-slate-900"
-                    >
-                      ?
-                    </span>
-                  )}
-                </label>
-                {input.multiline ? (
-                  <textarea
-                    id={id}
-                    rows={input.rows ?? 2}
-                    value={values[input.id] ?? ''}
-                    onChange={(e) => setValues((v) => ({ ...v, [input.id]: e.target.value }))}
-                    className={`${fieldClass} resize-none`}
-                    style={ringStyle}
-                  />
-                ) : (
-                  <input
-                    id={id}
-                    type="text"
-                    value={values[input.id] ?? ''}
-                    onChange={(e) => setValues((v) => ({ ...v, [input.id]: e.target.value }))}
-                    className={fieldClass}
-                    style={ringStyle}
-                  />
-                )}
-              </div>
-            );
-          })}
+  // Layout confirmação — esquerda: pergunta + botões | direita: textarea
+  if (slide.confirmGenerate) {
+    return (
+      <SlideCard color={slide.color}>
+        {header}
+        <div className="mt-6 grid w-full grid-cols-1 gap-6 text-left md:grid-cols-2">
+          <div className="flex flex-col items-center justify-center gap-8 text-center">
+            <p className="text-2xl font-bold text-slate-800 md:text-3xl">
+              Está preparado para iniciar seu projeto?
+            </p>
+            <div className="flex flex-col items-center gap-6">
+              <button
+                type="button"
+                onClick={() => { generate(); launchFireworks(); }}
+                className="rounded-2xl px-14 py-5 text-xl font-bold text-white shadow-lg transition hover:-translate-y-0.5"
+                style={{ background: slide.color }}
+              >
+                SIM
+              </button>
+              {onReset && (
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="rounded-xl border border-slate-300 bg-white/70 px-6 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-white"
+                >
+                  Iniciar novo projeto
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-slate-800 md:text-base">
+                Prompt para o Claude CLI
+              </label>
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                disabled={!generated}
+                className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 md:text-sm"
+              >
+                {copied ? 'Copiado!' : 'Copiar'}
+              </button>
+            </div>
+            <textarea
+              value={generated}
+              readOnly
+              placeholder="Clique em SIM para gerar o contexto do projeto..."
+              className="min-h-[50vh] w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-800 outline-none focus:ring-2 md:text-sm"
+              style={ringStyle}
+            />
+          </div>
         </div>
+        {fireworks && <FireworkOverlay />}
+      </SlideCard>
+    );
+  }
 
-        <div className="flex items-center justify-center md:w-[14%]">
-          <button
-            type="button"
-            onClick={generate}
-            className="w-full rounded-2xl px-4 py-4 text-sm font-bold uppercase tracking-wider text-white shadow-lg transition hover:-translate-y-0.5 md:py-6 md:text-base"
-            style={{ background: slide.color }}
-          >
-            {slide.buttonLabel}
-          </button>
-        </div>
-
-        <div className="flex w-full flex-1 flex-col gap-2 md:w-[50%]">
+  // Layout auto-gerado — textarea único centralizado
+  if (slide.autoGenerate) {
+    return (
+      <SlideCard color={slide.color}>
+        {header}
+        <div className="mt-6 flex w-full flex-col gap-2">
           <div className="flex items-center justify-between">
-            <label htmlFor="pb-output" className="text-sm font-semibold text-slate-800 md:text-base">
-              Prompt gerado
+            <label className="text-sm font-semibold text-slate-800 md:text-base">
+              Prompt para o Claude CLI
             </label>
             <button
               type="button"
@@ -819,36 +983,118 @@ function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
             </button>
           </div>
           <textarea
-            id="pb-output"
             value={generated}
             readOnly
-            placeholder="Preencha os campos e clique em Gerar prompt"
-            className="min-h-[18rem] w-full flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-800 outline-none focus:ring-2 md:text-sm"
+            className="min-h-[48vh] w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-800 outline-none focus:ring-2 md:text-sm"
             style={ringStyle}
           />
         </div>
-      </div>
+        {slide.instructions && (
+          <div className="mt-4 w-full">
+            <ol className="flex w-full flex-col items-center gap-2">
+              {slide.instructions.map((text, i) => (
+                <li key={i} className="flex items-center gap-2 text-xs text-slate-500 md:text-sm">
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{ background: slide.color }}
+                  >
+                    {i + 1}
+                  </span>
+                  {renderInline(text)}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </SlideCard>
+    );
+  }
 
+  // Layout do gerador — 3 colunas + instruções abaixo
+  if (slide.responseLabel) {
+    return (
+      <SlideCard color={slide.color}>
+        {header}
+        <div className="mt-6 grid w-full grid-cols-1 gap-4 text-left md:grid-cols-3 md:gap-5">
+          <div className="flex flex-col gap-3">
+            {formFields}
+            {generateButton}
+          </div>
+          {outputArea}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="pb-response" className="text-sm font-semibold text-slate-800 md:text-base">
+              {slide.responseLabel}
+            </label>
+            <textarea
+              id="pb-response"
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+              placeholder="Cole aqui a resposta do Claude..."
+              className="min-h-[18rem] w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-800 outline-none focus:ring-2 md:text-sm"
+              style={ringStyle}
+            />
+          </div>
+        </div>
+        {slide.instructions && (
+          <div className="mt-5 w-full">
+            <p className="mb-3 text-center text-xs font-bold uppercase tracking-widest text-slate-400">
+              Instruções
+            </p>
+            <ol className="flex w-full flex-col items-center gap-2">
+              {slide.instructions.map((text, i) => (
+                <li key={i} className="flex items-center gap-2 text-xs text-slate-500 md:text-sm">
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                    style={{ background: slide.color }}
+                  >
+                    {i + 1}
+                  </span>
+                  {renderInline(text)}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </SlideCard>
+    );
+  }
+
+  // Layout padrão — aulas
+  return (
+    <SlideCard color={slide.color}>
+      {header}
+      <div className="mt-6 flex w-full flex-col items-stretch gap-4 text-left md:flex-row md:gap-5">
+        <div className="flex w-full flex-col gap-3 md:w-[36%]">
+          {formFields}
+        </div>
+        <div className="flex items-center justify-center md:w-[14%]">
+          <button
+            type="button"
+            onClick={generate}
+            className="w-full rounded-2xl px-4 py-4 text-sm font-bold uppercase tracking-wider text-white shadow-lg transition hover:-translate-y-0.5 md:py-6 md:text-base"
+            style={{ background: slide.color }}
+          >
+            {slide.buttonLabel}
+          </button>
+        </div>
+        <div className="flex w-full flex-1 flex-col gap-2 md:w-[50%]">
+          {outputArea}
+        </div>
+      </div>
       {slide.nextStep && (
         <p className="mt-5 text-sm text-slate-600 md:text-base">
           {slide.nextStep.text}
           {slide.nextStep.linkUrl && (
             <>
               {' '}
-              <a
-                href={slide.nextStep.linkUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold underline-offset-4 hover:underline"
-                style={{ color: slide.color }}
-              >
+              <a href={slide.nextStep.linkUrl} target="_blank" rel="noreferrer"
+                className="font-semibold underline-offset-4 hover:underline" style={{ color: slide.color }}>
                 {slide.nextStep.linkLabel ?? slide.nextStep.linkUrl}
               </a>
             </>
           )}
         </p>
       )}
-
       {slide.nextSteps && (
         <div className="mt-5 text-sm text-slate-600 md:text-base">
           {slide.nextSteps.title && (
@@ -859,13 +1105,8 @@ function PromptBuilderSlideView({ slide }: { slide: PromptBuilderSlide }) {
               <li key={idx}>
                 {step.text}
                 {step.linkUrl && (
-                  <a
-                    href={step.linkUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-semibold underline-offset-4 hover:underline"
-                    style={{ color: slide.color }}
-                  >
+                  <a href={step.linkUrl} target="_blank" rel="noreferrer"
+                    className="font-semibold underline-offset-4 hover:underline" style={{ color: slide.color }}>
                     {step.linkLabel ?? step.linkUrl}
                   </a>
                 )}
@@ -1481,6 +1722,61 @@ function ImageSlideView({ slide }: { slide: ImageSlide }) {
         <p className="mt-4 text-sm text-slate-500 md:text-base">{slide.caption}</p>
       )}
     </SlideCard>
+  );
+}
+
+function FireworkOverlay() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let cancelled = false;
+    let fwInstance: { stop: () => void } | null = null;
+
+    import('fireworks-js').then(({ Fireworks }) => {
+      if (cancelled) return;
+      fwInstance = new Fireworks(el, {
+        autoresize: true,
+        opacity: 0.5,
+        acceleration: 1.05,
+        friction: 0.97,
+        gravity: 1.5,
+        particles: 90,
+        traceLength: 3,
+        traceSpeed: 10,
+        explosion: 5,
+        intensity: 30,
+        flickering: 50,
+        lineStyle: 'round',
+        hue: { min: 0, max: 360 },
+        delay: { min: 15, max: 30 },
+        rocketsPoint: { min: 20, max: 80 },
+        lineWidth: { explosion: { min: 1, max: 3 }, trace: { min: 0.1, max: 1 } },
+        brightness: { min: 50, max: 80 },
+        decay: { min: 0.015, max: 0.03 },
+        mouse: { click: false, move: false, max: 1 },
+        sound: {
+          enabled: true,
+          files: [
+            'https://fireworks.js.org/sounds/explosion0.mp3',
+            'https://fireworks.js.org/sounds/explosion1.mp3',
+            'https://fireworks.js.org/sounds/explosion2.mp3',
+          ],
+          volume: { min: 4, max: 8 },
+        },
+      });
+      fwInstance.start();
+    });
+
+    return () => { cancelled = true; fwInstance?.stop(); };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="pointer-events-none absolute inset-0 z-50"
+    />
   );
 }
 
