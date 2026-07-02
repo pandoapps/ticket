@@ -58,7 +58,7 @@ services:
       - ticketeira
 
   node:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: ticketeira_node
     working_dir: /app
     environment:
@@ -67,7 +67,7 @@ services:
       - ./:/app
     ports:
       - "${VITE_PORT:-5173}:5173"
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    command: sh -c "npm install -g npm@11 && npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
       - nginx
     networks:
