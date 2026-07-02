@@ -1732,7 +1732,7 @@ function FireworkOverlay() {
     const el = containerRef.current;
     if (!el) return;
     let cancelled = false;
-    let fwInstance: { stop: () => void } | null = null;
+    let fwInstance: { start: () => void; stop: () => void } | null = null;
 
     import('fireworks-js').then(({ Fireworks }) => {
       if (cancelled) return;
