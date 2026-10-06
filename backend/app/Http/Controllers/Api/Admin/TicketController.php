@@ -8,13 +8,17 @@ use App\Models\Ticket;
 use App\Models\TicketLot;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\ManualTicketService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class TicketController extends Controller
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly ManualTicketService $manualTickets,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -101,13 +105,7 @@ class TicketController extends Controller
             $customer->save();
         }
 
-        $ticket = Ticket::create([
-            'order_id' => null,
-            'ticket_lot_id' => $lot->id,
-            'customer_id' => $customer->id,
-        ]);
-
-        $lot->increment('sold');
+        $ticket = $this->manualTickets->issue($customer, $lot);
         $this->audit->log('admin.ticket.issued', $ticket, ['customer_email' => $customer->email]);
 
         return response()->json([

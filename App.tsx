@@ -14,6 +14,8 @@ import { OrdersPage as CustomerOrdersPage } from '@pages/customer/OrdersPage';
 import { CustomerOrderDetailPage } from '@pages/customer/CustomerOrderDetailPage';
 import { TicketsPage } from '@pages/customer/TicketsPage';
 import { TicketDetailPage } from '@pages/customer/TicketDetailPage';
+import { MyCoursesPage } from '@pages/customer/MyCoursesPage';
+import { CoursePlayerPage } from '@pages/customer/CoursePlayerPage';
 
 import { ProducerDashboardPage } from '@pages/producer/ProducerDashboardPage';
 import { ProducerRegisterPage } from '@pages/producer/ProducerRegisterPage';
@@ -21,6 +23,7 @@ import { CredentialsPage } from '@pages/producer/CredentialsPage';
 import { EventListPage } from '@pages/producer/EventListPage';
 import { EventFormPage } from '@pages/producer/EventFormPage';
 import { EventDetailPage as ProducerEventDetailPage } from '@pages/producer/EventDetailPage';
+import { EventContentPage } from '@pages/producer/EventContentPage';
 import { SalesPage } from '@pages/producer/SalesPage';
 import { CustomersPage as ProducerCustomersPage } from '@pages/producer/CustomersPage';
 import { TicketScannerPage } from '@pages/producer/TicketScannerPage';
@@ -34,6 +37,7 @@ import { ProducersPage } from '@pages/admin/ProducersPage';
 import { UsersPage } from '@pages/admin/UsersPage';
 import { EventsPage as AdminEventsPage } from '@pages/admin/EventsPage';
 import { AdminEventDetailPage } from '@pages/admin/AdminEventDetailPage';
+import { AdminEventContentPage } from '@pages/admin/EventContentPage';
 import { OrdersPage as AdminOrdersPage } from '@pages/admin/OrdersPage';
 import { SettingsPage } from '@pages/admin/SettingsPage';
 import { AuditPage } from '@pages/admin/AuditPage';
@@ -101,6 +105,22 @@ export default function App() {
           </RoleRoute>
         }
       />
+      <Route
+        path="/meus-cursos"
+        element={
+          <RoleRoute roles={['customer']}>
+            <MyCoursesPage />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path="/meus-cursos/:id"
+        element={
+          <RoleRoute roles={['customer']}>
+            <CoursePlayerPage />
+          </RoleRoute>
+        }
+      />
 
       <Route
         path="/produtor/cadastro"
@@ -147,6 +167,14 @@ export default function App() {
         element={
           <RoleRoute roles={['producer', 'admin']}>
             <EventFormPage />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path="/produtor/eventos/:id/conteudo"
+        element={
+          <RoleRoute roles={['producer', 'admin']}>
+            <EventContentPage />
           </RoleRoute>
         }
       />
@@ -252,6 +280,14 @@ export default function App() {
         element={
           <RoleRoute roles={['admin']}>
             <AdminEventDetailPage />
+          </RoleRoute>
+        }
+      />
+      <Route
+        path="/admin/eventos/:id/conteudo"
+        element={
+          <RoleRoute roles={['admin']}>
+            <AdminEventContentPage />
           </RoleRoute>
         }
       />

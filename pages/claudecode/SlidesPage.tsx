@@ -276,9 +276,11 @@ export function SlideRenderer({
     case 'cover':
       return (
         <SlideCard color={slide.color} backgroundColor={slide.backgroundColor}>
-          <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
-            {slide.aula}
-          </p>
+          {slide.aula && (
+            <p className="text-base font-semibold uppercase tracking-[0.3em] md:text-xl" style={{ color: slide.color }}>
+              {slide.aula}
+            </p>
+          )}
           <h1 className="mt-6 text-5xl font-bold leading-tight text-slate-900 md:text-8xl">{slide.title}</h1>
           <p className="mt-6 text-2xl text-slate-600 md:text-4xl">{slide.subtitle}</p>
           <span aria-hidden className="mt-10 block text-7xl md:text-9xl">
@@ -750,10 +752,14 @@ function PromptBuilderSlideView({ slide, onReset }: { slide: PromptBuilderSlide;
   useEffect(() => {
     try {
       sessionStorage.setItem(`${storageKey}:values`, JSON.stringify(values));
+      // Locale-independent copy so later slides can reuse an input via hiddenVars
+      for (const input of slide.inputs) {
+        sessionStorage.setItem(`pb-var:${input.id}`, values[input.id] ?? '');
+      }
     } catch {
       /* storage unavailable */
     }
-  }, [storageKey, values]);
+  }, [storageKey, values, slide.inputs]);
 
   useEffect(() => {
     try {

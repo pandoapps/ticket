@@ -290,14 +290,14 @@ Definir essas jornadas antes de construir garante que você não vai esquecer ne
 
 ---
 
-### Google AI Studio
+### Claude Design
 
-O [Google AI Studio](https://aistudio.google.com/apps) é uma ferramenta do Google que, dado um prompt de texto bem estruturado, consegue gerar protótipos visuais funcionais de aplicações web.
+O [Claude Design](https://claude.ai/design) é uma ferramenta da Anthropic que, dado um prompt de texto bem estruturado, consegue gerar protótipos visuais funcionais de aplicações web.
 
 Na aula, o fluxo foi:
 1. Usar o **Gerador de Prompt de Telas** para criar um prompt estruturado
 2. Enviar esse prompt para o Claude.ai para ele refinar
-3. Enviar a resposta para o Google AI Studio para gerar as telas
+3. Enviar a resposta para o Claude Design para gerar as telas
 4. Explorar as telas geradas e iterar
 
 ### O Gerador de Prompt de Telas
@@ -321,11 +321,11 @@ O prompt gerado automaticamente instrui a IA a criar um protótipo com:
 
 ### O Desafio Copa do Mundo (Figurinhas)
 
-Antes da tarefa principal, fizemos um exercício com figurinhas da Copa do Mundo — para praticar o fluxo completo de criação usando o Google AI Studio. Foi uma forma descontraída de praticar sem a pressão de um projeto real.
+Antes da tarefa principal, fizemos um exercício com figurinhas da Copa do Mundo — para praticar o fluxo completo de criação usando o Claude Design. Foi uma forma descontraída de praticar sem a pressão de um projeto real.
 
 > 🛠️
 >
-> Acesse o [Google AI Studio](https://aistudio.google.com/apps), clique em **Build → Apps** e descreva o seguinte projeto para a IA gerar as telas:
+> Acesse o [Claude Design](https://claude.ai/design) e descreva o seguinte projeto para a IA gerar as telas:
 >
 > *"Crie uma plataforma de compra e venda de figurinhas.*
 >
@@ -781,7 +781,7 @@ Com o documento de requisitos você pode:
 ### Como geramos o documento
 
 **Fluxo:**
-1. Você criou as telas no Google AI Studio usando um prompt estruturado
+1. Você criou as telas no Claude Design usando um prompt estruturado
 2. Esse prompt descreve o sistema visualmente
 3. Enviamos esse mesmo prompt para o Claude.ai pedindo para ele gerar os requisitos funcionais
 4. Claude analisa o prompt e lista todas as funcionalidades com nome e descrição
@@ -829,7 +829,7 @@ O documento de requisitos gerado na Parte 08. Claude vai implementar exatamente 
 
 ### 3. O Link do Repositório Visual
 
-O link do repositório do Google AI Studio com as telas criadas. Claude vai copiar a interface visual (cores, layout, estilo) mas vai refazer a estrutura do código seguindo os padrões da empresa.
+O link do repositório do Claude Design com as telas criadas. Claude vai copiar a interface visual (cores, layout, estilo) mas vai refazer a estrutura do código seguindo os padrões da empresa.
 
 ---
 

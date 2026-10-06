@@ -153,13 +153,22 @@ export function AdminEventDetailPage() {
               </p>
             )}
           </div>
-          <button
-            onClick={() => setEditing(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
-          >
-            <Icons.pencil className="h-4 w-4" />
-            {t('admin.editEvent')}
-          </button>
+          <div className="flex gap-2">
+            <Link
+              to={`/admin/eventos/${event.id}/conteudo`}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              <Icons.book className="h-4 w-4" />
+              {t('members_area.title')}
+            </Link>
+            <button
+              onClick={() => setEditing(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              <Icons.pencil className="h-4 w-4" />
+              {t('admin.editEvent')}
+            </button>
+          </div>
         </div>
       </div>
 

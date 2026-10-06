@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\TicketLot;
 use App\Models\User;
+use App\Services\ManualTicketService;
 use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,10 @@ use Illuminate\Support\Str;
 
 class TicketController extends Controller
 {
-    public function __construct(private readonly QrCodeService $qr) {}
+    public function __construct(
+        private readonly QrCodeService $qr,
+        private readonly ManualTicketService $manualTickets,
+    ) {}
 
     public function store(Request $request): JsonResponse
     {
@@ -43,13 +47,7 @@ class TicketController extends Controller
             $customer->save();
         }
 
-        $ticket = Ticket::create([
-            'order_id' => null,
-            'ticket_lot_id' => $lot->id,
-            'customer_id' => $customer->id,
-        ]);
-
-        $lot->increment('sold');
+        $ticket = $this->manualTickets->issue($customer, $lot);
 
         return response()->json([
             'data' => [

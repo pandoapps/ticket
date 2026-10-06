@@ -48,6 +48,7 @@ export interface EventModel {
   is_active: boolean;
   accepts_pix: boolean;
   accepts_card: boolean;
+  members_area_enabled: boolean;
   platform_fees?: PlatformFees;
   producer?: {
     id: number;

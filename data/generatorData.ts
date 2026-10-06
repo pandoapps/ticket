@@ -157,10 +157,11 @@ Para o banco de dados: localmente usaremos banco MySQL via Docker; em produção
       buttonLabel: '',
       confirmGenerate: true,
       instructions: [
-        'O texto foi preenchido automaticamente com o documento de requisitos do slide anterior',
+        'O texto foi preenchido automaticamente com o descritivo das telas e o documento de requisitos dos slides anteriores',
         'Copie o texto e cole no Claude CLI para iniciar o projeto',
       ],
       hiddenVars: {
+        'DESCRITIVO DAS TELAS': 'pb-FRONTEND|Gerando as interfaces do seu projeto:response',
         'RESPOSTA DO CLAUDE': 'pb-REQUISITOS|Gerando o documento de requisitos do projeto:response',
       },
       inputs: [],
@@ -429,6 +430,11 @@ Project context
 {RESPOSTA DO CLAUDE}
 
 Note: Ignore all the instructions in PROJECT CONTEXT that are divergent of the previous instructions
+
+Front-end context
+The description below is the prompt used to design the screens. Use it as the source of truth for the visual interface (screens, navigation, colors, layout and style), while keeping the Official Stack and Project Structure defined above.
+
+{DESCRITIVO DAS TELAS}
 
 ⚖️ LGPD Compliance
 All features involving personal data (names, emails, CPF, phone numbers, addresses, payment info, etc.) must comply with Brazil's Lei Geral de Proteção de Dados (LGPD — Law 13,709/2018). This means:

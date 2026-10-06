@@ -432,13 +432,12 @@ export const slidesData: Record<number, Slide[]> = {
     {
       type: 'presenter',
       name: 'Thiago Ferreira',
-      role: 'Mentor de Vibe Coding · Fundador da Pandô APPs',
+      role: 'Fundador da Pandô APPs',
       color: '#d97757',
       photoUrl: '/images/thiago.png',
       bullets: [
         'Desenvolvedor há mais de duas décadas, com mais de 100 projetos publicados',
         'Acredita que programar é transformar ideias em realidade, não decorar sintaxe',
-        'Criador do método IED — Inteligência Empresarial Digital',
         'Ajuda pessoas comuns a criar suas próprias soluções com tecnologia',
       ],
       socials: [
@@ -453,11 +452,9 @@ export const slidesData: Record<number, Slide[]> = {
     },
     {
       type: 'story',
-      title: 'Quebra Gelo',
+      title: 'QUERO TE CONHECER...',
       color: '#d97757',
       hint: 'Para que serve a IA?',
-      delayedImages: ['/images/thiago-timao.png', '/images/jefte-pumba-v2.png'],
-      delayedAudio: '/audio/burper.mp3',
     },
     {
       type: 'parts',
@@ -525,13 +522,13 @@ export const slidesData: Record<number, Slide[]> = {
       items: [
         '01 — Quando criar um projeto',
         '02 — Escopando um projeto',
-        '03 — Criando as interfaces',
-        '04 — Instalação e configuração do ambiente',
-        '05 — Construção do projeto do zero ao fim',
-        '06 — Primeiros comandos e fluxo de trabalho',
-        '07 — Boas práticas de prompt',
-        '08 — Gerando o documento de requisitos',
-        '09 — Gerando prompt para o Claude',
+        '03 — Instalação e configuração do ambiente',
+        '04 — Construção do projeto do zero ao fim',
+        '05 — Primeiros comandos e fluxo de trabalho',
+        '06 — Criando as interfaces',
+        '07 — Gerando o documento de requisitos',
+        '08 — Gerando prompt para o Claude',
+        '09 — Boas práticas de prompt',
       ],
     },
     {
@@ -582,7 +579,7 @@ export const slidesData: Record<number, Slide[]> = {
         { label: 'Qual o nome da plataforma?', multiline: false },
         'Qual o problema que a plataforma quer resolver?',
         'Qual o público alvo da plataforma?',
-        'Como você quer ganhar audiência com esse público?',
+        'Por quais canais você pretende fazer marketing?',
       ],
     },
     {
@@ -597,90 +594,12 @@ export const slidesData: Record<number, Slide[]> = {
         { label: 'Qual o nome da plataforma?', multiline: false },
         'Qual o problema que a plataforma quer resolver?',
         'Qual o público alvo da plataforma?',
-        'Como você quer ganhar audiência com esse público?',
+        'Por quais canais você pretende fazer marketing?',
       ],
-    },
-    {
-      type: 'list',
-      badge: 'Parte 03',
-      title: 'Criando as Interfaces',
-      subtitle: 'Construindo um prompt inicial',
-      color: '#d97757',
-      items: [],
-    },
-    {
-      type: 'list',
-      badge: 'Parte 03',
-      title: 'Criando as Interfaces',
-      subtitle: 'Conhecendo o Google AI Studio',
-      color: '#d97757',
-      items: [
-        'Entenda quais são os atores da sua plataforma',
-        'Entenda as jornadas de cada ator',
-        'Itere com o Claude: peça, veja o resultado, ajuste',
-        'Use componentes reutilizáveis para manter o visual consistente',
-      ],
-    },
-    {
-      type: 'image',
-      badge: 'Parte 03',
-      title: 'Criando as Interfaces',
-      subtitle: 'Desafio Copa do Mundo',
-      color: '#d97757',
-      imageUrl: '/images/figurinhas-copa.jpg',
-      imageAlt: 'Figurinhas da Copa do Mundo',
-      imageMaxHeight: '40vh',
-    },
-    {
-      type: 'promptBuilder',
-      badge: 'Parte 03',
-      title: 'Criando as Interfaces',
-      subtitle: 'Gerando um prompt inicial',
-      color: '#d97757',
-      buttonLabel: 'Gerar prompt de telas',
-      inputs: [
-        { id: 'NOME', label: 'Qual o nome da plataforma?' },
-        { id: 'OBJETIVO', label: 'Qual objetivo da plataforma?' },
-        { id: 'CORES', label: 'Quais as cores principais?' },
-        { id: 'ATORES', label: 'Quais atores do sistema e o que cada um pode fazer?', multiline: true },
-      ],
-      nextSteps: {
-        title: 'Instruções:',
-        steps: [
-          {
-            text: 'Envie o prompt gerado nesse quadro para o ',
-            linkLabel: 'Claude',
-            linkUrl: 'https://claude.ai',
-          },
-          {
-            text: 'Copie a resposta do Claude e envie no ',
-            linkLabel: 'Google AI Studio',
-            linkUrl: 'https://aistudio.google.com/apps',
-          },
-        ],
-      },
-      promptTemplate: `Estou criando as telas da plataforma chamada {NOME}, que terá como cores principais {CORES}
-
-Quero que você crie um prompt que será enviado para o google AI Studio criar as telas do meu sistema. Ele tem como objetivo {OBJETIVO}.
-
-Os principais atores da plataforma são:
-{ATORES}
-
-Quero que use glass design e que gere um visual moderno.
-
-Quero que as senhas dos usuários sejam 123456
-
-Quero que tenha um painel administrativo e que seu acesso seja realizado através de um botão no topo superior direito
-
-Quero que tenha uma landing page para o projeto com um botão de login no topo superior direito
-
-Quero que a plataforma seja responsiva
-
-Quero que crie um card abaixo do formulário de login com atalhos para preencher sozinho o login e senha dos usuários`,
     },
     {
       type: 'content',
-      badge: 'Parte 04',
+      badge: 'Parte 03',
       title: 'Instalação e Configuração',
       color: '#d97757',
       blocks: [
@@ -698,7 +617,7 @@ Quero que crie um card abaixo do formulário de login com atalhos para preencher
         },
         {
           icon: '🐳',
-          label: 'Docker Desktop',
+          label: 'Docker',
           text: 'Containerização da aplicação — mesmo ambiente em qualquer máquina',
           url: 'https://www.docker.com/get-started/',
         },
@@ -722,7 +641,7 @@ Quero que crie um card abaixo do formulário de login com atalhos para preencher
     },
     {
       type: 'list',
-      badge: 'Parte 04',
+      badge: 'Parte 03',
       title: 'Vamos Testar',
       color: '#d97757',
       items: [
@@ -732,7 +651,7 @@ Quero que crie um card abaixo do formulário de login com atalhos para preencher
     },
     {
       type: 'highlight',
-      badge: 'Parte 05',
+      badge: 'Parte 04',
       title: 'Construção do Projeto',
       color: '#d97757',
       quote: 'Você não precisa saber escrever o código. Você precisa saber descrever o que quer.',
@@ -745,7 +664,7 @@ Quero que crie um card abaixo do formulário de login com atalhos para preencher
     },
     {
       type: 'list',
-      badge: 'Parte 06',
+      badge: 'Parte 05',
       title: 'Primeiros Comandos',
       subtitle: 'Fluxo de Desenvolvimento',
       color: '#d97757',
@@ -760,22 +679,67 @@ Quero que crie um card abaixo do formulário de login com atalhos para preencher
     },
     {
       type: 'list',
-      badge: 'Parte 07',
-      title: 'Boas Práticas de Prompt',
-      subtitle: 'Para Desenvolvimento de Software',
+      badge: 'Parte 06',
+      title: 'Criando as Interfaces',
+      subtitle: 'Construindo um prompt inicial',
       color: '#d97757',
-      items: [
-        'Seja específico: diga o que quer, não o que não quer',
-        'Forneça contexto: tipo de projeto, tecnologia, usuário final',
-        'Um pedido por vez: não misture funcionalidades em um único prompt',
-        'Confirme antes de grandes mudanças usando /plan',
-        'Use CLAUDE.md para guardar regras permanentes do projeto',
-        'Releia o código gerado — entender é parte do processo',
-      ],
+      items: [],
+    },
+    {
+      type: 'image',
+      badge: 'Parte 06',
+      title: 'Criando as Interfaces',
+      subtitle: 'Desafio Copa do Mundo',
+      color: '#d97757',
+      imageUrl: '/images/figurinhas-copa.jpg',
+      imageAlt: 'Figurinhas da Copa do Mundo',
+      imageMaxHeight: '40vh',
     },
     {
       type: 'promptBuilder',
-      badge: 'Parte 08',
+      badge: 'Parte 06',
+      title: 'Criando as Interfaces',
+      subtitle: 'Gerando um prompt inicial',
+      color: '#d97757',
+      buttonLabel: 'Gerar prompt de telas',
+      inputs: [
+        { id: 'NOME', label: 'Qual o nome da plataforma?' },
+        { id: 'OBJETIVO', label: 'Qual objetivo da plataforma?' },
+        { id: 'CORES', label: 'Quais as cores principais?' },
+        { id: 'ATORES', label: 'Quais atores do sistema e o que cada um pode fazer?', multiline: true },
+      ],
+      nextSteps: {
+        title: 'Instruções:',
+        steps: [
+          {
+            text: 'Envie o prompt gerado nesse quadro para o ',
+            linkLabel: 'Claude',
+            linkUrl: 'https://claude.ai',
+          },
+        ],
+      },
+      promptTemplate: `Estou criando as telas da plataforma chamada {NOME}, que terá como cores principais {CORES}
+
+Quero que você crie um prompt que será enviado para o Claude Design criar as telas do meu sistema. Ele tem como objetivo {OBJETIVO}.
+
+Os principais atores da plataforma são:
+{ATORES}
+
+Quero que use glass design e que gere um visual moderno.
+
+Quero que as senhas dos usuários sejam 123456
+
+Quero que tenha um painel administrativo e que seu acesso seja realizado através de um botão no topo superior direito
+
+Quero que tenha uma landing page para o projeto com um botão de login no topo superior direito
+
+Quero que a plataforma seja responsiva
+
+Quero que crie um card abaixo do formulário de login com atalhos para preencher sozinho o login e senha dos usuários`,
+    },
+    {
+      type: 'promptBuilder',
+      badge: 'Parte 07',
       title: 'Gerando o Documento de Requisitos',
       subtitle: 'Mãos à obra!',
       color: '#d97757',
@@ -786,7 +750,7 @@ Quero que crie um card abaixo do formulário de login com atalhos para preencher
           label: 'Qual prompt da geração de telas?',
           multiline: true,
           rows: 14,
-          hint: 'Qual foi a resposta enviada pelo GPT na Parte 03?',
+          hint: 'Qual foi a resposta enviada pelo GPT na Parte 06?',
         },
       ],
       promptTemplate: `Estou criando uma plataforma web e para gerar as telas usei o seguinte prompt: {PROMPT}
@@ -806,23 +770,21 @@ Quero que você analise esse prompt e gere o documento de requisitos funcionais 
     },
     {
       type: 'promptBuilder',
-      badge: 'Parte 09',
+      badge: 'Parte 08',
       title: 'Gerando Prompt para o Claude',
       subtitle: 'Buildando o app',
       color: '#d97757',
       buttonLabel: 'Gerar prompt para o Claude',
+      hiddenVars: {
+        TELAS: 'pb-var:PROMPT',
+      },
       inputs: [
         {
           id: 'REQUISITOS',
           label: 'Quais requisitos do projeto?',
           multiline: true,
           rows: 14,
-          hint: 'Documento de requisitos gerado pelo Claude depois de finalizar a Parte 08',
-        },
-        {
-          id: 'LINK_REPO',
-          label: 'Qual o link do repositório no GitHub?',
-          hint: 'Link do repositório gerado ao publicar o projeto no GitHub no passo 3',
+          hint: 'Documento de requisitos gerado pelo Claude depois de finalizar a Parte 07',
         },
       ],
       promptTemplate: `🚀 Official Project Standard
@@ -1091,7 +1053,10 @@ Note: Ignore all the instructions in PROJECT CONTEXT that are divergent of the p
 
 {REQUISITOS}
 
-Use o seguinte repositório para buscar a interface: {LINK_REPO}. Não se prenda a estrutura desse repositório, use-o apenas para copiar a interface visual
+Front-end context
+The description below is the prompt used to design the screens. Use it as the source of truth for the visual interface (screens, navigation, colors, layout and style), while keeping the Official Stack and Project Structure defined above.
+
+{TELAS}
 
 ⚖️ LGPD Compliance
 All features involving personal data (names, emails, CPF, phone numbers, addresses, payment info, etc.) must comply with Brazil's Lei Geral de Proteção de Dados (LGPD — Law 13,709/2018). This means:
@@ -1102,6 +1067,21 @@ All features involving personal data (names, emails, CPF, phone numbers, address
 - Do not share or expose personal data to third parties without explicit consent.
 - Log data access and mutations for audit purposes.
 - Apply these rules to every model, migration, API endpoint, and UI form that handles personal data.`,
+    },
+    {
+      type: 'list',
+      badge: 'Parte 09',
+      title: 'Boas Práticas de Prompt',
+      subtitle: 'Para Desenvolvimento de Software',
+      color: '#d97757',
+      items: [
+        'Seja específico: diga o que quer, não o que não quer',
+        'Forneça contexto: tipo de projeto, tecnologia, usuário final',
+        'Um pedido por vez: não misture funcionalidades em um único prompt',
+        'Confirme antes de grandes mudanças usando /plan',
+        'Use CLAUDE.md para guardar regras permanentes do projeto',
+        'Releia o código gerado — entender é parte do processo',
+      ],
     },
     {
       type: 'deliverables',
@@ -1128,7 +1108,7 @@ All features involving personal data (names, emails, CPF, phone numbers, address
   2: [
     {
       type: 'cover',
-      aula: 'Encontro 2',
+      aula: '',
       date: '16 de Maio de 2026',
       title: 'Stack Completa de um Projeto',
       subtitle: 'Arquitetura, vocabulário técnico e entendimento profundo da aplicação',
@@ -1147,17 +1127,14 @@ All features involving personal data (names, emails, CPF, phone numbers, address
         { id: 'claude',     label: 'Claude.ai',               icon: '🤖', accent: '#a78bfa' },
         { id: 'descritivo', label: 'Descritivo de Telas',     icon: '📄', accent: '#6ea8fe', badge: '1' },
         { id: 'feliz',      label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
-        { id: 'gas',        label: 'Google AI Studio',        icon: '🎨', accent: '#6ee7b7' },
-        { id: 'telas',      label: 'Telas',                   icon: '🖥️', accent: '#6ea8fe', badge: '2' },
-        { id: 'feliz2',     label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
-        // — Linha 2 —
         { id: 'claude2',    label: 'Claude.ai',               icon: '🤖', accent: '#a78bfa' },
-        { id: 'requisitos', label: 'Documento de Requisitos', icon: '📋', accent: '#6ea8fe', badge: '3' },
+        { id: 'requisitos', label: 'Documento de Requisitos', icon: '📋', accent: '#6ea8fe', badge: '2' },
         { id: 'feliz3',     label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
-        { id: 'slide',      label: 'Slide Aula 01',            icon: '📊', accent: '#d97757', aboveBadges: ['2', '3'] },
+        // — Linha 2 —
+        { id: 'slide',      label: 'Slide Aula 01',            icon: '📊', accent: '#d97757', aboveBadges: ['1', '2'] },
         { id: 'prompt',     label: 'Prompt do Projeto',       icon: '📝', accent: '#6ea8fe' },
         { id: 'claudecli',  label: 'Claude CLI',              icon: '⌨️', accent: '#a78bfa' },
-        { id: 'projeto',    label: 'Projeto',                 icon: '📦', accent: '#6ee7b7', badge: '4' },
+        { id: 'projeto',    label: 'Projeto',                 icon: '📦', accent: '#6ee7b7', badge: '3' },
         { id: 'feliz4',     label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
         { id: 'fim',        label: '"Fim"',                   icon: '🏁', accent: '#6ee7b7' },
       ],
@@ -1166,11 +1143,7 @@ All features involving personal data (names, emails, CPF, phone numbers, address
         { from: 'claude',     to: 'descritivo' },
         { from: 'descritivo', to: 'feliz'      },
         { from: 'feliz',      to: 'claude',    label: 'Não' },
-        { from: 'feliz',      to: 'gas',       label: 'Sim' },
-        { from: 'gas',        to: 'telas'      },
-        { from: 'telas',      to: 'feliz2'     },
-        { from: 'feliz2',     to: 'gas',       label: 'Não' },
-        { from: 'feliz2',     to: 'claude2',   label: 'Sim' },
+        { from: 'feliz',      to: 'claude2',   label: 'Sim' },
         { from: 'claude2',    to: 'requisitos' },
         { from: 'requisitos', to: 'feliz3'     },
         { from: 'feliz3',     to: 'claude2',   label: 'Não' },
@@ -1529,16 +1502,13 @@ All features involving personal data (names, emails, CPF, phone numbers, address
         { id: 'claude',     label: 'Claude.ai',               icon: '🤖', accent: '#a78bfa' },
         { id: 'descritivo', label: 'Descritivo de Telas',     icon: '📄', accent: '#6ea8fe', badge: '1' },
         { id: 'feliz',      label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
-        { id: 'gas',        label: 'Google AI Studio',        icon: '🎨', accent: '#6ee7b7' },
-        { id: 'telas',      label: 'Telas',                   icon: '🖥️', accent: '#6ea8fe', badge: '2' },
-        { id: 'feliz2',     label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
         { id: 'claude2',    label: 'Claude.ai',               icon: '🤖', accent: '#a78bfa' },
-        { id: 'requisitos', label: 'Documento de Requisitos', icon: '📋', accent: '#6ea8fe', badge: '3' },
+        { id: 'requisitos', label: 'Documento de Requisitos', icon: '📋', accent: '#6ea8fe', badge: '2' },
         { id: 'feliz3',     label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
-        { id: 'slide',      label: 'Slide Aula 01',            icon: '📊', accent: '#d97757', aboveBadges: ['2', '3'] },
+        { id: 'slide',      label: 'Slide Aula 01',            icon: '📊', accent: '#d97757', aboveBadges: ['1', '2'] },
         { id: 'prompt',     label: 'Prompt do Projeto',       icon: '📝', accent: '#6ea8fe' },
         { id: 'claudecli',  label: 'Claude CLI',              icon: '⌨️', accent: '#a78bfa' },
-        { id: 'projeto',    label: 'Projeto',                 icon: '📦', accent: '#6ee7b7', badge: '4' },
+        { id: 'projeto',    label: 'Projeto',                 icon: '📦', accent: '#6ee7b7', badge: '3' },
         { id: 'feliz4',     label: 'Humano Feliz?',           icon: '😊', accent: '#fbbf24', shape: 'diamond' },
         { id: 'fim',        label: '"Fim"',                   icon: '🏁', accent: '#6ee7b7' },
       ],
@@ -1547,11 +1517,7 @@ All features involving personal data (names, emails, CPF, phone numbers, address
         { from: 'claude',     to: 'descritivo' },
         { from: 'descritivo', to: 'feliz'      },
         { from: 'feliz',      to: 'claude',    label: 'Não' },
-        { from: 'feliz',      to: 'gas',       label: 'Sim' },
-        { from: 'gas',        to: 'telas'      },
-        { from: 'telas',      to: 'feliz2'     },
-        { from: 'feliz2',     to: 'gas',       label: 'Não' },
-        { from: 'feliz2',     to: 'claude2',   label: 'Sim' },
+        { from: 'feliz',      to: 'claude2',   label: 'Sim' },
         { from: 'claude2',    to: 'requisitos' },
         { from: 'requisitos', to: 'feliz3'     },
         { from: 'feliz3',     to: 'claude2',   label: 'Não' },

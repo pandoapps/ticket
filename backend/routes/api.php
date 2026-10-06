@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Customer\CouponController as CustomerCouponController;
+use App\Http\Controllers\Api\Customer\CourseController as CustomerCourseController;
 use App\Http\Controllers\Api\Customer\OrderController as CustomerOrderController;
 use App\Http\Controllers\Api\Customer\PublicEventController;
 use App\Http\Controllers\Api\Customer\TicketController as CustomerTicketController;
@@ -21,6 +22,10 @@ use App\Http\Controllers\Api\Producer\CredentialController;
 use App\Http\Controllers\Api\Producer\CustomersController as ProducerCustomersController;
 use App\Http\Controllers\Api\Producer\EmailLogController as ProducerEmailLogController;
 use App\Http\Controllers\Api\Producer\EventController as ProducerEventController;
+use App\Http\Controllers\Api\Producer\EventLessonController;
+use App\Http\Controllers\Api\Producer\EventModuleController;
+use App\Http\Controllers\Api\Producer\LessonMaterialController;
+use App\Http\Controllers\Api\Producer\MembersAreaController;
 use App\Http\Controllers\Api\Producer\PosController as ProducerPosController;
 use App\Http\Controllers\Api\Producer\ProducerProfileController;
 use App\Http\Controllers\Api\Producer\ReportController as ProducerReportController;
@@ -66,6 +71,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('orders/{order}', [CustomerOrderController::class, 'show']);
         Route::get('tickets', [CustomerTicketController::class, 'index']);
         Route::get('tickets/{ticket}', [CustomerTicketController::class, 'show']);
+        Route::get('courses', [CustomerCourseController::class, 'index']);
+        Route::get('courses/{event}', [CustomerCourseController::class, 'show']);
     });
 
     Route::prefix('producer')->group(function () {
@@ -83,6 +90,18 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('events/{event}', [ProducerEventController::class, 'destroy']);
             Route::post('events/{event}/publish', [ProducerEventController::class, 'publish']);
             Route::post('events/{event}/unpublish', [ProducerEventController::class, 'unpublish']);
+
+            Route::get('events/{event}/members-area', [MembersAreaController::class, 'show']);
+            Route::post('events/{event}/members-area/toggle', [MembersAreaController::class, 'toggle']);
+            Route::post('events/{event}/modules', [EventModuleController::class, 'store']);
+            Route::put('modules/{module}', [EventModuleController::class, 'update']);
+            Route::delete('modules/{module}', [EventModuleController::class, 'destroy']);
+            Route::post('modules/{module}/lessons', [EventLessonController::class, 'store']);
+            Route::put('lessons/{lesson}', [EventLessonController::class, 'update']);
+            Route::delete('lessons/{lesson}', [EventLessonController::class, 'destroy']);
+            Route::post('lessons/{lesson}/materials', [LessonMaterialController::class, 'store']);
+            Route::put('materials/{material}', [LessonMaterialController::class, 'update']);
+            Route::delete('materials/{material}', [LessonMaterialController::class, 'destroy']);
 
             Route::get('events/{event}/lots', [TicketLotController::class, 'index']);
             Route::post('events/{event}/lots', [TicketLotController::class, 'store']);
@@ -141,6 +160,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('events/{event}/lots', [TicketLotController::class, 'store']);
         Route::put('lots/{lot}', [TicketLotController::class, 'update']);
         Route::delete('lots/{lot}', [TicketLotController::class, 'destroy']);
+
+        Route::get('events/{event}/members-area', [MembersAreaController::class, 'show']);
+        Route::post('events/{event}/members-area/toggle', [MembersAreaController::class, 'toggle']);
+        Route::post('events/{event}/modules', [EventModuleController::class, 'store']);
+        Route::put('modules/{module}', [EventModuleController::class, 'update']);
+        Route::delete('modules/{module}', [EventModuleController::class, 'destroy']);
+        Route::post('modules/{module}/lessons', [EventLessonController::class, 'store']);
+        Route::put('lessons/{lesson}', [EventLessonController::class, 'update']);
+        Route::delete('lessons/{lesson}', [EventLessonController::class, 'destroy']);
+        Route::post('lessons/{lesson}/materials', [LessonMaterialController::class, 'store']);
+        Route::put('materials/{material}', [LessonMaterialController::class, 'update']);
+        Route::delete('materials/{material}', [LessonMaterialController::class, 'destroy']);
 
         Route::get('orders', [AdminOrderController::class, 'index']);
         Route::put('orders/{order}', [AdminOrderController::class, 'update']);

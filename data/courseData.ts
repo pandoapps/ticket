@@ -51,7 +51,7 @@ export const courseModules: CourseModule[] = [
       { name: 'Manual de Instalação (DOCX)', url: '/downloads/AULA_01_INSTALACAO.docx' },
       { name: 'Visual Studio Code', url: 'https://code.visualstudio.com/download' },
       { name: 'WSL (Windows Subsystem for Linux)', url: 'https://learn.microsoft.com/pt-br/windows/wsl/install' },
-      { name: 'Docker Desktop', url: 'https://www.docker.com/get-started/' },
+      { name: 'Docker', url: 'https://www.docker.com/get-started/' },
       { name: 'Claude Code Quickstart', url: 'https://code.claude.com/docs/en/quickstart' },
     ],
   },

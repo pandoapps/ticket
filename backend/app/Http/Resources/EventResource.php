@@ -42,6 +42,7 @@ class EventResource extends JsonResource
             'is_active' => (bool) $this->is_active,
             'accepts_pix' => (bool) $this->accepts_pix,
             'accepts_card' => (bool) $this->accepts_card,
+            'members_area_enabled' => (bool) $this->members_area_enabled,
             'platform_fees' => [
                 'pix_percent' => (float) $settings->pix_commission_percent,
                 'pix_fixed' => (float) $settings->pix_fixed_fee_cents,

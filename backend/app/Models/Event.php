@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends Model
@@ -35,6 +36,7 @@ class Event extends Model
         'is_active',
         'accepts_pix',
         'accepts_card',
+        'members_area_enabled',
     ];
 
     protected function casts(): array
@@ -49,6 +51,7 @@ class Event extends Model
             'is_active' => 'boolean',
             'accepts_pix' => 'boolean',
             'accepts_card' => 'boolean',
+            'members_area_enabled' => 'boolean',
         ];
     }
 
@@ -75,6 +78,16 @@ class Event extends Model
     public function tickets()
     {
         return $this->hasManyThrough(Ticket::class, Order::class);
+    }
+
+    public function modules(): HasMany
+    {
+        return $this->hasMany(EventModule::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function lessons(): HasManyThrough
+    {
+        return $this->hasManyThrough(EventLesson::class, EventModule::class);
     }
 
     public function scopePublished(Builder $query): Builder

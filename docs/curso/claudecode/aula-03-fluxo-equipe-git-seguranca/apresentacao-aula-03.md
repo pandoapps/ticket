@@ -35,7 +35,7 @@ flowchart TD
     B --> C["📄 Descritivo de Telas"]
     C --> D{"😊 Humano Feliz?"}
     D -- Não --> B
-    D -- Sim --> E["🎨 Google AI Studio"]
+    D -- Sim --> E["🎨 Claude Design"]
     E --> F["..."]
 
     style A fill:#d97757,color:#fff,stroke:#d97757

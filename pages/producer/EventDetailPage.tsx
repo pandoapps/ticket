@@ -125,6 +125,9 @@ export function EventDetailPage() {
         description={`${formatDateTime(event.starts_at)} • ${event.venue_name ?? t('browse.online')}`}
         action={
           <div className="flex gap-2">
+            <button onClick={() => navigate(`/produtor/eventos/${event.id}/conteudo`)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100">
+              {t('producer.membersArea')}
+            </button>
             <button onClick={() => navigate(`/produtor/eventos/${event.id}/editar`)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100">
               {t('common.edit')}
             </button>
